@@ -1,0 +1,63 @@
+<!-- @dsCard group="Components" viewport="700x540" subtitle="One chrome, four faces: HUD ≥1920 · Three Realms 1280–1919 · Seeker 881–1279 · dock ≤880" name="Adaptive nav tiers" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="cards.css">
+</head>
+<body>
+<div class="col" style="gap: 18px;">
+
+  <div class="col" style="gap: 8px;">
+    <span class="lbl">C · HUD — ultrawide (numbered, gold marker on current)</span>
+    <div class="row" style="gap: 2px;">
+      <a class="nav-hlink" href="#"><span class="n">01</span><span class="t">Home</span></a>
+      <a class="nav-hlink" href="#"><span class="n">04</span><span class="t">Portfolio</span></a>
+      <a class="nav-hlink here" href="#"><span class="n">06</span><span class="t">Docs</span></a>
+      <a class="nav-hlink" href="#"><span class="n">07</span><span class="t">Games</span></a>
+      <a class="nav-hlink" href="#"><span class="n">09</span><span class="t">Countdowns</span></a>
+    </div>
+  </div>
+
+  <div class="col" style="gap: 8px;">
+    <span class="lbl">A · Three Realms — desktop (dropdown open)</span>
+    <div class="row" style="gap: 4px; align-items: flex-start;">
+      <button type="button" class="nav-rtop">The Work <span class="car">▼</span></button>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="nav-rtop open active">The Codex <span class="car">▼</span></button>
+        <div class="nav-rpanel" style="position: static; width: 280px;">
+          <a class="nav-ritem" href="#"><span class="t">Blog</span><span class="d">The Codex — long-form writing</span></a>
+          <a class="nav-ritem here" href="#"><span class="t">Docs</span><span class="d">The Grimoire — guides &amp; cheat sheets</span></a>
+        </div>
+      </div>
+      <button type="button" class="nav-rtop">The Hall <span class="car">▼</span></button>
+    </div>
+  </div>
+
+  <div class="col" style="gap: 8px;">
+    <span class="lbl">B · Seeker — laptop (pill opens search · Menu opens mega panel)</span>
+    <div class="row">
+      <button type="button" class="nav-seek" style="display: flex; max-width: 340px; flex: none; width: 340px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" width="13" height="13"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 L21 21"></path></svg>
+        <span>Seek pages, docs, spells…</span><span class="sk">/</span>
+      </button>
+      <button type="button" class="nav-menubtn" style="display: flex;">☰ Menu</button>
+    </div>
+  </div>
+
+  <div class="col" style="gap: 8px;">
+    <span class="lbl">Mobile · quick-slot dock (glowing active slot · More opens sheet)</span>
+    <nav class="jx-dock" style="position: static; display: grid; max-width: 420px; border: 1px solid var(--line-strong); border-radius: 10px;">
+      <a class="jx-slot" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" width="20" height="20"><path d="M3 11 L12 3 L21 11 V21 H14 V15 H10 V21 H3 Z"></path></svg><span>Home</span></a>
+      <a class="jx-slot" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 7 L13 7 L13 3 L17 3 L20 6 L20 10 L13 10 L13 11 L4 11 Z"></path><path d="M8.5 11 L8.5 21"></path></svg><span>Forge</span></a>
+      <a class="jx-slot here" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 4 H10 C11.1 4 12 4.9 12 6 V20 C12 19 11 18.5 10 18.5 H4 Z"></path><path d="M20 4 H14 C12.9 4 12 4.9 12 6 V20 C12 19 13 18.5 14 18.5 H20 Z"></path></svg><span>Grimoire</span></a>
+      <a class="jx-slot" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M7 8 H17 C19.5 8 21 10 21 13 C21 16 19.8 17.5 18.4 17.5 C16.5 17.5 16.4 15 14.5 15 H9.5 C7.6 15 7.5 17.5 5.6 17.5 C4.2 17.5 3 16 3 13 C3 10 4.5 8 7 8 Z"></path><path d="M8 10.6 V13.4 M6.6 12 H9.4 M15.6 11 h.01 M17.4 13 h.01"></path></svg><span>Hall</span></a>
+      <button type="button" class="jx-slot"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg><span>More</span></button>
+    </nav>
+  </div>
+
+</div>
+</body>
+</html>

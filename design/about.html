@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — JonnXor</title>
+<script>(function(){try{var t=localStorage.getItem('jx-theme');if(t){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 880px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-body p { font-size: 16.5px; }
+  .about-body .drop {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 52px;
+    line-height: .85;
+    float: left;
+    margin: 6px 12px 0 0;
+    color: var(--gold-ink);
+    text-shadow: 0 0 var(--glow-r) var(--glow-gold);
+  }
+  .fact-card { padding: 22px; }
+  .fact-card h3 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; }
+  .fact-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .fact-list li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .fact-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .fact-list .k { color: var(--ink-faint); }
+  .fact-list .v { font-weight: 600; text-align: right; }
+  .fact-card .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  .letter {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 48px 52px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 640px) { .letter { padding: 28px 22px; } }
+  .letter .letter-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+  }
+  .letter .letter-head .who { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: .08em; }
+  .letter .letter-head .when { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
+  .letter p { font-size: 15.5px; }
+  .letter .sign { font-family: var(--font-display); font-weight: 700; letter-spacing: .1em; margin-top: 28px; }
+  .letter .sign small { display: block; font-family: var(--font-body); font-weight: 400; color: var(--ink-faint); letter-spacing: 0; margin-top: 4px; }
+</style>
+</head>
+<body data-page="about">
+<header class="site-nav"></header>
+
+<main>
+  <section class="page-head" data-screen-label="About head">
+    <div class="container">
+      <p class="kicker">About</p>
+      <h1>The Saga of Jón</h1>
+      <p class="lede">Developer, saga enthusiast, professional dragon-botherer. The long version, plus a letter you can forward to your hiring manager.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+    <section class="about-grid" data-screen-label="About body">
+      <div class="about-body">
+        <p><span class="drop">I</span> grew up in Reykjavík on a steady diet of Norse myth and Nintendo cartridges, which explains almost everything that follows. By day I'm a full-stack developer — ten years of building APIs, frontends, and the unglamorous plumbing in between. By night I am, depending on the hour, a Tarnished, a Shinobi, or a Hunter.</p>
+        <p>I gravitate toward the trickster gods — Loki, Hermes — not for the chaos, but for the lateral thinking. The best engineering I've done has been Loki-shaped: the sideways solution nobody asked for that quietly becomes the way things are done. My favorite hero is Odysseus for the same reason. Strength is fine; <em>cleverness gets you home.</em></p>
+        <p>I'm an INFJ, which in practice means I'll be quiet in your stand-up and then send you a four-paragraph document about the thing nobody mentioned. I do my best thinking with a cup of masala chai — extra cardamom — and my best debugging at 1 a.m. with a cat on the keyboard, which is also how most of my typos happen.</p>
+        <p>Things I believe: software should outlive its author's enthusiasm. Error messages are user interface. Every codebase is a saga — it deserves a narrator who cares. And somewhere in every hard problem there is a hidden wall you can roll through.</p>
+      </div>
+
+      <aside class="card fact-card reveal">
+        <h3>Character sheet</h3>
+        <ul class="fact-list">
+          <li><span class="k">Class</span> <span class="v">Full-stack developer</span></li>
+          <li><span class="k">Home base</span> <span class="v">Reykjavík, Iceland</span></li>
+          <li><span class="k">Alignment</span> <span class="v">Chaotic kind (INFJ)</span></li>
+          <li><span class="k">Patron gods</span> <span class="v">Loki · Hermes</span></li>
+          <li><span class="k">Favorite hero</span> <span class="v">Odysseus</span></li>
+          <li><span class="k">Familiar</span> <span class="v">One cat, one owl (alleged)</span></li>
+          <li><span class="k">Potion</span> <span class="v">Masala chai, extra cardamom</span></li>
+          <li><span class="k">Languages</span> <span class="v">Íslenska · English · 日本語 (learning)</span></li>
+        </ul>
+        <div class="chips">
+          <span class="chip tq">TypeScript</span>
+          <span class="chip tq">Go</span>
+          <span class="chip tq">React</span>
+          <span class="chip tq">Postgres</span>
+          <span class="chip gold">Souls veteran</span>
+        </div>
+      </aside>
+    </section>
+
+    <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+    <section id="cover-letter" data-screen-label="Cover letter">
+      <p class="kicker gold" style="text-align: center;">Cover letter</p>
+      <article class="letter reveal">
+        <div class="letter-head">
+          <span class="who">Jón Agnar Stefánsson</span>
+          <span class="when">Reykjavík · June 2026</span>
+        </div>
+        <p>Dear hiring team,</p>
+        <p>I'm a full-stack developer with ten years of experience shipping web platforms end to end — from schema design and API architecture to the pixel-level details of the frontend. I've spent the last four years at a fintech scale-up leading the rebuild of a payments dashboard used by 40,000 merchants, cutting page load times by 70% and support tickets by half.</p>
+        <p>What I bring beyond the stack: I write. Documentation, ADRs, postmortems, onboarding guides — I treat them as part of the product, because the next engineer is also a user. Teammates describe me as the person who listens through the whole meeting and then asks the question that reframes it.</p>
+        <p>I work comfortably across TypeScript, Go, and Python; I care about accessibility, performance budgets, and boring, reliable deployments. I'm at my best on small teams with real ownership, solving problems that need both rigor and a little lateral thinking.</p>
+        <p>I'd love to tell you more — my CV is one page away, and my inbox is open.</p>
+        <p class="sign">Jón Agnar Stefánsson<small>jon@jonnxor.is · jonnxor.is</small></p>
+      </article>
+      <p style="text-align: center; margin-top: 28px;">
+        <a class="btn btn-ghost" href="cv.html">Continue to CV →</a>
+      </p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer"></footer>
+
+<script src="assets/site.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="assets/tweaks-panel.jsx"></script>
+<script type="text/babel" src="assets/tweaks.jsx"></script>
+</body>
+</html>

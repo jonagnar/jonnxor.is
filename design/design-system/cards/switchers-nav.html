@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x170" subtitle="Theme triple (signature) · theme orb (ultrawide compact form) · is/en/ja language toggle" name="Switchers" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="cards.css">
+</head>
+<body>
+<div class="row" style="gap: 32px; align-items: flex-start;">
+  <div class="col" style="gap: 8px; align-items: center;">
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      <button type="button" data-set="dawn" title="Dawn (light)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"></circle><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"></path></svg></button>
+      <button type="button" data-set="rune" class="active" title="Rune Night (dark)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></button>
+      <button type="button" data-set="neon" title="Neon (gamer)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"></path></svg></button>
+    </div>
+    <span class="lbl">Theme · signature</span>
+  </div>
+  <div class="col" style="gap: 8px; align-items: center;">
+    <button type="button" class="nav-orb" style="display: grid;" title="Theme: Rune Night — click to cycle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></button>
+    <span class="lbl">Orb · ultrawide</span>
+  </div>
+  <div class="col" style="gap: 8px; align-items: center;">
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button">IS</button>
+      <button type="button" class="active">EN</button>
+      <button type="button">JA</button>
+    </div>
+    <span class="lbl">Language</span>
+  </div>
+  <div class="col" style="gap: 8px; align-items: center;">
+    <button type="button" class="nav-search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" width="13" height="13"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 L21 21"></path></svg></button>
+    <span class="lbl">Search</span>
+  </div>
+</div>
+</body>
+</html>

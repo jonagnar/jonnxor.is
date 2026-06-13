@@ -1,0 +1,43 @@
+<!-- @dsCard group="Components" viewport="700x250" subtitle="surface + 1px line + 8px corners · hover: lift 3px + accent border + glow · Neon glows at rest" name="Cards" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+  .now-label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .now-value { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+  .now-sub { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="trio">
+  <div data-theme="dawn">
+    <span class="tlbl">Dawn</span>
+    <div class="card lift" style="padding: 14px 16px; width: 100%; box-sizing: border-box;">
+      <div class="now-label">Now brewing</div>
+      <div class="now-value">Masala chai #214</div>
+      <div class="now-sub">Extra cardamom. Hover me.</div>
+    </div>
+  </div>
+  <div data-theme="rune">
+    <span class="tlbl">Rune Night</span>
+    <div class="card lift" style="padding: 14px 16px; width: 100%; box-sizing: border-box;">
+      <div class="now-label">Now playing</div>
+      <div class="now-value">Elden Ring: Nightreign</div>
+      <div class="now-sub">NG+2 · dying with style</div>
+    </div>
+  </div>
+  <div data-theme="neon">
+    <span class="tlbl">Neon · ambient at rest</span>
+    <div class="card lift" style="padding: 14px 16px; width: 100%; box-sizing: border-box;">
+      <div class="now-label">Now building</div>
+      <div class="now-value">Saga Tracker API</div>
+      <div class="now-sub">Go + Postgres quest log</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

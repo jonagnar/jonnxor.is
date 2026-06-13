@@ -1,0 +1,25 @@
+<!-- @dsCard group="Spacing" viewport="700x170" subtitle="Aurora wash for heroes/page heads · CRT scanlines (Neon only, opacity .05)" name="Aurora & scanlines" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+  .aur { height: 96px; border-radius: 8px; border: 1px solid var(--line); background: var(--aurora), var(--bg); position: relative; overflow: hidden; }
+  .aur .cap { position: absolute; left: 12px; bottom: 10px; }
+  .scan::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, var(--scanline-c) 3px, transparent 4px);
+    opacity: .05; mix-blend-mode: overlay;
+  }
+</style>
+</head>
+<body>
+<div class="trio" style="display: grid;">
+  <div data-theme="dawn" style="padding: 0; border: none;"><div class="aur" style="width: 100%;"><span class="cap tlbl">Dawn aurora</span></div></div>
+  <div data-theme="rune" style="padding: 0; border: none;"><div class="aur" style="width: 100%;"><span class="cap tlbl">Rune aurora</span></div></div>
+  <div data-theme="neon" style="padding: 0; border: none;"><div class="aur scan" style="width: 100%;"><span class="cap tlbl">Neon + scanlines</span></div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!-- @dsCard group="Components" viewport="700x200" subtitle="Tabs (gold underline active) · countdown clock cells" name="Tabs & countdown cells" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+  .cd-cell { text-align: center; width: 64px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 2px 6px; }
+  .cd-num { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--tq-ink); text-shadow: 0 0 calc(var(--glow-r) * .6) var(--glow-tq); }
+  .cd-lbl { font-family: var(--font-display); font-size: 9px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="col" style="gap: 18px;">
+  <div class="tabs">
+    <button class="tab" type="button">Upcoming</button>
+    <button class="tab active" type="button">Playing</button>
+    <button class="tab" type="button">Played</button>
+    <button class="tab" type="button">Favorites</button>
+  </div>
+  <div class="row">
+    <div class="cd-cell"><div class="cd-num">162</div><div class="cd-lbl">days</div></div>
+    <div class="cd-cell"><div class="cd-num">07</div><div class="cd-lbl">hrs</div></div>
+    <div class="cd-cell"><div class="cd-num">42</div><div class="cd-lbl">min</div></div>
+    <div class="cd-cell"><div class="cd-num">11</div><div class="cd-lbl">sec</div></div>
+  </div>
+</div>
+</body>
+</html>

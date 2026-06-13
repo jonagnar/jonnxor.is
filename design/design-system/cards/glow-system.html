@@ -1,0 +1,30 @@
+<!-- @dsCard group="Spacing" viewport="700x215" subtitle="Glow is the shadow system — none in Dawn, moderate in Rune, ambient in Neon" name="Glow system" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="cards.css">
+<style>
+  .demo { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; box-shadow: var(--ambient-card, none); width: 100%; box-sizing: border-box; }
+  .demo h4 { font-family: var(--font-display); font-size: 13px; margin: 0 0 6px; text-shadow: var(--ambient-text, none); }
+  .demo .g { display: inline-block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--tq-ink); text-shadow: 0 0 var(--glow-r) var(--glow-tq); }
+</style>
+</head>
+<body>
+<div class="trio">
+  <div data-theme="dawn">
+    <span class="tlbl">Dawn · glow-r 0</span>
+    <div class="demo"><h4>No glow</h4><span class="g">DAYLIGHT</span></div>
+  </div>
+  <div data-theme="rune">
+    <span class="tlbl">Rune · glow-r 30</span>
+    <div class="demo"><h4>Glow on accents</h4><span class="g">RUNELIGHT</span></div>
+  </div>
+  <div data-theme="neon">
+    <span class="tlbl">Neon · ambient</span>
+    <div class="demo"><h4>Lights ON at rest</h4><span class="g">SYNTHWAVE</span></div>
+  </div>
+</div>
+</body>
+</html>

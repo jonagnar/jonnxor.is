@@ -1,0 +1,222 @@
+/* ============================================================
+   JonnXor — token system
+   One token vocabulary, three themes:
+   dawn (light) · rune (dark, default) · neon (gamer)
+   Brand: yellow · black · turquoise
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --font-display: 'Orbitron', 'Avenir Next', sans-serif;
+  --font-body: 'Montserrat', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  --nav-h: 64px;
+  --maxw: 1120px;
+
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ---------- Rune Night (default, dark) — electric runes on near-black ----------
+   Theme blocks use bare [data-theme="…"] so any container can be re-scoped,
+   not just <html> — used by design-system specimen cards. */
+:root,
+[data-theme="rune"] {
+  color-scheme: dark;
+  --bg: #07060c;
+  --bg-2: #0b0915;
+  --surface: #100d1d;
+  --surface-2: #171330;
+  --ink: #f1f5f4;
+  --ink-soft: #a3aac4;
+  --ink-faint: #6a7190;
+  --line: #221e3e;
+  --line-strong: #383263;
+
+  --tq: #00f5d4;            /* turquoise accent (fills, strokes) */
+  --tq-ink: #2cffe5;        /* turquoise safe for text on bg */
+  --tq-deep: #00bda4;
+  --tq-soft: rgba(0, 245, 212, .10);
+  --on-tq: #03211c;         /* text on turquoise fill */
+
+  --gold: #f5e642;          /* golden-yellow highlight */
+  --gold-ink: #f5e642;
+  --gold-soft: rgba(245, 230, 66, .12);
+  --on-gold: #1d1a02;
+
+  --glow-tq: rgba(0, 245, 212, .45);
+  --glow-gold: rgba(245, 230, 66, .35);
+  --glow-mult: 1;
+  --glow-r: calc(30px * var(--glow-mult)); /* glow blur radius scale */
+
+  --shadow: 0 12px 36px rgba(0, 0, 0, .6);
+  --code-bg: #0c0a18;
+  --code-line: #221d40;
+  --scanline-a: 0;          /* scanlines belong to neon */
+  --scanline-c: rgba(0, 245, 212, .5);
+  --ambient-card: none;     /* always-on glow (neon only) */
+  --ambient-text: none;
+  --aurora:
+    radial-gradient(820px 360px at 18% -8%, rgba(0,245,212,.14), transparent 64%),
+    radial-gradient(700px 320px at 86% -4%, rgba(245,230,66,.09), transparent 60%);
+}
+
+/* ---------- Dawn (light) — Icelandic daylight ---------- */
+[data-theme="dawn"] {
+  color-scheme: light;
+  --bg: #faf6ec;
+  --bg-2: #f3edda;
+  --surface: #fffdf6;
+  --surface-2: #f7f2e4;
+  --ink: #17150e;
+  --ink-soft: #4d4839;
+  --ink-faint: #8b8470;
+  --line: #e3dac2;
+  --line-strong: #c8bd9e;
+
+  --tq: #0e9488;
+  --tq-ink: #0b6e64;
+  --tq-deep: #0b6e64;
+  --tq-soft: rgba(14, 148, 136, .10);
+  --on-tq: #fffdf6;
+
+  --gold: #ecbd3e;
+  --gold-ink: #876312;
+  --gold-soft: rgba(236, 189, 62, .18);
+  --on-gold: #211a04;
+
+  --glow-tq: rgba(14, 148, 136, 0);
+  --glow-gold: rgba(236, 189, 62, 0);
+  --glow-r: 0px;            /* no glow in daylight */
+
+  --shadow: 0 8px 24px rgba(64, 54, 24, .10);
+  --code-bg: #1a1a14;
+  --code-line: #2c2c22;
+  --scanline-a: 0;
+  --scanline-c: rgba(0, 0, 0, .5);
+  --ambient-card: none;
+  --ambient-text: none;
+  --aurora:
+    radial-gradient(820px 360px at 18% -8%, rgba(236,189,62,.20), transparent 64%),
+    radial-gradient(700px 320px at 86% -4%, rgba(14,148,136,.10), transparent 60%);
+}
+
+/* ---------- Neon (gamer) — pink synthwave, ALL the lights on ---------- */
+[data-theme="neon"] {
+  color-scheme: dark;
+  --bg: #0c0614;
+  --bg-2: #120822;
+  --surface: #190b2c;
+  --surface-2: #23103e;
+  --ink: #fdf3fb;
+  --ink-soft: #cbaed0;
+  --ink-faint: #95709f;
+  --line: #3a1d55;
+  --line-strong: #5b2f82;
+
+  --tq: #ff3dae;            /* pink takes the accent channel */
+  --tq-ink: #ff77cb;
+  --tq-deep: #c2187d;
+  --tq-soft: rgba(255, 61, 174, .13);
+  --on-tq: #2a0418;
+
+  --gold: #ffe14d;
+  --gold-ink: #ffe14d;
+  --gold-soft: rgba(255, 225, 77, .13);
+  --on-gold: #1d1a02;
+
+  --glow-tq: rgba(255, 61, 174, .60);
+  --glow-gold: rgba(255, 225, 77, .45);
+  --glow-r: calc(34px * var(--glow-mult, 1));
+
+  --shadow: 0 12px 36px rgba(10, 0, 16, .65);
+  --code-bg: #150826;
+  --code-line: #321753;
+  --scanline-a: .05;
+  --scanline-c: rgba(255, 61, 174, .5);
+  /* lights ON: ambient glow without hover */
+  --ambient-card: 0 0 2px rgba(255, 61, 174, .45), 0 0 22px rgba(255, 61, 174, .16), inset 0 0 26px rgba(255, 61, 174, .05);
+  --ambient-text: 0 0 18px rgba(255, 110, 199, .55);
+  --aurora:
+    radial-gradient(820px 360px at 18% -8%, rgba(255,61,174,.22), transparent 64%),
+    radial-gradient(700px 320px at 86% -4%, rgba(255,225,77,.12), transparent 60%),
+    radial-gradient(900px 420px at 50% 110%, rgba(120,40,255,.14), transparent 70%);
+}
+
+html[data-theme="neon"][data-scanlines="off"] { --scanline-a: 0; }
+
+/* Re-scoped theme containers paint their own bg/ink */
+div[data-theme] { background: var(--bg); color: var(--ink); }
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .35s var(--ease-out), color .35s var(--ease-out);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  margin: 0 0 .5em;
+  letter-spacing: .02em;
+  text-wrap: balance;
+  text-shadow: var(--ambient-text, none);
+}
+
+p { margin: 0 0 1em; text-wrap: pretty; }
+
+a { color: var(--tq-ink); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+::selection { background: var(--gold); color: var(--on-gold); }
+
+strong { font-weight: 600; }
+
+img { max-width: 100%; display: block; }
+
+button { font-family: inherit; }
+
+/* Scanline / CRT overlay (neon only) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    var(--scanline-c) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+  opacity: var(--scanline-a);
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001s !important; transition-duration: .001s !important; }
+}

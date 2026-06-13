@@ -1,0 +1,11 @@
+/* Shared layout for design-system specimen cards */
+body { margin: 0; padding: 16px 18px; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.trio > [data-theme] { padding: 14px; border-radius: 8px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.tlbl { font-family: var(--font-display); font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-faint); }
+.lbl { font-family: var(--font-display); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); }
+.sw { display: flex; flex-direction: column; gap: 4px; width: 64px; }
+.sw .box { height: 40px; border-radius: 6px; border: 1px solid var(--line); }
+.sw .nm { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-soft); line-height: 1.35; }

@@ -1,0 +1,32 @@
+<!-- @dsCard group="Components" viewport="700x330" subtitle="Opened with / or Ctrl+K anywhere · Pages + Grimoire groups · gold mark snippets · ↑↓ + Enter" name="Search modal" -->
+<!doctype html>
+<html lang="en" data-theme="rune">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../assets/tokens.css">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="cards.css">
+</head>
+<body>
+<div class="search-modal" style="position: static; display: flex; background: none; backdrop-filter: none; padding: 0;">
+  <div class="sm-panel">
+    <div class="sm-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" width="16" height="16"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 L21 21"></path></svg>
+      <input type="search" value="rebase" aria-label="Search">
+      <span class="sm-esc">esc</span>
+    </div>
+    <div class="sm-results">
+      <div class="sm-group">Grimoire</div>
+      <a class="sm-item sel" href="#">
+        <span class="t-row"><span class="t">Git incantations for when things go wrong</span><span class="where">Cheat sheets</span></span>
+        <span class="snip">…the last 4 commits — NEVER on a shared branch git <mark>rebase</mark> -i HEAD~4 # pick · reword · squash…</span>
+      </a>
+      <a class="sm-item" href="#">
+        <span class="t-row"><span class="t">My WSL dev environment, from zero</span><span class="where">Guides</span></span>
+        <span class="snip">…file watching and git are 10× faster. Install via apt…</span>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
