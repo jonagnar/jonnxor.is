@@ -1,0 +1,131 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Countdowns — JonnXor" page="countdowns">
+  <main>
+    <section class="page-head" data-screen-label="Countdowns head">
+      <div class="container">
+        <p class="kicker">Countdowns &amp; count-ups</p>
+        <h1>The Reckoning</h1>
+        <p class="lede">Time until the things worth waiting for — and a brutally honest accounting of where a life actually goes.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section data-screen-label="Countdowns">
+        <p class="kicker">Counting down</p>
+        <div class="cd-grid" id="cd-grid"></div>
+      </section>
+
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section data-screen-label="Count-ups">
+        <p class="kicker gold">Counting up — days of my life spent…</p>
+        <div class="up-grid" id="up-grid"></div>
+        <p class="up-method">Methodology: extremely scientific estimates since age 10, updated live. The toilet number includes time spent reading patch notes. No further questions.</p>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline slot="end">
+(function () {
+  'use strict';
+
+  var COUNTDOWNS = [
+    { what: 'Þjóðhátíðardagurinn', when: '2026-06-17', note: 'Iceland National Day', gold: true },
+    { what: 'Summer solstice', when: '2026-06-21', note: 'Midnight sun, peak Iceland' },
+    { what: 'Fable', when: '2026-10-09', note: 'Release day' },
+    { what: 'GTA VI', when: '2026-11-19', note: 'Release day, allegedly' },
+    { what: 'Jól (Christmas Eve)', when: '2026-12-24', note: 'Hangikjöt o’clock', gold: true },
+    { what: 'Hollow Knight: Silksong', when: null, note: 'Any day now. Any day.' }
+  ];
+
+  // count-ups: (hours/day since start) → days total, ticking live
+  var BORN = new Date('1992-05-05T08:00:00'); // Taurus, as the footer attests
+  var AGE10 = new Date('2002-05-05T08:00:00');
+  var COUNTUPS = [
+    { icon: '⚒', what: 'Working', start: new Date('2014-06-01T09:00:00'), rate: 7.4, note: 'Code, meetings, and meetings about code.' },
+    { icon: '🎮', what: 'Gaming', start: AGE10, rate: 2.6, note: 'Souls games are at least a third of this.' },
+    { icon: '📖', what: 'Studying', start: AGE10, rate: 1.7, note: 'School, docs, and 日本語 flashcards.' },
+    { icon: '🚽', what: 'On the toilet', start: BORN, rate: 0.35, note: 'A king on a porcelain throne.' }
+  ];
+
+  var cdGrid = document.getElementById('cd-grid');
+  var upGrid = document.getElementById('up-grid');
+
+  cdGrid.innerHTML = COUNTDOWNS.map(function (c, i) {
+    var cells = c.when
+      ? ['d', 'h', 'm', 's'].map(function (u) {
+          return '<div class="cd-cell"><div class="cd-num" data-cd="' + i + '" data-u="' + u + '">–</div><div class="cd-lbl">' + { d: 'days', h: 'hrs', m: 'min', s: 'sec' }[u] + '</div></div>';
+        }).join('')
+      : '<div class="cd-cell" style="flex: 4;"><div class="cd-num">∞</div><div class="cd-lbl">soon™</div></div>';
+    return (
+      '<article class="card cd-card' + (c.gold ? ' gold' : '') + '">' +
+        '<div class="cd-what">' + c.what + '</div>' +
+        '<div class="cd-when">' + (c.when ? c.when + ' · ' : '') + c.note + '</div>' +
+        '<div class="cd-clock">' + cells + '</div>' +
+      '</article>'
+    );
+  }).join('');
+
+  upGrid.innerHTML = COUNTUPS.map(function (u, i) {
+    return (
+      '<article class="card up-card">' +
+        '<div class="up-icon">' + u.icon + '</div>' +
+        '<div class="up-num"><span data-up="' + i + '">0</span> <small>days</small></div>' +
+        '<div class="up-what">' + u.what + '</div>' +
+        '<p class="up-note">' + u.note + '</p>' +
+      '</article>'
+    );
+  }).join('');
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function tick() {
+    var now = Date.now();
+    COUNTDOWNS.forEach(function (c, i) {
+      if (!c.when) return;
+      var r = window.JX.daysUntil(c.when);
+      var sel = '[data-cd="' + i + '"]';
+      var map = { d: r.past ? 0 : r.d, h: r.past ? 0 : r.h, m: r.past ? 0 : r.m, s: r.past ? 0 : r.s };
+      document.querySelectorAll(sel).forEach(function (el) {
+        var u = el.getAttribute('data-u');
+        el.textContent = u === 'd' ? map.d : pad(map[u]);
+      });
+    });
+    COUNTUPS.forEach(function (u, i) {
+      var days = (now - u.start.getTime()) / 86400000 * (u.rate / 24);
+      var el = document.querySelector('[data-up="' + i + '"]');
+      if (el) el.textContent = days.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    });
+  }
+
+  tick();
+  setInterval(tick, 100);
+})();
+  </script>
+</Base>
+
+<style is:global>
+  .cd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+  .cd-card { padding: 22px; }
+  .cd-card .cd-what { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: .06em; margin-bottom: 2px; }
+  .cd-card .cd-when { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); margin-bottom: 16px; }
+  .cd-card .cd-clock { display: flex; gap: 10px; }
+  .cd-card .cd-cell { text-align: center; flex: 1; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 2px 6px; }
+  .cd-card .cd-num { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--tq-ink); text-shadow: 0 0 calc(var(--glow-r) * .6) var(--glow-tq); font-variant-numeric: tabular-nums; }
+  .cd-card .cd-lbl { font-family: var(--font-display); font-size: 9px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; margin-top: 2px; }
+  .cd-card.gold .cd-num { color: var(--gold-ink); text-shadow: 0 0 calc(var(--glow-r) * .6) var(--glow-gold); }
+
+  .up-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+  .up-card { padding: 22px; }
+  .up-card .up-icon { font-size: 20px; margin-bottom: 8px; color: var(--tq-ink); }
+  .up-card .up-num { font-family: var(--font-display); font-size: 26px; font-weight: 800; color: var(--gold-ink); text-shadow: 0 0 calc(var(--glow-r) * .5) var(--glow-gold); font-variant-numeric: tabular-nums; }
+  .up-card .up-num small { font-size: 14px; font-weight: 600; color: var(--ink-faint); text-shadow: none; }
+  .up-card .up-what { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); margin-top: 4px; }
+  .up-card .up-note { font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 0; }
+  .up-method { font-size: 12.5px; color: var(--ink-faint); margin-top: 18px; }
+</style>

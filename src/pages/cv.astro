@@ -1,0 +1,171 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="CV — Jón Agnar Stefánsson" page="cv">
+  <main>
+    <section class="page-head" data-screen-label="CV head">
+      <div class="container">
+        <p class="kicker">Curriculum vitae</p>
+        <h1>The Record of Deeds</h1>
+        <p class="lede">Clean, scannable, and print-friendly — hit the button and it becomes a sober one-pager, no dragons attached.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <div class="cv-actions">
+        <button class="btn btn-gold" type="button" onclick="window.print()">Print / Save as PDF</button>
+      </div>
+
+      <article class="cv-sheet" data-screen-label="CV sheet">
+        <div class="cv-head">
+          <div>
+            <h1>Jón Agnar Stefánsson</h1>
+            <p class="role">Full-stack developer</p>
+          </div>
+          <div class="cv-contact">
+            Reykjavík, Iceland<br />
+            jon@jonnxor.is · jonnxor.is<br />
+            github.com/jonnxor
+          </div>
+        </div>
+
+        <section class="cv-section">
+          <h2>Profile</h2>
+          <p style="font-size: 14.5px; color: var(--ink-soft); margin: 0;">Full-stack developer with 10 years of experience designing and shipping web platforms end to end. Strong in TypeScript, Go, and React; known for clear technical writing, calm incident response, and finding the lateral solution. Trilingual-in-progress (Icelandic, English, Japanese).</p>
+        </section>
+
+        <section class="cv-section">
+          <h2>Experience</h2>
+          <div class="cv-role">
+            <span class="when">2022 — now</span>
+            <div>
+              <h3>Senior Full-stack Developer · <span class="org">Straumur Pay</span></h3>
+              <ul>
+                <li>Led rebuild of merchant dashboard (React + Go) serving 40,000 merchants; p75 load time down 70%.</li>
+                <li>Designed event-driven settlement pipeline processing 2M transactions/day on Postgres + NATS.</li>
+                <li>Introduced ADR practice and incident postmortem culture; support tickets halved in one year.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="cv-role">
+            <span class="when">2019 — 2022</span>
+            <div>
+              <h3>Full-stack Developer · <span class="org">Nordsky Software</span></h3>
+              <ul>
+                <li>Built booking and logistics systems for Icelandic tourism operators (Node, TypeScript, PostGIS).</li>
+                <li>Shipped offline-first mobile web client used by guides in zero-signal highland routes.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="cv-role">
+            <span class="when">2016 — 2019</span>
+            <div>
+              <h3>Web Developer · <span class="org">RVK Studio</span></h3>
+              <ul>
+                <li>Delivered 30+ client sites and web apps; owned everything from CMS modeling to deployment.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="cv-section">
+          <h2>Skills</h2>
+          <div class="cv-skills">
+            <div class="row"><span class="k">Languages</span> <span>TypeScript, Go, Python, SQL</span></div>
+            <div class="row"><span class="k">Frontend</span> <span>React, Next.js, CSS architecture, a11y</span></div>
+            <div class="row"><span class="k">Backend</span> <span>Node, Go services, Postgres, Redis, NATS</span></div>
+            <div class="row"><span class="k">Infra</span> <span>Docker, GitHub Actions, Grafana, AWS</span></div>
+            <div class="row"><span class="k">Practices</span> <span>ADRs, testing strategy, incident response</span></div>
+            <div class="row"><span class="k">Writing</span> <span>Docs, postmortems, long-form technical blog</span></div>
+          </div>
+        </section>
+
+        <section class="cv-section">
+          <h2>Education & languages</h2>
+          <div class="cv-role">
+            <span class="when">2012 — 2015</span>
+            <div>
+              <h3>BSc Computer Science · <span class="org">University of Iceland</span></h3>
+            </div>
+          </div>
+          <div class="cv-role">
+            <span class="when"></span>
+            <div>
+              <h3 style="font-weight: 600;">Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)</h3>
+            </div>
+          </div>
+        </section>
+      </article>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .cv-sheet {
+    max-width: 880px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 52px 56px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 700px) { .cv-sheet { padding: 28px 22px; } }
+
+  .cv-head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+  .cv-head h1 { font-size: 30px; font-weight: 800; margin: 0; }
+  .cv-head .role { font-family: var(--font-display); font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--tq-ink); margin-top: 6px; }
+  .cv-contact { text-align: right; font-size: 13.5px; color: var(--ink-soft); line-height: 1.8; }
+  @media (max-width: 600px) { .cv-contact { text-align: left; } }
+
+  .cv-section { margin-top: 34px; }
+  .cv-section > h2 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+
+  .cv-role { display: grid; grid-template-columns: 130px 1fr; gap: 18px; margin-bottom: 22px; }
+  @media (max-width: 600px) { .cv-role { grid-template-columns: 1fr; gap: 4px; } }
+  .cv-role .when { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); padding-top: 3px; }
+  .cv-role h3 { font-family: var(--font-body); font-size: 16px; font-weight: 700; margin: 0; }
+  .cv-role .org { color: var(--tq-ink); font-weight: 600; }
+  .cv-role ul { margin: 8px 0 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .cv-role li { margin-bottom: 4px; }
+
+  .cv-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 32px; font-size: 14.5px; }
+  @media (max-width: 600px) { .cv-skills { grid-template-columns: 1fr; } }
+  .cv-skills .row { display: flex; gap: 10px; border-bottom: 1px dashed var(--line); padding: 6px 0; }
+  .cv-skills .k { min-width: 110px; color: var(--ink-faint); font-size: 13px; padding-top: 1px; }
+
+  .cv-actions { max-width: 880px; margin: 0 auto 22px; display: flex; justify-content: flex-end; gap: 12px; }
+
+  /* ---------- print: always clean daylight ---------- */
+  @media print {
+    html[data-theme] {
+      --bg: #ffffff; --bg-2: #ffffff; --surface: #ffffff; --surface-2: #f6f3ea;
+      --ink: #17150e; --ink-soft: #3c382c; --ink-faint: #6f6a59;
+      --line: #ddd5c0; --line-strong: #b9af92;
+      --tq: #0e9488; --tq-ink: #0b6e64; --tq-deep: #0b6e64; --tq-soft: rgba(14,148,136,.08); --on-tq: #fff;
+      --gold: #ecbd3e; --gold-ink: #876312; --gold-soft: rgba(236,189,62,.15); --on-gold: #211a04;
+      --glow-tq: transparent; --glow-gold: transparent; --glow-r: 0px;
+      --shadow: none; --scanline-a: 0; --aurora: none;
+    }
+    .site-nav, .site-footer, .cv-actions, .page-head .lede, #jx-tweaks-root { display: none !important; }
+    body::after { display: none; }
+    .page-head { padding: 0; background: none; }
+    .page-head h1, .page-head .kicker { display: none; }
+    .cv-sheet { border: none; box-shadow: none; padding: 0; max-width: none; border-radius: 0; }
+    main { min-height: 0; }
+    body { font-size: 12pt; }
+    a { color: inherit; }
+  }
+</style>

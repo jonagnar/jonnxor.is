@@ -1,0 +1,445 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Docs — JonnXor" page="docs">
+  <main>
+    <section class="page-head" data-screen-label="Docs head">
+      <div class="container">
+        <p class="kicker">Docs</p>
+        <h1>The Grimoire</h1>
+        <p class="lede">Cheat codes, cheat sheets, walkthroughs, and code patterns — every spell I keep returning to, bound in one book. Press <kbd>/</kbd> anywhere on the site to search it.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <div class="grimoire" data-screen-label="Grimoire">
+        <aside class="doc-side">
+          <div class="realm-toggle" role="group" aria-label="Filter by realm">
+            <button type="button" data-realm="all" class="active">All</button>
+            <button type="button" data-realm="games">Games</button>
+            <button type="button" data-realm="code">Code</button>
+            <button type="button" data-realm="life">Life</button>
+          </div>
+          <div class="game-chips" id="game-chips" hidden></div>
+          <label class="doc-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 L21 21"></path></svg>
+            <input type="search" id="doc-q" placeholder="Filter this list…" aria-label="Filter docs" />
+          </label>
+          <nav id="doc-nav" aria-label="Documents"></nav>
+        </aside>
+
+        <div class="doc-main">
+          <article class="doc-pane" id="doc-pane" data-screen-label="Doc reading pane"></article>
+          <nav class="doc-pager" id="doc-pager" aria-label="Previous and next"></nav>
+        </div>
+
+        <nav class="doc-toc" id="doc-toc" aria-label="On this page"></nav>
+      </div>
+    </div>
+  </main>
+
+  <script is:inline slot="end" src="/assets/docs-data.js"></script>
+  <script is:inline slot="end">
+(function () {
+  'use strict';
+
+  var docs = window.JX_DOCS;
+  var nav = document.getElementById('doc-nav');
+  var pane = document.getElementById('doc-pane');
+  var pager = document.getElementById('doc-pager');
+  var toc = document.getElementById('doc-toc');
+  var gameChips = document.getElementById('game-chips');
+  var q = document.getElementById('doc-q');
+
+  var REALMS = { games: 'Games', code: 'Code', life: 'Life' };
+  var state = { id: null, query: '', realm: 'all', game: null, closed: {} };
+  var spy = null;
+
+  // deep link (?doc=) wins over last-read
+  var urlDoc = new URLSearchParams(location.search).get('doc');
+  try { state.id = urlDoc || localStorage.getItem('jx-doc') || null; } catch (e) { state.id = urlDoc; }
+  if (!docs.some(function (d) { return d.id === state.id; })) state.id = docs[0].id;
+
+  var CATS = [];
+  docs.forEach(function (d) { if (CATS.indexOf(d.cat) === -1) CATS.push(d.cat); });
+  var GAMES = [];
+  docs.forEach(function (d) { if (d.game && GAMES.indexOf(d.game) === -1) GAMES.push(d.game); });
+
+  function visibleDocs() {
+    var ql = state.query.toLowerCase();
+    return docs.filter(function (d) {
+      if (state.realm !== 'all' && d.realm !== state.realm) return false;
+      if (state.realm === 'games' && state.game && d.game !== state.game) return false;
+      if (ql && (d.title + ' ' + d.tags.join(' ') + ' ' + (d.game || '')).toLowerCase().indexOf(ql) === -1) return false;
+      return true;
+    });
+  }
+
+  function renderGameChips() {
+    if (state.realm !== 'games') { gameChips.hidden = true; return; }
+    gameChips.hidden = false;
+    gameChips.innerHTML = GAMES.map(function (g) {
+      return '<button type="button" class="chip' + (state.game === g ? ' on' : '') + '" data-game="' + g + '">' + g + '</button>';
+    }).join('');
+  }
+
+  function renderNav() {
+    var vis = visibleDocs();
+    var html = '';
+    CATS.forEach(function (cat) {
+      var items = vis.filter(function (d) { return d.cat === cat; });
+      if (!items.length) return;
+      var closed = state.closed[cat] ? ' closed' : '';
+      html += '<div class="doc-group' + closed + '" data-cat="' + cat + '">' +
+        '<button type="button" class="g-label">' + cat + ' <span class="tw">▾</span></button>' +
+        items.map(function (d) {
+          return '<button type="button" class="doc-item' + (d.id === state.id ? ' active' : '') + '" data-id="' + d.id + '"><span class="t">' + d.title + '</span></button>';
+        }).join('') + '</div>';
+    });
+    nav.innerHTML = html || '<p class="doc-empty">No spells match. The grimoire keeps its secrets.</p>';
+  }
+
+  function slug(s) {
+    return s.toLowerCase().replace(/[^a-z0-9À-ɏ぀-ヿ一-鿿]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function renderDoc() {
+    var d = docs.filter(function (x) { return x.id === state.id; })[0];
+    if (!d) return;
+    var crumb = 'The Grimoire <span class="sep">/</span> ' +
+      (d.realm === 'games' && d.game ? d.game + ' <span class="sep">/</span> ' : '') +
+      '<span class="here">' + d.cat + '</span>';
+    pane.innerHTML =
+      '<div class="doc-crumb">' + crumb + '</div>' +
+      '<h1>' + d.title + '</h1>' +
+      '<div class="doc-meta">' +
+        '<span class="chip tq">' + d.cat + '</span>' +
+        (d.game ? '<span class="chip gold">' + d.game + '</span>' : '') +
+        d.tags.map(function (t) { return '<span class="chip">' + t + '</span>'; }).join('') +
+        '<time>updated ' + d.updated + '</time>' +
+      '</div>' +
+      d.body;
+    // wide reference tables pan instead of stretching the page on small screens
+    pane.querySelectorAll('table.doc-table').forEach(function (t) {
+      var w = document.createElement('div');
+      w.className = 'table-scroll';
+      t.parentNode.insertBefore(w, t);
+      w.appendChild(t);
+    });
+    renderTOC();
+    renderPager();
+  }
+
+  function renderTOC() {
+    if (spy) { spy.disconnect(); spy = null; }
+    var hs = pane.querySelectorAll('h2');
+    if (!hs.length) { toc.innerHTML = ''; return; }
+    var links = [];
+    hs.forEach(function (h) {
+      var id = slug(h.textContent);
+      h.id = id;
+      var a = document.createElement('a');
+      a.className = 'anchor';
+      a.href = '#' + id;
+      a.textContent = '#';
+      a.setAttribute('aria-label', 'Link to section');
+      h.appendChild(a);
+      links.push('<a href="#' + id + '" data-h="' + id + '">' + h.textContent.replace(/#$/, '') + '</a>');
+    });
+    toc.innerHTML = '<div class="toc-label">On this page</div>' + links.join('');
+
+    if ('IntersectionObserver' in window) {
+      spy = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          toc.querySelectorAll('a[data-h]').forEach(function (a) {
+            a.classList.toggle('active', a.getAttribute('data-h') === en.target.id);
+          });
+        });
+      }, { rootMargin: '-15% 0px -70% 0px' });
+      hs.forEach(function (h) { spy.observe(h); });
+    }
+  }
+
+  function renderPager() {
+    var list = visibleDocs();
+    if (list.length < 2) { pager.innerHTML = ''; return; }
+    var i = list.map(function (d) { return d.id; }).indexOf(state.id);
+    var prev = i > 0 ? list[i - 1] : null;
+    var next = i !== -1 && i < list.length - 1 ? list[i + 1] : null;
+    pager.innerHTML =
+      (prev ? '<a class="card lift pager-card prev" href="?doc=' + prev.id + '" data-nav="' + prev.id + '"><span class="dir">← Previous</span><span class="pt">' + prev.title + '</span></a>' : '') +
+      (next ? '<a class="card lift pager-card next" href="?doc=' + next.id + '" data-nav="' + next.id + '"><span class="dir">Next →</span><span class="pt">' + next.title + '</span></a>' : '');
+  }
+
+  function goTo(id, scroll) {
+    state.id = id;
+    try { localStorage.setItem('jx-doc', id); } catch (err) {}
+    history.replaceState(null, '', '?doc=' + id);
+    renderNav();
+    renderDoc();
+    if (scroll) {
+      var top = pane.getBoundingClientRect().top + window.pageYOffset - 84;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
+  }
+
+  nav.addEventListener('click', function (e) {
+    var g = e.target.closest('.g-label');
+    if (g) {
+      var cat = g.parentElement.getAttribute('data-cat');
+      state.closed[cat] = !state.closed[cat];
+      g.parentElement.classList.toggle('closed', state.closed[cat]);
+      return;
+    }
+    var b = e.target.closest('.doc-item');
+    if (!b) return;
+    goTo(b.getAttribute('data-id'), window.matchMedia('(max-width: 880px)').matches);
+  });
+
+  pager.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-nav]');
+    if (!a) return;
+    e.preventDefault();
+    goTo(a.getAttribute('data-nav'), true);
+  });
+
+  document.querySelectorAll('.realm-toggle button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.realm = b.getAttribute('data-realm');
+      state.game = null;
+      document.querySelectorAll('.realm-toggle button').forEach(function (x) { x.classList.toggle('active', x === b); });
+      renderGameChips();
+      renderNav();
+      renderPager();
+    });
+  });
+
+  gameChips.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-game]');
+    if (!c) return;
+    var g = c.getAttribute('data-game');
+    state.game = state.game === g ? null : g;
+    renderGameChips();
+    renderNav();
+    renderPager();
+  });
+
+  q.addEventListener('input', function () {
+    state.query = q.value.trim();
+    renderNav();
+  });
+
+  renderGameChips();
+  renderNav();
+  renderDoc();
+})();
+  </script>
+</Base>
+
+<style is:global>
+  .grimoire {
+    display: grid;
+    grid-template-columns: 268px minmax(0, 1fr) 196px;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 1140px) { .grimoire { grid-template-columns: 268px minmax(0, 1fr); } }
+  @media (max-width: 880px) { .grimoire { grid-template-columns: 1fr; } }
+
+  /* ---------- sidebar ---------- */
+  .doc-side {
+    position: sticky;
+    top: calc(var(--nav-h) + 20px);
+    max-height: calc(100vh - var(--nav-h) - 40px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-right: 4px;
+    scrollbar-width: thin;
+  }
+  @media (max-width: 880px) { .doc-side { position: static; max-height: none; } }
+
+  .realm-toggle {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    padding: 3px;
+  }
+  .realm-toggle button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 7px 2px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .realm-toggle button:hover { color: var(--ink); }
+  .realm-toggle button.active { color: var(--on-gold); background: var(--gold); box-shadow: 0 0 calc(var(--glow-r) * .4) var(--glow-gold); }
+
+  .game-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .game-chips .chip { cursor: pointer; user-select: none; }
+  .game-chips .chip.on { color: var(--tq-ink); background: var(--tq-soft); border-color: var(--tq-deep); }
+  .game-chips[hidden] { display: none; }
+
+  .doc-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    padding: 9px 12px;
+  }
+  .doc-search:focus-within { border-color: var(--tq-deep); box-shadow: 0 0 calc(var(--glow-r) * .5) var(--glow-tq); }
+  .doc-search svg { color: var(--ink-faint); flex: none; }
+  .doc-search input {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+  }
+  .doc-search input::placeholder { color: var(--ink-faint); }
+
+  .doc-group { display: flex; flex-direction: column; gap: 2px; }
+  .doc-group + .doc-group { margin-top: 6px; }
+  .doc-group .g-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    appearance: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 6px 10px;
+  }
+  .doc-group .g-label:hover { color: var(--ink); }
+  .doc-group .g-label .tw { transition: transform .2s var(--ease-out); font-size: 9px; }
+  .doc-group.closed .g-label .tw { transform: rotate(-90deg); }
+  .doc-group.closed .doc-item { display: none; }
+  .doc-item {
+    appearance: none;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 8px 10px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .doc-item:hover { color: var(--ink); background: var(--tq-soft); }
+  .doc-item.active { color: var(--tq-ink); background: var(--tq-soft); box-shadow: inset 2px 0 0 var(--tq); }
+  .doc-item .t { flex: 1; }
+  .doc-empty { font-size: 13px; color: var(--ink-faint); padding: 8px 10px; }
+
+  /* ---------- reading pane ---------- */
+  .doc-main { min-width: 0; }
+  .doc-pane {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--ambient-card, none);
+    padding: 36px 40px 40px;
+    min-width: 0;
+  }
+  @media (max-width: 640px) { .doc-pane { padding: 24px 20px; } }
+  .doc-pane .doc-crumb {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+  .doc-pane .doc-crumb .sep { color: var(--line-strong); margin: 0 7px; }
+  .doc-pane .doc-crumb .here { color: var(--tq-ink); }
+  .doc-pane .doc-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+  .doc-pane .doc-meta time { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); }
+  .doc-pane h1 { font-size: clamp(22px, 3.2vw, 30px); font-weight: 800; margin: 0 0 10px; }
+  .doc-pane h2 { font-size: 17px; margin-top: 1.9em; scroll-margin-top: calc(var(--nav-h) + 18px); }
+  .doc-pane h2 .anchor { color: var(--ink-faint); opacity: 0; margin-left: 8px; font-weight: 400; text-decoration: none; }
+  .doc-pane h2:hover .anchor { opacity: 1; }
+  .doc-pane p { font-size: 15px; color: var(--ink-soft); }
+  .doc-pane p strong { color: var(--ink); }
+  .doc-pane .tip { font-size: 14px; }
+
+  .doc-pane ol, .doc-pane ul { font-size: 15px; color: var(--ink-soft); padding-left: 22px; margin: 0 0 1.4em; }
+  .doc-pane li { margin-bottom: 6px; }
+  .doc-pane li::marker { color: var(--tq-ink); font-family: var(--font-display); font-size: 12px; }
+
+  /* ---------- prev / next pager ---------- */
+  .doc-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  @media (max-width: 640px) { .doc-pager { grid-template-columns: 1fr; } }
+  .pager-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    color: var(--ink);
+  }
+  .pager-card:hover { text-decoration: none; }
+  .pager-card.next { text-align: right; align-items: flex-end; grid-column: 2; }
+  .pager-card.prev { grid-column: 1; }
+  @media (max-width: 640px) { .pager-card.next, .pager-card.prev { grid-column: auto; } }
+  .pager-card .dir { font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-faint); }
+  .pager-card .pt { font-family: var(--font-display); font-size: 13.5px; font-weight: 600; color: var(--tq-ink); }
+
+  /* ---------- TOC ---------- */
+  .doc-toc {
+    position: sticky;
+    top: calc(var(--nav-h) + 20px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+  }
+  .doc-toc .toc-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .doc-toc a {
+    color: var(--ink-soft);
+    padding: 5px 10px;
+    border-left: 2px solid var(--line);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .doc-toc a:hover { color: var(--ink); }
+  .doc-toc a.active { color: var(--tq-ink); border-left-color: var(--tq); background: var(--tq-soft); }
+  @media (max-width: 1140px) { .doc-toc { display: none; } }
+</style>

@@ -1,0 +1,231 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="JonnXor — Jón Agnar Stefánsson" page="home" dragonfly="on">
+  <main>
+    <section class="hero" data-screen-label="Home hero">
+      <div class="container hero-grid">
+        <div>
+          <p class="kicker">Full-stack developer · Reykjavík, Iceland</p>
+          <h1>JONN<span class="xor">XOR</span></h1>
+          <p class="real-name">Jón Agnar Stefánsson</p>
+          <p class="tagline">I build sturdy, long-lived software with a storyteller's heart — fueled by masala chai, Norse sagas, and roughly a thousand hours of Souls games.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-gold" href="/portfolio">View the work</a>
+            <a class="btn btn-ghost" href="/about">Read the saga</a>
+          </div>
+        </div>
+        <div class="hero-dragon" aria-hidden="true">
+          <svg viewBox="0 0 440 340" fill="none">
+            <g class="lines" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <!-- head -->
+              <path d="M392 86 L352 64 L334 30 M352 64 L322 92 L286 132 M392 86 L350 102 L322 92" />
+              <!-- wing -->
+              <path d="M286 132 L262 44 L218 86 L180 64 L196 122 L286 132" />
+              <!-- body -->
+              <path d="M286 132 L240 176 L186 196 L196 122" />
+              <!-- legs -->
+              <path d="M240 176 L250 218 L234 240 M186 196 L188 234" />
+              <!-- tail -->
+              <path d="M186 196 L118 226 L62 204 L28 256 M28 256 L44 246 M28 256 L40 264" />
+            </g>
+            <g class="stars">
+              <circle cx="392" cy="86" r="3.4" /><circle cx="352" cy="64" r="2.6" /><circle cx="334" cy="30" r="3.4" />
+              <circle cx="322" cy="92" r="2.6" /><circle cx="350" cy="102" r="2.2" />
+              <circle cx="286" cy="132" r="3.8" /><circle cx="262" cy="44" r="3.4" /><circle cx="218" cy="86" r="2.6" />
+              <circle cx="180" cy="64" r="3.4" /><circle cx="196" cy="122" r="2.6" />
+              <circle cx="240" cy="176" r="3.4" /><circle cx="250" cy="218" r="2.2" /><circle cx="234" cy="240" r="2.6" />
+              <circle cx="186" cy="196" r="3.4" /><circle cx="188" cy="234" r="2.2" />
+              <circle cx="118" cy="226" r="2.6" /><circle cx="62" cy="204" r="2.6" /><circle cx="28" cy="256" r="3.4" />
+            </g>
+            <text class="caption" x="220" y="318" text-anchor="middle">Drekinn · the dragon constellation</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section data-screen-label="Three paths">
+        <div class="paths">
+          <a class="card lift path-card reveal" href="/portfolio">
+            <span class="path-rune">I</span>
+            <h3>The Work</h3>
+            <p>Production systems, side quests, and open-source offerings. TypeScript, Go, and whatever the quest requires.</p>
+            <span class="go">Enter the forge →</span>
+          </a>
+          <a class="card lift path-card reveal" href="/blog">
+            <span class="path-rune">II</span>
+            <h3>The Saga</h3>
+            <p>Long-form writing on code, myth, and the spaces between — with the occasional strong opinion about boss design.</p>
+            <span class="go">Open the codex →</span>
+          </a>
+          <a class="card lift path-card reveal" href="/games">
+            <span class="path-rune">III</span>
+            <h3>The Game Hall</h3>
+            <p>What I'm playing, what I'm waiting for, and the favorites I'd defend in single combat.</p>
+            <span class="go">Take a seat →</span>
+          </a>
+        </div>
+      </section>
+
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section data-screen-label="Now strip">
+        <p class="kicker gold">Currently</p>
+        <div class="now-strip">
+          <div class="card now-card reveal">
+            <div class="now-label">Now playing</div>
+            <div class="now-value">Elden Ring: Nightreign</div>
+            <div class="now-sub">Co-op runs, NG+2 · mostly dying with style</div>
+          </div>
+          <div class="card now-card reveal">
+            <div class="now-label">Now building</div>
+            <div class="now-value">Saga Tracker API</div>
+            <div class="now-sub">Go + Postgres · a quest log for real life</div>
+          </div>
+          <div class="card now-card reveal">
+            <div class="now-label">Now brewing</div>
+            <div class="now-value">Masala chai, batch #214</div>
+            <div class="now-sub">Extra cardamom. Non-negotiable.</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section class="home-posts" data-screen-label="Latest writing">
+        <p class="kicker">Latest from the codex</p>
+        <a class="post-row" href="/blog-post">
+          <span class="post-date">2026-05-28</span>
+          <span class="post-title">Error handling is a narrative problem</span>
+          <span class="chip tq post-tag">Engineering</span>
+        </a>
+        <a class="post-row" href="/blog">
+          <span class="post-date">2026-05-09</span>
+          <span class="post-title">What Sekiro taught me about code review</span>
+          <span class="chip gold post-tag">Games × Code</span>
+        </a>
+        <a class="post-row" href="/blog">
+          <span class="post-date">2026-04-17</span>
+          <span class="post-title">Loki was the first refactorer</span>
+          <span class="chip post-tag">Myth</span>
+        </a>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .hero {
+    background: var(--aurora);
+    padding: 72px 0 24px;
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .hero h1 {
+    font-size: clamp(44px, 7vw, 76px);
+    font-weight: 900;
+    letter-spacing: .06em;
+    margin: 0 0 6px;
+  }
+  .hero h1 .xor { color: var(--tq-ink); text-shadow: 0 0 var(--glow-r) var(--glow-tq); }
+  .hero .real-name {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+    margin: 0 0 22px;
+  }
+  .hero .tagline {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin-bottom: 30px;
+  }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-dragon { display: grid; place-items: center; }
+  .hero-dragon svg { width: 100%; max-width: 460px; height: auto; }
+  .hero-dragon .lines {
+    stroke: var(--tq);
+    filter: drop-shadow(0 0 calc(var(--glow-r) * .5) var(--glow-tq));
+  }
+  .hero-dragon .stars { fill: var(--gold); filter: drop-shadow(0 0 calc(var(--glow-r) * .4) var(--glow-gold)); }
+  .hero-dragon .caption {
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    fill: var(--ink-faint);
+  }
+  @media (max-width: 880px) {
+    .hero { padding-top: 48px; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-dragon { order: -1; }
+    .hero-dragon svg { max-width: 320px; }
+  }
+
+  .paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 880px) { .paths { grid-template-columns: 1fr; } }
+  .path-card { padding: 26px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); }
+  .path-card:hover { text-decoration: none; }
+  .path-card .path-rune {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--tq-ink);
+  }
+  .path-card h3 { font-size: 18px; margin: 0; }
+  .path-card p { color: var(--ink-soft); font-size: 14.5px; margin: 0; }
+  .path-card .go { font-family: var(--font-display); font-size: 11px; letter-spacing: .14em; color: var(--gold-ink); margin-top: 8px; }
+
+  .now-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 880px) { .now-strip { grid-template-columns: 1fr; } }
+  .now-card { padding: 20px 22px; }
+  .now-card .now-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .now-card .now-value { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+  .now-card .now-sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+
+  .home-posts .post-row {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    padding: 18px 4px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+  }
+  .home-posts .post-row:hover { text-decoration: none; background: var(--tq-soft); }
+  .home-posts .post-date {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    min-width: 92px;
+  }
+  .home-posts .post-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: .03em; }
+  .home-posts .post-tag { margin-left: auto; }
+  @media (max-width: 600px) {
+    .home-posts .post-tag { display: none; }
+  }
+</style>

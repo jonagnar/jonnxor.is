@@ -1,0 +1,83 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="404 — Þú dóst">
+  <main>
+    <section class="dead" data-screen-label="404">
+      <div>
+        <p class="code">HTTP 404 · PAGE NOT FOUND</p>
+        <h1>ÞÚ DÓST</h1>
+        <p class="sub">You died</p>
+        <p class="story">The page you sought has been consumed by the dragon. Your unsaved progress was carried off by an owl. The cat, as ever, knew and said nothing.</p>
+        <div class="actions">
+          <a class="btn btn-gold" href="/">Respawn at last bonfire</a>
+          <a class="btn btn-ghost" href="/blog">Read the codex instead</a>
+        </div>
+        <p class="souls">souls lost: <span class="n" id="souls">404</span></p>
+      </div>
+    </section>
+  </main>
+
+  <script is:inline slot="end">
+    (function () {
+      // souls trickle away, as souls do
+      var n = 404;
+      var el = document.getElementById("souls");
+      var t = setInterval(function () {
+        n -= Math.ceil(Math.random() * 7);
+        if (n <= 0) { n = 0; clearInterval(t); el.textContent = "0 · git gud"; return; }
+        el.textContent = String(n);
+      }, 600);
+    })();
+  </script>
+</Base>
+
+<style is:global>
+  .dead {
+    min-height: calc(100vh - var(--nav-h));
+    display: grid;
+    place-items: center;
+    text-align: center;
+    background: var(--aurora);
+    padding: 48px 24px;
+  }
+  .dead .code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: .3em;
+    color: var(--ink-faint);
+    margin-bottom: 18px;
+  }
+  .dead h1 {
+    font-size: clamp(48px, 10vw, 110px);
+    font-weight: 900;
+    letter-spacing: .08em;
+    color: var(--gold-ink);
+    text-shadow: 0 0 calc(var(--glow-r) * 1.4) var(--glow-gold);
+    margin: 0 0 4px;
+    animation: dead-in 2.4s var(--ease-out) both;
+  }
+  @keyframes dead-in {
+    from { opacity: 0; letter-spacing: .3em; filter: blur(6px); }
+    to { opacity: 1; letter-spacing: .08em; filter: blur(0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .dead h1 { animation: none; } }
+  .dead .sub {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 22px;
+  }
+  .dead .story { max-width: 46ch; margin: 0 auto 30px; color: var(--ink-soft); }
+  .dead .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .dead .souls {
+    margin-top: 34px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+  }
+  .dead .souls .n { color: var(--tq-ink); }
+</style>

@@ -1,0 +1,178 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Wallpaper Stash — JonnXor" page="wallpapers">
+  <main>
+    <section class="page-head" data-screen-label="Wallpapers head">
+      <div class="container">
+        <p class="kicker">Wallpaper stash</p>
+        <h1>The Hoard</h1>
+        <p class="lede">Placeholder art for now — these tiles generate real downloadable wallpapers. Drop in your own collection later.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <div class="wall-filters" id="wall-filters" data-screen-label="Tag filters"></div>
+      <section class="masonry" id="masonry" data-screen-label="Masonry grid"></section>
+    </div>
+  </main>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Wallpaper preview">
+    <div class="lb-frame">
+      <div class="lb-art" id="lb-art"></div>
+      <div class="lb-bar">
+        <span class="lb-title" id="lb-title"></span>
+        <span class="chip" id="lb-res">1920 × 1080</span>
+        <button class="btn btn-gold" type="button" id="lb-download">Download</button>
+        <button class="btn btn-ghost" type="button" id="lb-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline slot="end">
+(function () {
+  'use strict';
+
+  var TAGS = ['All', 'Dragons', 'Aurora', 'Synthwave', 'Landscapes', 'Cats & Owls'];
+
+  var WALLS = [
+    { t: 'Drekinn Rising', tag: 'Dragons', ar: '16/10', g: ['#0b0e14', '#15433d', '#f2c94c'], a: 160 },
+    { t: 'Aurora over Esja', tag: 'Aurora', ar: '16/9', g: ['#070d18', '#0e4a52', '#3fe0cb'], a: 120 },
+    { t: 'Grid Runner', tag: 'Synthwave', ar: '3/4', g: ['#120724', '#5d1d8f', '#00f5d4'], a: 35 },
+    { t: 'Black Sand Coast', tag: 'Landscapes', ar: '4/3', g: ['#0d0f10', '#33414a', '#cfd8d2'], a: 200 },
+    { t: 'Owl at Vespers', tag: 'Cats & Owls', ar: '3/4', g: ['#15120c', '#5a4a26', '#ecbd3e'], a: 75 },
+    { t: 'Wyrm of the Fjord', tag: 'Dragons', ar: '16/9', g: ['#0a1410', '#1e5e46', '#9fe8c4'], a: 145 },
+    { t: 'Neon Reykjavík', tag: 'Synthwave', ar: '16/10', g: ['#0a0616', '#36206e', '#f5e642'], a: 60 },
+    { t: 'Kettle & Cat', tag: 'Cats & Owls', ar: '1/1', g: ['#1a100c', '#6e3a22', '#f0c08a'], a: 100 },
+    { t: 'Green Lady', tag: 'Aurora', ar: '3/4', g: ['#060a12', '#0d3b4f', '#7ef0cf'], a: 25 },
+    { t: 'Highlands in Fog', tag: 'Landscapes', ar: '16/10', g: ['#101312', '#3c4a40', '#aebcb0'], a: 175 },
+    { t: 'Dragon Gate', tag: 'Dragons', ar: '3/4', g: ['#160a0a', '#6e2230', '#f2c94c'], a: 10 },
+    { t: 'Arcade Dusk', tag: 'Synthwave', ar: '4/3', g: ['#0c0618', '#8f1d5d', '#2cffe5'], a: 80 }
+  ];
+
+  var state = { tag: 'All' };
+  var filtersEl = document.getElementById('wall-filters');
+  var masonryEl = document.getElementById('masonry');
+  var lb = document.getElementById('lightbox');
+  var lbArt = document.getElementById('lb-art');
+  var lbTitle = document.getElementById('lb-title');
+  var current = null;
+
+  function grad(w) {
+    return 'linear-gradient(' + w.a + 'deg, ' + w.g[0] + ', ' + w.g[1] + ' 55%, ' + w.g[2] + ' 145%)';
+  }
+
+  function renderFilters() {
+    filtersEl.innerHTML = TAGS.map(function (t) {
+      return '<button class="chip' + (state.tag === t ? ' on' : '') + '" type="button" data-tag="' + t + '">' + t + '</button>';
+    }).join('');
+  }
+
+  function renderTiles() {
+    var items = WALLS.filter(function (w) { return state.tag === 'All' || w.tag === state.tag; });
+    masonryEl.innerHTML = items.map(function (w, i) {
+      return (
+        '<button class="wall-tile" type="button" data-i="' + WALLS.indexOf(w) + '">' +
+          '<div class="w-art" style="aspect-ratio: ' + w.ar + '; background: ' + grad(w) + ';">' +
+            '<span class="w-mark">ᛞ</span>' +
+          '</div>' +
+          '<div class="w-bar"><span>' + w.t + '</span><span class="chip">' + w.tag + '</span></div>' +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  filtersEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tag]');
+    if (!b) return;
+    state.tag = b.getAttribute('data-tag');
+    renderFilters();
+    renderTiles();
+  });
+
+  masonryEl.addEventListener('click', function (e) {
+    var tile = e.target.closest('.wall-tile');
+    if (!tile) return;
+    current = WALLS[+tile.getAttribute('data-i')];
+    lbArt.style.background = grad(current);
+    lbTitle.textContent = current.t;
+    lb.classList.add('open');
+  });
+
+  function closeLb() { lb.classList.remove('open'); }
+  document.getElementById('lb-close').addEventListener('click', closeLb);
+  lb.addEventListener('click', function (e) { if (e.target === lb) closeLb(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
+
+  // Real download: paint the gradient to a canvas and save it
+  document.getElementById('lb-download').addEventListener('click', function () {
+    if (!current) return;
+    var c = document.createElement('canvas');
+    c.width = 1920; c.height = 1080;
+    var ctx = c.getContext('2d');
+    var rad = (current.a - 90) * Math.PI / 180;
+    var x = Math.cos(rad) * 960, y = Math.sin(rad) * 540;
+    var g = ctx.createLinearGradient(960 - x, 540 - y, 960 + x, 540 + y);
+    g.addColorStop(0, current.g[0]);
+    g.addColorStop(.55, current.g[1]);
+    g.addColorStop(1, current.g[2]);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1920, 1080);
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.font = '600 28px Orbitron, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ᛞ', 960, 556);
+    var a = document.createElement('a');
+    a.download = current.t.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-1920x1080.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+  });
+
+  renderFilters();
+  renderTiles();
+})();
+  </script>
+</Base>
+
+<style is:global>
+  .wall-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 30px; }
+  .wall-filters .chip { cursor: pointer; user-select: none; }
+  .wall-filters .chip.on { color: var(--tq-ink); background: var(--tq-soft); border-color: var(--tq-deep); }
+
+  .masonry { columns: 3 280px; column-gap: 18px; }
+  .wall-tile {
+    break-inside: avoid;
+    margin-bottom: 18px;
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    cursor: zoom-in;
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    background: none;
+    text-align: left;
+    transition: transform .25s var(--ease-out), box-shadow .25s;
+  }
+  .wall-tile:hover { transform: translateY(-3px); box-shadow: 0 0 var(--glow-r) var(--glow-tq), var(--shadow); }
+  .wall-tile .w-art { display: grid; place-items: center; color: rgba(255,255,255,.85); }
+  .wall-tile .w-mark { font-family: var(--font-display); font-weight: 800; letter-spacing: .2em; font-size: 13px; opacity: .85; text-shadow: 0 1px 10px rgba(0,0,0,.5); }
+  .wall-tile .w-bar {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: linear-gradient(to top, rgba(4,6,10,.78), transparent);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: .1em;
+  }
+  .wall-tile .w-bar .chip { background: rgba(255,255,255,.12); border-color: transparent; color: rgba(255,255,255,.85); }
+</style>

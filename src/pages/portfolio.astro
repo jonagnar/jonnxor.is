@@ -1,0 +1,139 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Portfolio — JonnXor" page="portfolio">
+  <main>
+    <section class="page-head" data-screen-label="Portfolio head">
+      <div class="container">
+        <p class="kicker">Portfolio</p>
+        <h1>The Forge</h1>
+        <p class="lede">Selected work — production systems, side quests, and open-source offerings. Cover art is placeholder; real screenshots go here.</p>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section class="grid-3" data-screen-label="Project grid">
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #0e3b3a, #15897b 55%, #f2c94c 140%);">
+            <span class="sigil">SP</span>
+            <span class="plate">2022–now</span>
+          </div>
+          <div class="body">
+            <h3>Straumur Merchant Dashboard</h3>
+            <p>Payments dashboard rebuild for 40,000 merchants — real-time settlement views, dispute flows, and a design system to hold it together.</p>
+            <div class="meta">
+              <span class="chip tq">React</span><span class="chip tq">Go</span><span class="chip tq">Postgres</span><span class="chip">Production</span>
+            </div>
+            <div class="links"><a href="#">Case study</a><a href="#">Live</a></div>
+          </div>
+        </article>
+
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #1a1233, #2b2a72 50%, #00f5d4 150%);">
+            <span class="sigil">ST</span>
+            <span class="plate">side quest</span>
+          </div>
+          <div class="body">
+            <h3>Saga Tracker</h3>
+            <p>A quest log for real life: track long-running goals as sagas with chapters, XP, and boss fights. Go API + React PWA.</p>
+            <div class="meta">
+              <span class="chip tq">Go</span><span class="chip tq">PWA</span><span class="chip gold">In progress</span>
+            </div>
+            <div class="links"><a href="#">GitHub</a><a href="#">Devlog</a></div>
+          </div>
+        </article>
+
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #3a2c08, #b58a1d 60%, #faf6ec 160%);">
+            <span class="sigil">HV</span>
+            <span class="plate">open source</span>
+          </div>
+          <div class="body">
+            <h3>Hrafn Validator</h3>
+            <p>Tiny, zero-dependency schema validation for TypeScript with error messages a human can actually read. 4.2k stars.</p>
+            <div class="meta">
+              <span class="chip tq">TypeScript</span><span class="chip tq">OSS</span>
+            </div>
+            <div class="links"><a href="#">GitHub</a><a href="#">Docs</a></div>
+          </div>
+        </article>
+
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #06222b, #0b5f6e 55%, #3fe0cb 145%);">
+            <span class="sigil">HL</span>
+            <span class="plate">2019–22</span>
+          </div>
+          <div class="body">
+            <h3>Highland Logistics</h3>
+            <p>Offline-first booking and route client for highland tour guides — built for zero signal, glove-friendly taps, and Icelandic weather.</p>
+            <div class="meta">
+              <span class="chip tq">Node</span><span class="chip tq">PostGIS</span><span class="chip">Shipped</span>
+            </div>
+            <div class="links"><a href="#">Case study</a></div>
+          </div>
+        </article>
+
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #2b0a1e, #8c1d4f 55%, #f5e642 160%);">
+            <span class="sigil">DV</span>
+            <span class="plate">game jam</span>
+          </div>
+          <div class="body">
+            <h3>Dreki's Vault</h3>
+            <p>A 72-hour game-jam roguelike where the dungeon is your git history and merge conflicts are the boss. Won "most cursed concept."</p>
+            <div class="meta">
+              <span class="chip tq">Godot</span><span class="chip gold">Jam winner</span>
+            </div>
+            <div class="links"><a href="#">Play</a><a href="#">Source</a></div>
+          </div>
+        </article>
+
+        <article class="card lift proj-card reveal">
+          <div class="art" style="background: linear-gradient(135deg, #101418, #2e3a45 55%, #ecbd3e 170%);">
+            <span class="sigil">RK</span>
+            <span class="plate">open source</span>
+          </div>
+          <div class="body">
+            <h3>Runakefli</h3>
+            <p>CLI that turns your changelog into release notes people want to read — with templates, emoji policies, and an Icelandic mode.</p>
+            <div class="meta">
+              <span class="chip tq">Go</span><span class="chip tq">CLI</span>
+            </div>
+            <div class="links"><a href="#">GitHub</a></div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .proj-card { display: flex; flex-direction: column; overflow: hidden; }
+  .proj-card .art .sigil {
+    font-family: var(--font-display);
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    opacity: .92;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, .35);
+  }
+  .proj-card .art .plate {
+    position: absolute;
+    inset: auto 12px 12px auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, .75);
+    background: rgba(0, 0, 0, .35);
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+  }
+  .proj-card .body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .proj-card h3 { font-size: 16px; margin: 0; }
+  .proj-card p { font-size: 14px; color: var(--ink-soft); margin: 0; flex: 1; }
+  .proj-card .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .proj-card .links { display: flex; gap: 14px; margin-top: 4px; }
+  .proj-card .links a { font-family: var(--font-display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+</style>

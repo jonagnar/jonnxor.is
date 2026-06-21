@@ -1,0 +1,39 @@
+---
+interface Props {
+  title: string;
+  page?: string;
+  dragonfly?: string;
+  theme?: string;
+}
+const { title, page = "", dragonfly, theme = "rune" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme={theme}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {/* Pre-paint theme: apply persisted choice before first render to avoid a flash */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("jx-theme");
+          if (t) document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/assets/tokens.css" />
+    <link rel="stylesheet" href="/assets/site.css" />
+    <slot name="head" />
+  </head>
+  <body data-page={page} data-dragonfly={dragonfly}>
+    {/* site.js renders the adaptive nav + footer and appends the mobile dock + search modal */}
+    <header class="site-nav"></header>
+    <slot />
+    <footer class="site-footer"></footer>
+    <script is:inline src="/assets/site.js"></script>
+    {/* page-specific scripts run here — AFTER site.js so window.JX is ready */}
+    <slot name="end" />
+  </body>
+</html>

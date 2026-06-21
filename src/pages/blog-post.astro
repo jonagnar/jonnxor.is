@@ -1,0 +1,97 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Error handling is a narrative problem — JonnXor" page="blog">
+  <main>
+    <section class="article-head" data-screen-label="Article head">
+      <div class="container">
+        <p class="kicker">The Codex · Engineering</p>
+        <h1>Error handling is a narrative problem</h1>
+        <div class="meta">
+          <time datetime="2026-05-28">28 May 2026</time>
+          <span class="chip tq">Engineering</span>
+          <span class="chip">9 min read</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <article class="article" data-screen-label="Article body">
+        <p>Every error is a moment where your software has to tell a story: <em>something went wrong, here is what it was, here is what you can do about it.</em> Most software tells this story the way a drunk skald tells the fall of kings — out of order, missing the important parts, and somehow blaming the audience.</p>
+
+        <p>Consider the classic:</p>
+
+<pre class="code"><span class="cm">// What the user sees:</span>
+<span class="st">"Error: operation failed (code 500)"</span>
+
+<span class="cm">// What actually happened:</span>
+<span class="st">"The settlement file for 2026-05-27 hasn't arrived from
+ the bank yet, so we can't reconcile your payouts."</span></pre>
+
+        <p>The first version is a shrug. The second is a story — it has a subject, a cause, and an implied resolution (<em>wait, or contact us</em>). Nobody files a support ticket about a story they understood.</p>
+
+        <h2>The three-act error</h2>
+
+        <p>Stolen shamelessly from every saga in the canon, a good error has three parts:</p>
+
+        <p><strong>Context</strong> — what were we trying to do? Not internally; narratively. "Saving your draft," not <code class="inline">POST /v2/drafts</code>.</p>
+
+        <p><strong>Conflict</strong> — what got in the way, in terms the reader can act on? Name the actor. "The bank's file is late" beats "upstream dependency timeout."</p>
+
+        <p><strong>A path home</strong> — what now? Retry, wait, contact, undo. Odysseus spent ten years getting home; your user should get a button.</p>
+
+        <p>In code, I encode the three acts as a type, so an error can't ship without its story:</p>
+
+<pre class="code"><span class="kw">type</span> <span class="fn">StoryError</span> = &#123;
+  context: <span class="kw">string</span>;   <span class="cm">// "Reconciling May payouts"</span>
+  conflict: <span class="kw">string</span>;  <span class="cm">// "Settlement file hasn't arrived"</span>
+  pathHome: <span class="fn">Action</span>[]; <span class="cm">// [&#123; label: "Retry at 14:00" &#125;]</span>
+  cause?: <span class="kw">unknown</span>;    <span class="cm">// the raw saga, for the logs</span>
+&#125;;
+
+<span class="kw">function</span> <span class="fn">tell</span>(e: StoryError): <span class="kw">string</span> &#123;
+  <span class="kw">return</span> <span class="st">`$&#123;e.context&#125;: $&#123;e.conflict&#125;.`</span>;
+&#125;</pre>
+
+        <blockquote><p>An error message is the only part of your interface that users read word by word. It's the worst possible place to stop trying.</p></blockquote>
+
+        <h2>Logs are for the gods, messages are for mortals</h2>
+
+        <p>The raw cause — stack traces, status codes, the screaming of distant services — belongs in the logs, where engineers (the gods of this particular cosmology) can read it. The user-facing message is a translation layer, and like all translation it is an act of care. Keep both. Never show one to the other's audience.</p>
+
+        <p>Since adopting this shape at work, our most-common support ticket ("what does this error mean?") dropped by roughly half. Turns out users don't hate errors. They hate riddles.</p>
+
+        <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+        <div class="article-foot">
+          <a class="btn btn-ghost" href="/blog">← All posts</a>
+          <a class="btn btn-gold" href="/blog">Next: Sekiro &amp; code review →</a>
+        </div>
+      </article>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .article { max-width: 720px; margin: 0 auto; }
+  .article-head { text-align: center; padding: 56px 0 12px; background: var(--aurora); }
+  .article-head h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; max-width: 18em; margin-left: auto; margin-right: auto; }
+  .article-head .meta { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .article-head time { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
+  .article h2 { font-size: 20px; margin-top: 1.8em; }
+  .article p { font-size: 16.5px; }
+  .article blockquote {
+    margin: 1.6em 0;
+    padding: 16px 22px;
+    border-left: 3px solid var(--gold);
+    background: var(--gold-soft);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+  .article blockquote p { margin: 0; }
+  .article-foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 44px; }
+</style>
