@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: \.env\.sops$
+    age: "age1s0yqnylhal8xqcy5edd5ma4yvewcxg9eazyg4x9y8vtr3qj2gdnqnz8knl"
