@@ -22,15 +22,15 @@
   };
 
   var PAGES = [
-    { id: 'home', label: 'Home', href: 'index.html' },
-    { id: 'about', label: 'About', href: 'about.html' },
-    { id: 'cv', label: 'CV', href: 'cv.html' },
-    { id: 'portfolio', label: 'Portfolio', href: 'portfolio.html' },
-    { id: 'blog', label: 'Blog', href: 'blog.html' },
-    { id: 'docs', label: 'Docs', href: 'docs.html' },
-    { id: 'games', label: 'Games', href: 'games.html' },
-    { id: 'wallpapers', label: 'Wallpapers', href: 'wallpapers.html' },
-    { id: 'countdowns', label: 'Countdowns', href: 'countdowns.html' }
+    { id: 'home', label: 'Home', href: '/' },
+    { id: 'about', label: 'About', href: '/about' },
+    { id: 'cv', label: 'CV', href: '/cv' },
+    { id: 'portfolio', label: 'Portfolio', href: '/portfolio' },
+    { id: 'blog', label: 'Blog', href: '/blog' },
+    { id: 'docs', label: 'Docs', href: '/docs' },
+    { id: 'games', label: 'Games', href: '/games' },
+    { id: 'wallpapers', label: 'Wallpapers', href: '/wallpapers' },
+    { id: 'countdowns', label: 'Countdowns', href: '/countdowns' }
   ];
 
   var LANGS = ['is', 'en', 'ja'];
@@ -146,7 +146,7 @@
 
     return (
       '<div class="nav-inner">' +
-        '<a class="nav-logo" href="index.html">' +
+        '<a class="nav-logo" href="/">' +
           '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>' +
           '<span>JONN<span class="xor">XOR</span></span>' +
         '</a>' +
@@ -209,7 +209,7 @@
     return (
       '<div class="foot-inner">' +
         '<div class="foot-brand">' +
-          '<a class="nav-logo" href="index.html">' +
+          '<a class="nav-logo" href="/">' +
             '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>' +
             '<span>JONN<span class="xor">XOR</span></span>' +
           '</a>' +
@@ -246,9 +246,9 @@
       '<div class="foot-bottom">' +
         '<span>© 2026 Jón Agnar Stefánsson</span>' +
         '<div class="foot-links">' +
-          '<a href="cv.html">CV</a>' +
-          '<a href="wallpapers.html">Wallpapers</a>' +
-          '<a href="404.html">Here be dragons</a>' +
+          '<a href="/cv">CV</a>' +
+          '<a href="/wallpapers">Wallpapers</a>' +
+          '<a href="/404">Here be dragons</a>' +
         '</div>' +
       '</div>'
     );
@@ -295,11 +295,12 @@
 
   function ensureDocs(cb) {
     if (window.JX_DOCS) { cb(); return; }
-    var s = document.createElement('script');
-    s.src = 'assets/docs-data.js';
-    s.onload = cb;
-    s.onerror = cb;
-    document.head.appendChild(s);
+    // The grimoire lives in the content collection now: the /docs page injects
+    // window.JX_DOCS directly; every other page lazy-fetches it for search.
+    fetch('/assets/docs-data.json')
+      .then(function (r) { return r.json(); })
+      .then(function (data) { window.JX_DOCS = data; cb(); })
+      .catch(function () { window.JX_DOCS = []; cb(); });
   }
 
   function buildIndex() {
@@ -351,7 +352,7 @@
       }
       if (docs.length) {
         html += '<div class="sm-group">Grimoire</div>' + docs.slice(0, 12).map(function (e) {
-          return '<a class="sm-item" href="docs.html?doc=' + e.d.id + '">' +
+          return '<a class="sm-item" href="/docs?doc=' + e.d.id + '">' +
             '<span class="t-row"><span class="t">' + e.d.title + '</span><span class="where">' + e.d.cat + '</span></span>' +
             '<span class="snip">' + snippet(stripTags(e.d.body), q) + '</span>' +
           '</a>';
