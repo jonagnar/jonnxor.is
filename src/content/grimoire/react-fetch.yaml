@@ -1,0 +1,22 @@
+order: 8
+realm: "code"
+cat: "Code patterns"
+title: "React: the fetch-on-mount I actually ship"
+tags: ["react", "typescript"]
+updated: "2026-04-19"
+body: |
+  <p>No library, no waterfall surprises, no setting state on unmounted components. The boring, sturdy version.</p><h2>The hook</h2><pre class="code"><span class="kw">function</span> <span class="fn">useQuest</span>(id: <span class="kw">string</span>) {
+    <span class="kw">const</span> [state, setState] = React.<span class="fn">useState</span>&lt;State&gt;({ kind: <span class="st">"loading"</span> });
+  
+    React.<span class="fn">useEffect</span>(() =&gt; {
+      <span class="kw">const</span> ctrl = <span class="kw">new</span> <span class="fn">AbortController</span>();
+      <span class="fn">fetchQuest</span>(id, ctrl.signal)
+        .<span class="fn">then</span>((q) =&gt; <span class="fn">setState</span>({ kind: <span class="st">"ok"</span>, quest: q }))
+        .<span class="fn">catch</span>((e) =&gt; {
+          <span class="kw">if</span> (!ctrl.signal.aborted) <span class="fn">setState</span>({ kind: <span class="st">"error"</span>, error: e });
+        });
+      <span class="kw">return</span> () =&gt; ctrl.<span class="fn">abort</span>(); <span class="cm">// the cleanup IS the pattern</span>
+    }, [id]);
+  
+    <span class="kw">return</span> state;
+  }</pre><h2>Why this shape</h2><ul><li>State is a <strong>tagged union</strong> (<code class="inline">loading | ok | error</code>) — impossible states stay impossible.</li><li>The <strong>AbortController teardown</strong> handles both unmount and id changes in one move.</li><li>Upgrade path: same shape drops straight into TanStack Query when caching matters.</li></ul>

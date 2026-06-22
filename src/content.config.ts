@@ -16,4 +16,21 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+// The Grimoire — reference docs. YAML data (not Markdown) because each body is
+// rich hand-authored HTML (tables, .tip callouts, hand-coloured code) that the
+// client-side reader injects as-is. One file per doc, validated at build time.
+const grimoire = defineCollection({
+  loader: glob({ pattern: '**/*.yaml', base: './src/content/grimoire' }),
+  schema: z.object({
+    order: z.number(),
+    realm: z.enum(['games', 'code', 'life']),
+    game: z.string().optional(),
+    cat: z.string(),
+    title: z.string(),
+    tags: z.array(z.string()),
+    updated: z.string(),
+    body: z.string(),
+  }),
+});
+
+export const collections = { blog, grimoire };

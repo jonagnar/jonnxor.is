@@ -1,0 +1,20 @@
+order: 5
+realm: "code"
+cat: "Cheat sheets"
+title: "CSS Grid runes"
+tags: ["css", "layout"]
+updated: "2026-05-12"
+body: |
+  <p>The five lines that solve 90% of layouts, and the two that solve the rest.</p><h2>The five lines</h2><pre class="code"><span class="cm">/* the workhorse: responsive card grid, no media query */</span>
+  .grid { display: grid;
+    grid-template-columns: <span class="fn">repeat</span>(auto-fill, <span class="fn">minmax</span>(<span class="nu">240px</span>, <span class="nu">1fr</span>));
+    gap: <span class="nu">20px</span>; }
+  
+  <span class="cm">/* the holy centering rune */</span>
+  .center { display: grid; place-items: center; }
+  
+  <span class="cm">/* sidebar + content, sidebar fixed */</span>
+  .shell { display: grid; grid-template-columns: <span class="nu">280px</span> <span class="nu">1fr</span>; }
+  
+  <span class="cm">/* overlap without position: absolute */</span>
+  .stack &gt; * { grid-area: <span class="nu">1</span> / <span class="nu">1</span>; }</pre><h2>Disambiguation runes</h2><table class="doc-table"><thead><tr><th>Rune</th><th>Meaning</th></tr></thead><tbody><tr><td>auto-fill vs auto-fit</td><td>fill keeps empty tracks; fit collapses them (stretching the rest)</td></tr><tr><td>minmax(0, 1fr)</td><td>the “why is my grid blowing out” fix — allows content to shrink</td></tr><tr><td>subgrid</td><td>child rows/cols align to the parent’s tracks — card internals, finally aligned</td></tr></tbody></table>

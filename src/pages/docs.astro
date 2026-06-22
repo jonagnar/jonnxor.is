@@ -1,5 +1,15 @@
 ---
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
+
+// Feed the (unchanged) client-side reader from the grimoire collection instead of
+// a hand-maintained JS blob. Sort by the explicit `order` field to keep the curated
+// category sequence; shape each entry to exactly what the reader expects, then
+// serialise (escaping "<" so no doc body can break out of the <script>).
+const docs = (await getCollection("grimoire"))
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((e) => ({ id: e.id, ...e.data }));
+const docsJson = JSON.stringify(docs).replace(/</g, "\\u003c");
 ---
 
 <Base title="Docs — JonnXor" page="docs">
@@ -41,7 +51,7 @@ import Base from "../layouts/Base.astro";
     </div>
   </main>
 
-  <script is:inline slot="end" src="/assets/docs-data.js"></script>
+  <script is:inline slot="end" set:html={`window.JX_DOCS = ${docsJson};`}></script>
   <script is:inline slot="end">
 (function () {
   'use strict';
