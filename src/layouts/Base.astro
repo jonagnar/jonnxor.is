@@ -1,4 +1,6 @@
 ---
+import Footer from "../components/Footer.astro";
+
 interface Props {
   title: string;
   page?: string;
@@ -32,7 +34,7 @@ const { title, page = "", dragonfly, theme = "rune" } = Astro.props;
     {/* site.js renders the adaptive nav + footer and appends the mobile dock + search modal */}
     <header class="site-nav"></header>
     <slot />
-    <footer class="site-footer"></footer>
+    <Footer />
     <script is:inline src="/assets/site.js"></script>
     {/* page-specific scripts run here — AFTER site.js so window.JX is ready */}
     <slot name="end" />

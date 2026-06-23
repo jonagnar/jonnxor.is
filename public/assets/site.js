@@ -448,8 +448,7 @@
       while (dockWrap.firstChild) body.appendChild(dockWrap.firstChild);
     }
 
-    var footer = document.querySelector('footer.site-footer');
-    if (footer) footer.innerHTML = footHTML();
+    // footer is server-rendered now (src/components/Footer.astro)
 
     // theme
     setTheme(read('jx-theme') || getTheme());
