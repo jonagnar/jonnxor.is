@@ -1,7 +1,7 @@
 /* ============================================================
    JonnXor — shared site chrome & behavior
-   Renders nav + footer, theme switcher (sun/moon/dragon),
-   language switcher, countdown utils, reveal, dragonfly egg.
+   Wires behavior for the server-rendered nav + footer: theme switcher
+   (sun/moon/dragon), language switcher, countdown utils, reveal, dragonfly egg.
    ============================================================ */
 (function () {
   'use strict';
@@ -253,7 +253,9 @@
       b.addEventListener('click', function () { setTheme(b.getAttribute('data-set')); });
     });
 
-    // lang — buttons carry server-computed per-locale URLs; remember the choice and navigate
+    // lang — buttons carry server-computed per-locale URLs; navigate on click.
+    // (jx-lang is stored for a future Accept-Language/root redirect; the URL is the
+    //  source of truth for locale, so it isn't read back yet.)
     document.querySelectorAll('.lang-toggle button').forEach(function (b) {
       b.addEventListener('click', function () {
         var lang = b.getAttribute('data-lang');
