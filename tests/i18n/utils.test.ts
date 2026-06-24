@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { useTranslations, stripLocale } from '../../src/i18n/utils';
+import { ui, fallbackLocale } from '../../src/i18n/ui';
 
 describe('useTranslations', () => {
   it('returns the string for the requested locale', () => {
@@ -37,5 +38,16 @@ describe('stripLocale', () => {
 
   it('tolerates a trailing slash', () => {
     expect(stripLocale('/en/about/')).toBe('/about/');
+  });
+});
+
+describe('dictionary coverage', () => {
+  it('English (the fallback) defines every key used by any locale', () => {
+    const enKeys = new Set(Object.keys(ui[fallbackLocale]));
+    for (const loc of ['is', 'ja'] as const) {
+      for (const key of Object.keys(ui[loc])) {
+        expect(enKeys.has(key), `missing en key: ${key}`).toBe(true);
+      }
+    }
   });
 });
