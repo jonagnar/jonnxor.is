@@ -1,15 +1,21 @@
 ---
-// Site footer — was injected client-side by site.js (footHTML); now server-rendered.
+// Site footer — server-rendered; strings via the i18n dictionary, links locale-aware.
+import { useTranslations } from "../i18n/utils";
+import { getRelativeLocaleUrl } from "astro:i18n";
+
+const locale = Astro.currentLocale ?? "is";
+const t = useTranslations(locale);
+const localeHref = (path: string) => getRelativeLocaleUrl(locale, path);
 ---
 <footer class="site-footer">
   <div class="foot-inner">
     <div class="foot-brand">
-      <a class="nav-logo" href="/">
+      <a class="nav-logo" href={localeHref("/")}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>
         <span>JONN<span class="xor">XOR</span></span>
       </a>
-      <p class="foot-tag">Forged in Reykjavík · est. 1992</p>
-      <p class="foot-note">Full-stack developer, saga enthusiast, professional dragon-botherer.</p>
+      <p class="foot-tag">{t("foot.tag")}</p>
+      <p class="foot-note">{t("foot.note")}</p>
     </div>
     <div class="foot-sign" aria-hidden="true">
       <svg viewBox="0 0 240 130" fill="none">
@@ -26,24 +32,24 @@
           <circle cx="172" cy="22" r="1.2"/><circle cx="178" cy="17" r="1"/><circle cx="184" cy="24" r="1.2"/>
           <circle cx="176" cy="28" r="1"/><circle cx="183" cy="31" r="1"/><circle cx="189" cy="19" r="1"/>
         </g>
-        <text class="caption" x="120" y="122" text-anchor="middle">Nautíð · born under the bull</text>
+        <text class="caption" x="120" y="122" text-anchor="middle">{t("foot.caption")}</text>
       </svg>
     </div>
     <div class="foot-contact">
-      <h3 class="foot-hd">Send a raven</h3>
-      <div class="foot-row"><span class="k">raven</span><a href="mailto:jon@jonnxor.is">jon@jonnxor.is</a></div>
-      <div class="foot-row"><span class="k">github</span><a href="https://github.com" target="_blank" rel="noopener">github.com/jonnxor</a></div>
-      <div class="foot-row"><span class="k">linkedin</span><a href="https://linkedin.com" target="_blank" rel="noopener">in/jonnxor</a></div>
-      <div class="foot-row"><span class="k">hall</span><span>Reykjavík, Iceland · GMT</span></div>
-      <div class="foot-row"><span class="k">status</span><span class="chip tq">Open to interesting quests</span></div>
+      <h3 class="foot-hd">{t("foot.contactHd")}</h3>
+      <div class="foot-row"><span class="k">{t("foot.k.raven")}</span><a href="mailto:jon@jonnxor.is">jon@jonnxor.is</a></div>
+      <div class="foot-row"><span class="k">{t("foot.k.github")}</span><a href="https://github.com" target="_blank" rel="noopener">github.com/jonnxor</a></div>
+      <div class="foot-row"><span class="k">{t("foot.k.linkedin")}</span><a href="https://linkedin.com" target="_blank" rel="noopener">in/jonnxor</a></div>
+      <div class="foot-row"><span class="k">{t("foot.k.hall")}</span><span>{t("foot.location")}</span></div>
+      <div class="foot-row"><span class="k">{t("foot.k.status")}</span><span class="chip tq">{t("foot.status")}</span></div>
     </div>
   </div>
   <div class="foot-bottom">
-    <span>© 2026 Jón Agnar Stefánsson</span>
+    <span>{t("foot.copyright")}</span>
     <div class="foot-links">
-      <a href="/cv">CV</a>
-      <a href="/wallpapers">Wallpapers</a>
-      <a href="/404">Here be dragons</a>
+      <a href={localeHref("/cv")}>{t("foot.link.cv")}</a>
+      <a href={localeHref("/wallpapers")}>{t("foot.link.wallpapers")}</a>
+      <a href={localeHref("/404")}>{t("foot.link.dragons")}</a>
     </div>
   </div>
 </footer>
