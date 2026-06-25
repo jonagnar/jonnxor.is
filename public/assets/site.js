@@ -1,7 +1,7 @@
 /* ============================================================
    JonnXor — shared site chrome & behavior
-   Renders nav + footer, theme switcher (sun/moon/dragon),
-   language switcher, countdown utils, reveal, dragonfly egg.
+   Wires behavior for the server-rendered nav + footer: theme switcher
+   (sun/moon/dragon), language switcher, countdown utils, reveal, dragonfly egg.
    ============================================================ */
 (function () {
   'use strict';
@@ -33,8 +33,6 @@
     { id: 'countdowns', label: 'Countdowns', href: '/countdowns' }
   ];
 
-  var LANGS = ['is', 'en', 'ja'];
-
   function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
   function read(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 
@@ -63,15 +61,6 @@
   }
   function setGlow(mult) {
     document.documentElement.style.setProperty('--glow-mult', String(mult));
-  }
-
-  /* ---------- lang (visual only) ---------- */
-  function setLang(l) {
-    if (LANGS.indexOf(l) === -1) return;
-    store('jx-lang', l);
-    document.querySelectorAll('.lang-toggle button').forEach(function (b) {
-      b.classList.toggle('active', b.getAttribute('data-lang') === l);
-    });
   }
 
   /* ---------- countdown utils ---------- */
@@ -264,10 +253,16 @@
       b.addEventListener('click', function () { setTheme(b.getAttribute('data-set')); });
     });
 
-    // lang
-    setLang(read('jx-lang') || 'en');
+    // lang — buttons carry server-computed per-locale URLs; navigate on click.
+    // (jx-lang is stored for a future Accept-Language/root redirect; the URL is the
+    //  source of truth for locale, so it isn't read back yet.)
     document.querySelectorAll('.lang-toggle button').forEach(function (b) {
-      b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); });
+      b.addEventListener('click', function () {
+        var lang = b.getAttribute('data-lang');
+        var href = b.getAttribute('data-href');
+        if (lang) store('jx-lang', lang);
+        if (href) window.location.href = href;
+      });
     });
 
     // adaptive nav behaviors
@@ -378,7 +373,6 @@
   window.JX = {
     setTheme: setTheme,
     getTheme: getTheme,
-    setLang: setLang,
     setScanlines: setScanlines,
     setGlow: setGlow,
     daysUntil: daysUntil,

@@ -12,7 +12,7 @@ const { title, page = "", dragonfly, theme = "rune" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" data-theme={theme}>
+<html lang={Astro.currentLocale ?? "is"} data-theme={theme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -1,52 +1,51 @@
 ---
 // Site nav — was injected client-side by site.js (navHTML/dockHTML); now server-rendered.
 // Behavior (theme/realm/mega/search/dock wiring) stays in site.js, which binds via querySelector.
+import { useTranslations, stripLocale } from "../i18n/utils";
+import { localeNames, locales } from "../i18n/ui";
+import { getRelativeLocaleUrl } from "astro:i18n";
+
 interface Props { page?: string; }
 const { page = "" } = Astro.props;
 const current = page;
 
+const locale = Astro.currentLocale ?? "is";
+const t = useTranslations(locale);
+const basePath = stripLocale(Astro.url.pathname);
+
 const PAGES = [
-  { id: "home", label: "Home", href: "/" },
-  { id: "about", label: "About", href: "/about" },
-  { id: "cv", label: "CV", href: "/cv" },
-  { id: "portfolio", label: "Portfolio", href: "/portfolio" },
-  { id: "blog", label: "Blog", href: "/blog" },
-  { id: "docs", label: "Docs", href: "/docs" },
-  { id: "games", label: "Games", href: "/games" },
-  { id: "wallpapers", label: "Wallpapers", href: "/wallpapers" },
-  { id: "countdowns", label: "Countdowns", href: "/countdowns" },
+  { id: "home", href: "/" },
+  { id: "about", href: "/about" },
+  { id: "cv", href: "/cv" },
+  { id: "portfolio", href: "/portfolio" },
+  { id: "blog", href: "/blog" },
+  { id: "docs", href: "/docs" },
+  { id: "games", href: "/games" },
+  { id: "wallpapers", href: "/wallpapers" },
+  { id: "countdowns", href: "/countdowns" },
+];
+const label = (id: string) => t(`nav.${id}`);
+const localeHref = (path: string) => getRelativeLocaleUrl(locale, path);
+
+const pageDesc = (id: string) => t(`navDesc.${id}`);
+
+const REALM_GROUPS = [
+  { key: "work", ids: ["portfolio", "cv", "about"] },
+  { key: "codex", ids: ["blog", "docs"] },
+  { key: "hall", ids: ["games", "wallpapers", "countdowns"] },
+];
+
+const DOCK_SLOTS = [
+  { id: "home", labelKey: "dock.home", icon: "home" },
+  { id: "portfolio", labelKey: "dock.forge", icon: "hammer" },
+  { id: "docs", labelKey: "dock.grimoire", icon: "book" },
+  { id: "games", labelKey: "dock.hall", icon: "pad" },
 ];
 
 const THEMES = [
   { key: "dawn", name: "Dawn (light)", icon: "sun" },
   { key: "rune", name: "Rune Night (dark)", icon: "moon" },
   { key: "neon", name: "Neon (gamer)", icon: "dragon" },
-];
-const LANGS = ["is", "en", "ja"];
-
-const PAGE_DESC: Record<string, string> = {
-  home: "The landing — start here",
-  about: "The Saga of Jón + cover letter",
-  cv: "The Record of Deeds — print-ready",
-  portfolio: "The Forge — selected projects",
-  blog: "The Codex — long-form writing",
-  docs: "The Grimoire — guides & cheat sheets",
-  games: "The Game Hall — tracker & favorites",
-  wallpapers: "The Hoard — gallery & downloads",
-  countdowns: "The Reckoning — timers & tallies",
-};
-
-const REALM_GROUPS = [
-  { label: "The Work", ids: ["portfolio", "cv", "about"] },
-  { label: "The Codex", ids: ["blog", "docs"] },
-  { label: "The Hall", ids: ["games", "wallpapers", "countdowns"] },
-];
-
-const DOCK_SLOTS = [
-  { id: "home", label: "Home", icon: "home" },
-  { id: "portfolio", label: "Forge", icon: "hammer" },
-  { id: "docs", label: "Grimoire", icon: "book" },
-  { id: "games", label: "Hall", icon: "pad" },
 ];
 
 const ICONS: Record<string, string> = {
@@ -70,15 +69,15 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
 
 <header class="site-nav">
   <div class="nav-inner">
-    <a class="nav-logo" href="/">
+    <a class="nav-logo" href={localeHref("/")}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>
       <span>JONN<span class="xor">XOR</span></span>
     </a>
 
     <nav class="nav-hud" aria-label="Primary">
       {PAGES.map((p, i) => (
-        <a class:list={["nav-hlink", p.id === current && "here"]} href={p.href}>
-          <span class="n">{pad2(i)}</span><span class="t">{p.label}</span>
+        <a class:list={["nav-hlink", p.id === current && "here"]} href={localeHref(p.href)}>
+          <span class="n">{pad2(i)}</span><span class="t">{label(p.id)}</span>
         </a>
       ))}
     </nav>
@@ -87,12 +86,12 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
       {REALM_GROUPS.map((g, gi) => (
         <div class="nav-realm">
           <button type="button" class:list={["nav-rtop", g.ids.includes(current) && "active"]} data-realm={gi} aria-expanded="false">
-            {g.label} <span class="car">▼</span>
+            {t(`realm.${g.key}`)} <span class="car">▼</span>
           </button>
           <div class="nav-rpanel" hidden>
             {g.ids.map((id) => (
-              <a class:list={["nav-ritem", id === current && "here"]} href={pageById(id).href}>
-                <span class="t">{pageById(id).label}</span><span class="d">{PAGE_DESC[id]}</span>
+              <a class:list={["nav-ritem", id === current && "here"]} href={localeHref(pageById(id).href)}>
+                <span class="t">{label(id)}</span><span class="d">{pageDesc(id)}</span>
               </a>
             ))}
           </div>
@@ -100,16 +99,18 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
       ))}
     </nav>
 
-    <button type="button" class="nav-seek" aria-label="Search">
+    <button type="button" class="nav-seek" aria-label={t("nav.searchAria")}>
       <Fragment set:html={ICONS.search} />
-      <span>Seek pages, docs, spells…</span><span class="sk">/</span>
+      <span>{t("nav.seek")}</span><span class="sk">/</span>
     </button>
 
     <div class="nav-controls">
-      <button type="button" class="nav-search" aria-label="Search (press /)" title="Search (press /)"><Fragment set:html={ICONS.search} /><span class="sk">/</span></button>
-      <button type="button" class="nav-menubtn" aria-expanded="false">☰ Menu</button>
+      <button type="button" class="nav-search" aria-label={t("nav.searchHint")} title={t("nav.searchHint")}><Fragment set:html={ICONS.search} /><span class="sk">/</span></button>
+      <button type="button" class="nav-menubtn" aria-expanded="false">☰ {t("nav.menu")}</button>
       <div class="lang-toggle" role="group" aria-label="Language">
-        {LANGS.map((l) => (<button type="button" data-lang={l}>{l.toUpperCase()}</button>))}
+        {locales.map((l) => (
+          <button type="button" data-lang={l} data-href={getRelativeLocaleUrl(l, basePath)} class:list={[l === locale && "active"]} aria-current={l === locale ? "true" : undefined} title={localeNames[l]}>{l.toUpperCase()}</button>
+        ))}
       </div>
       <div class="theme-toggle" role="group" aria-label="Theme">
         {THEMES.map((t) => (
@@ -122,8 +123,8 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
     <div class="nav-mega" hidden>
       <div class="mg-grid">
         {PAGES.map((p, i) => (
-          <a class:list={["mg-cell", p.id === current && "here"]} href={p.href}>
-            <span class="n">{pad2(i)}</span><span class="t">{p.label}</span>
+          <a class:list={["mg-cell", p.id === current && "here"]} href={localeHref(p.href)}>
+            <span class="n">{pad2(i)}</span><span class="t">{label(p.id)}</span>
           </a>
         ))}
       </div>
@@ -133,10 +134,10 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
 
 {/* dock + sheet are body-level siblings — the header's backdrop-filter would trap position:fixed */}
 <div class="jx-sheet" hidden>
-  <div class="sh-hd">More halls</div>
+  <div class="sh-hd">{t("nav.more")}</div>
   {morePages.map((p) => (
-    <a class:list={["sh-row", p.id === current && "here"]} href={p.href}>
-      <span class="t">{p.label}</span><span class="d">{(PAGE_DESC[p.id].split("—")[0] || "").trim().toLowerCase()}</span>
+    <a class:list={["sh-row", p.id === current && "here"]} href={localeHref(pageById(p.id).href)}>
+      <span class="t">{label(p.id)}</span><span class="d">{(pageDesc(p.id).split("—")[0] || "").trim().toLowerCase()}</span>
     </a>
   ))}
   <div class="sh-foot">
@@ -144,18 +145,20 @@ const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
       {THEMES.map((t) => (<button type="button" data-set={t.key} aria-label={t.name} title={t.name} set:html={ICONS[t.icon]} />))}
     </div>
     <div class="lang-toggle" role="group" aria-label="Language">
-      {LANGS.map((l) => (<button type="button" data-lang={l}>{l.toUpperCase()}</button>))}
+      {locales.map((l) => (
+        <button type="button" data-lang={l} data-href={getRelativeLocaleUrl(l, basePath)} class:list={[l === locale && "active"]} aria-current={l === locale ? "true" : undefined} title={localeNames[l]}>{l.toUpperCase()}</button>
+      ))}
     </div>
   </div>
 </div>
 
 <nav class="jx-dock" aria-label="Quick navigation">
   {DOCK_SLOTS.map((s) => (
-    <a class:list={["jx-slot", s.id === current && "here"]} href={pageById(s.id).href}>
-      <Fragment set:html={ICONS[s.icon]} /><span>{s.label}</span>
+    <a class:list={["jx-slot", s.id === current && "here"]} href={localeHref(pageById(s.id).href)}>
+      <Fragment set:html={ICONS[s.icon]} /><span>{t(s.labelKey)}</span>
     </a>
   ))}
   <button type="button" class:list={["jx-slot", "jx-more", moreActive && "here"]} aria-expanded="false">
-    <Fragment set:html={ICONS.dots} /><span>More</span>
+    <Fragment set:html={ICONS.dots} /><span>{t("nav.more")}</span>
   </button>
 </nav>
