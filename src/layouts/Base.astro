@@ -1,5 +1,6 @@
 ---
 import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
 
 interface Props {
   title: string;
@@ -31,8 +32,8 @@ const { title, page = "", dragonfly, theme = "rune" } = Astro.props;
     <slot name="head" />
   </head>
   <body data-page={page} data-dragonfly={dragonfly}>
-    {/* site.js renders the adaptive nav + footer and appends the mobile dock + search modal */}
-    <header class="site-nav"></header>
+    {/* Nav.astro server-renders the adaptive nav + mobile dock; site.js wires behavior + appends the search modal */}
+    <Nav page={page} />
     <slot />
     <Footer />
     <script is:inline src="/assets/site.js"></script>

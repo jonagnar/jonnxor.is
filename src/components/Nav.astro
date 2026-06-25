@@ -1,0 +1,161 @@
+---
+// Site nav — was injected client-side by site.js (navHTML/dockHTML); now server-rendered.
+// Behavior (theme/realm/mega/search/dock wiring) stays in site.js, which binds via querySelector.
+interface Props { page?: string; }
+const { page = "" } = Astro.props;
+const current = page;
+
+const PAGES = [
+  { id: "home", label: "Home", href: "/" },
+  { id: "about", label: "About", href: "/about" },
+  { id: "cv", label: "CV", href: "/cv" },
+  { id: "portfolio", label: "Portfolio", href: "/portfolio" },
+  { id: "blog", label: "Blog", href: "/blog" },
+  { id: "docs", label: "Docs", href: "/docs" },
+  { id: "games", label: "Games", href: "/games" },
+  { id: "wallpapers", label: "Wallpapers", href: "/wallpapers" },
+  { id: "countdowns", label: "Countdowns", href: "/countdowns" },
+];
+
+const THEMES = [
+  { key: "dawn", name: "Dawn (light)", icon: "sun" },
+  { key: "rune", name: "Rune Night (dark)", icon: "moon" },
+  { key: "neon", name: "Neon (gamer)", icon: "dragon" },
+];
+const LANGS = ["is", "en", "ja"];
+
+const PAGE_DESC: Record<string, string> = {
+  home: "The landing — start here",
+  about: "The Saga of Jón + cover letter",
+  cv: "The Record of Deeds — print-ready",
+  portfolio: "The Forge — selected projects",
+  blog: "The Codex — long-form writing",
+  docs: "The Grimoire — guides & cheat sheets",
+  games: "The Game Hall — tracker & favorites",
+  wallpapers: "The Hoard — gallery & downloads",
+  countdowns: "The Reckoning — timers & tallies",
+};
+
+const REALM_GROUPS = [
+  { label: "The Work", ids: ["portfolio", "cv", "about"] },
+  { label: "The Codex", ids: ["blog", "docs"] },
+  { label: "The Hall", ids: ["games", "wallpapers", "countdowns"] },
+];
+
+const DOCK_SLOTS = [
+  { id: "home", label: "Home", icon: "home" },
+  { id: "portfolio", label: "Forge", icon: "hammer" },
+  { id: "docs", label: "Grimoire", icon: "book" },
+  { id: "games", label: "Hall", icon: "pad" },
+];
+
+const ICONS: Record<string, string> = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L21 21"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  dragon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>',
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11 L12 3 L21 11 V21 H14 V15 H10 V21 H3 Z"/></svg>',
+  hammer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 L13 7 L13 3 L17 3 L20 6 L20 10 L13 10 L13 11 L4 11 Z"/><path d="M8.5 11 L8.5 21"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4 H10 C11.1 4 12 4.9 12 6 V20 C12 19 11 18.5 10 18.5 H4 Z"/><path d="M20 4 H14 C12.9 4 12 4.9 12 6 V20 C12 19 13 18.5 14 18.5 H20 Z"/></svg>',
+  pad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8 H17 C19.5 8 21 10 21 13 C21 16 19.8 17.5 18.4 17.5 C16.5 17.5 16.4 15 14.5 15 H9.5 C7.6 15 7.5 17.5 5.6 17.5 C4.2 17.5 3 16 3 13 C3 10 4.5 8 7 8 Z"/><path d="M8 10.6 V13.4 M6.6 12 H9.4 M15.6 11 h.01 M17.4 13 h.01"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
+};
+
+const pad2 = (i: number) => (i < 9 ? "0" : "") + (i + 1);
+const pageById = (id: string) => PAGES.find((p) => p.id === id)!;
+const dockIds = DOCK_SLOTS.map((s) => s.id);
+const moreActive = current && !dockIds.includes(current);
+const morePages = PAGES.filter((p) => !dockIds.includes(p.id));
+---
+
+<header class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11 L8 5 L3 1 L7 8 L4 9 L8 17 L14 14 L12 11 Z"/></svg>
+      <span>JONN<span class="xor">XOR</span></span>
+    </a>
+
+    <nav class="nav-hud" aria-label="Primary">
+      {PAGES.map((p, i) => (
+        <a class:list={["nav-hlink", p.id === current && "here"]} href={p.href}>
+          <span class="n">{pad2(i)}</span><span class="t">{p.label}</span>
+        </a>
+      ))}
+    </nav>
+
+    <nav class="nav-realms" aria-label="Primary">
+      {REALM_GROUPS.map((g, gi) => (
+        <div class="nav-realm">
+          <button type="button" class:list={["nav-rtop", g.ids.includes(current) && "active"]} data-realm={gi} aria-expanded="false">
+            {g.label} <span class="car">▼</span>
+          </button>
+          <div class="nav-rpanel" hidden>
+            {g.ids.map((id) => (
+              <a class:list={["nav-ritem", id === current && "here"]} href={pageById(id).href}>
+                <span class="t">{pageById(id).label}</span><span class="d">{PAGE_DESC[id]}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
+
+    <button type="button" class="nav-seek" aria-label="Search">
+      <Fragment set:html={ICONS.search} />
+      <span>Seek pages, docs, spells…</span><span class="sk">/</span>
+    </button>
+
+    <div class="nav-controls">
+      <button type="button" class="nav-search" aria-label="Search (press /)" title="Search (press /)"><Fragment set:html={ICONS.search} /><span class="sk">/</span></button>
+      <button type="button" class="nav-menubtn" aria-expanded="false">☰ Menu</button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        {LANGS.map((l) => (<button type="button" data-lang={l}>{l.toUpperCase()}</button>))}
+      </div>
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        {THEMES.map((t) => (
+          <button type="button" data-set={t.key} aria-label={t.name} title={t.name} set:html={ICONS[t.icon]} />
+        ))}
+      </div>
+      <button type="button" class="nav-orb" aria-label="Theme — click to cycle"></button>
+    </div>
+
+    <div class="nav-mega" hidden>
+      <div class="mg-grid">
+        {PAGES.map((p, i) => (
+          <a class:list={["mg-cell", p.id === current && "here"]} href={p.href}>
+            <span class="n">{pad2(i)}</span><span class="t">{p.label}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</header>
+
+{/* dock + sheet are body-level siblings — the header's backdrop-filter would trap position:fixed */}
+<div class="jx-sheet" hidden>
+  <div class="sh-hd">More halls</div>
+  {morePages.map((p) => (
+    <a class:list={["sh-row", p.id === current && "here"]} href={p.href}>
+      <span class="t">{p.label}</span><span class="d">{(PAGE_DESC[p.id].split("—")[0] || "").trim().toLowerCase()}</span>
+    </a>
+  ))}
+  <div class="sh-foot">
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      {THEMES.map((t) => (<button type="button" data-set={t.key} aria-label={t.name} title={t.name} set:html={ICONS[t.icon]} />))}
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      {LANGS.map((l) => (<button type="button" data-lang={l}>{l.toUpperCase()}</button>))}
+    </div>
+  </div>
+</div>
+
+<nav class="jx-dock" aria-label="Quick navigation">
+  {DOCK_SLOTS.map((s) => (
+    <a class:list={["jx-slot", s.id === current && "here"]} href={pageById(s.id).href}>
+      <Fragment set:html={ICONS[s.icon]} /><span>{s.label}</span>
+    </a>
+  ))}
+  <button type="button" class:list={["jx-slot", "jx-more", moreActive && "here"]} aria-expanded="false">
+    <Fragment set:html={ICONS.dots} /><span>More</span>
+  </button>
+</nav>
