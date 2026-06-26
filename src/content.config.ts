@@ -13,6 +13,8 @@ const blog = defineCollection({
     excerpt: z.string(),
     readTime: z.string(), // e.g. "9 min"
     draft: z.boolean().default(false),
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
   }),
 });
 
