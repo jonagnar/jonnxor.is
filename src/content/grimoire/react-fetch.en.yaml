@@ -7,7 +7,7 @@ title: "React: the fetch-on-mount I actually ship"
 tags:
   - react
   - typescript
-updated: 2026-04-19
+updated: "2026-04-19"
 body: |
   <p>No library, no waterfall surprises, no setting state on unmounted components. The boring, sturdy version.</p><h2>The hook</h2><pre class="code"><span class="kw">function</span> <span class="fn">useQuest</span>(id: <span class="kw">string</span>) {
     <span class="kw">const</span> [state, setState] = React.<span class="fn">useState</span>&lt;State&gt;({ kind: <span class="st">"loading"</span> });

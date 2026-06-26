@@ -7,6 +7,6 @@ title: Masala chai for debugging sessions
 tags:
   - chai
   - ritual
-updated: 2026-06-01
+updated: "2026-06-01"
 body: |
   <p>Batch #214 of the house potion. Brewed before every gnarly bug since 2019. Serves two, or one engineer facing a heisenbug.</p><h2>Components</h2><ul><li>2 cups water · 1 cup whole milk</li><li>2 tsp loose Assam (strong, honest, CTC)</li><li>6 green cardamom pods, <strong>crushed</strong> — this is non-negotiable</li><li>4 cloves · 1 cinnamon stick · thumb of ginger, smashed</li><li>black pepper, 4–5 cracks (the mischief)</li><li>sugar to taste — chai without any is a missed save point</li></ul><h2>Ritual</h2><ol><li>Simmer spices in water 5 min — until the kitchen smells like a better codebase.</li><li>Add tea, 2 min. No more — Assam turns bitter like an unreviewed PR.</li><li>Add milk + sugar, bring <em>just</em> to the boil, then pull it back. Twice.</li><li>Strain, pour from height for foam, return to the debugger.</li></ol><h2>Protocols</h2><div class="tip"><b>Cat protocol</b>The cat gets to sniff the steam, never the cup. The bug is usually in the code you were sure about; check it after the first sip, not before.</div>

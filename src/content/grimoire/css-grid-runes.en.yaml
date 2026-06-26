@@ -7,7 +7,7 @@ title: CSS Grid runes
 tags:
   - css
   - layout
-updated: 2026-05-12
+updated: "2026-05-12"
 body: |
   <p>The five lines that solve 90% of layouts, and the two that solve the rest.</p><h2>The five lines</h2><pre class="code"><span class="cm">/* the workhorse: responsive card grid, no media query */</span>
   .grid { display: grid;

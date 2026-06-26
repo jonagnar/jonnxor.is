@@ -33,5 +33,7 @@ export function serializeDoc(r) {
   const doc = new YAML.Document(obj);
   const bodyNode = doc.get('body', true);
   if (bodyNode) bodyNode.type = Scalar.BLOCK_LITERAL;
+  const updatedNode = doc.get('updated', true);
+  if (updatedNode) updatedNode.type = Scalar.QUOTE_DOUBLE;
   return doc.toString({ lineWidth: 0 });
 }

@@ -36,4 +36,8 @@ describe('serializeDoc', () => {
     const out = serializeDoc(withGame);
     expect(serializeDoc(parseDoc(out))).toBe(out);
   });
+  it('quotes the updated date so a YAML 1.1 loader keeps it a string (not a Date)', () => {
+    const out = serializeDoc(record);
+    expect(out).toMatch(/updated: "2026-05-26"/);
+  });
 });
