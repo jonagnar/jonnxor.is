@@ -1,11 +1,11 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createDirectus, rest, authentication, readItems, createItem } from '@directus/sdk';
+import { readItems, createItem } from '@directus/sdk';
+import { connect, done } from './lib/directus-client.mjs';
 import { parsePost } from './lib/post-markdown.mjs';
 
 const BLOG_DIR = 'src/content/blog';
-const client = createDirectus(process.env.DIRECTUS_URL).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const existing = new Set(
   (await client.request(readItems('blog', { fields: ['slug'], limit: -1 }))).map((p) => p.slug),
@@ -34,7 +34,4 @@ for (const file of files) {
   console.log('imported:', slug);
 }
 console.log(`done — ${created} created, ${existing.size} pre-existing`);
-
-// The authenticated SDK client keeps a token-refresh timer alive, which would
-// otherwise hang the process after the work is done (matches content-pull/content-restore).
-process.exit(0);
+done();

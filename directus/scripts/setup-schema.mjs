@@ -1,12 +1,10 @@
 import {
-  createDirectus, rest, authentication,
   createCollection, createField, createRelation, readCollections,
   readFieldsByCollection, updateField,
 } from '@directus/sdk';
+import { connect, done } from '../../scripts/lib/directus-client.mjs';
 
-const url = process.env.DIRECTUS_URL;
-const client = createDirectus(url).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const existing = new Set((await client.request(readCollections())).map((c) => c.collection));
 const need = (name) => !existing.has(name);
@@ -107,7 +105,4 @@ const want = [
 if (want.length) await client.request(createItems('languages', want));
 
 console.log('schema setup complete');
-
-// The authenticated SDK client keeps a token-refresh timer alive, which would
-// otherwise hang the process after the work is done (matches content-pull/content-restore).
-process.exit(0);
+done();

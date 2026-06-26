@@ -13,12 +13,12 @@
 // for standing the stack back up from the committed snapshot.
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createDirectus, rest, authentication, readItems, createItem } from '@directus/sdk';
+import { readItems, createItem } from '@directus/sdk';
+import { connect, done } from './lib/directus-client.mjs';
 import { parsePost } from './lib/post-markdown.mjs';
 
 const BLOG_DIR = 'src/content/blog';
-const client = createDirectus(process.env.DIRECTUS_URL).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 // Group per-locale snapshot files by slug -> one blog item with N translations.
 const files = (await readdir(BLOG_DIR)).filter((f) => /\.(is|en|ja)\.md$/.test(f));
@@ -59,7 +59,4 @@ for (const [slug, item] of bySlug) {
   console.log('restored:', slug, '(' + item.translations.map((t) => t.languages_code).join(', ') + ')');
 }
 console.log(`done — ${created} restored, ${bySlug.size - created} skipped, ${bySlug.size} post(s) in snapshot`);
-
-// The authenticated SDK client keeps a token-refresh timer alive, which would
-// otherwise hang the process after the work is done (see content-pull.mjs).
-process.exit(0);
+done();

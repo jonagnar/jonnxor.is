@@ -1,11 +1,11 @@
 import { readdir, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createDirectus, rest, authentication, readItems } from '@directus/sdk';
+import { readItems } from '@directus/sdk';
+import { connect, done } from './lib/directus-client.mjs';
 import { serializePost } from './lib/post-markdown.mjs';
 
 const BLOG_DIR = 'src/content/blog';
-const client = createDirectus(process.env.DIRECTUS_URL).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const posts = await client.request(readItems('blog', {
   limit: -1,
@@ -45,8 +45,4 @@ for (const ent of await readdir(BLOG_DIR, { withFileTypes: true })) {
   }
 }
 console.log(`pulled — ${wanted.size} locale file(s) from ${posts.length} post(s)`);
-
-// The authenticated SDK client keeps a token-refresh timer on the event loop,
-// so Node won't exit on its own. Exit explicitly so `content:pull` terminates
-// (required for `content:pull && …` chaining and the dev/CI workflow).
-process.exit(0);
+done();
