@@ -1,5 +1,8 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+// localeEntryId gives each locale file a distinct collection id; both loaders below
+// MUST keep `generateId: localeEntryId` or a slug's locale files collide on one id
+// (guarded by tests/content/config-wiring.test.ts).
 import { localeEntryId } from './content/loaders';
 
 // The Codex — long-form posts. Drop a Markdown file in src/content/blog/ and it
