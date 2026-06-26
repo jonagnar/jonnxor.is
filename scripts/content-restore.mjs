@@ -1,14 +1,16 @@
-// Rehydrate Directus blog content FROM the committed per-locale snapshot —
-// the inverse of content:pull, and the content-side companion to the schema
-// snapshot (directus/schema/snapshot.yaml). Use it to repopulate a fresh/empty
-// Directus (new clone, wiped DB, re-bootstrap) so the local authoring stack
-// matches the repo without re-authoring.
+// Rehydrate Directus content (blog posts AND grimoire docs) FROM the committed
+// per-locale snapshot — the inverse of content:pull, and the content-side
+// companion to the schema snapshot (directus/schema/snapshot.yaml). Use it to
+// repopulate a fresh/empty Directus (new clone, wiped DB, re-bootstrap) so the
+// local authoring stack matches the repo without re-authoring.
 //
 // It reads every src/content/blog/<slug>.<locale>.md, groups the locale files
 // by slug into one `blog` item + its `blog_translations`, and creates any post
-// whose slug doesn't already exist. It is idempotent at the POST level (existing
-// slugs are skipped) — it rehydrates missing posts, it does NOT reconcile
-// per-translation diffs on posts that already exist. The normal authoring loop
+// whose slug doesn't already exist. Grimoire docs are grouped the same way from
+// src/content/grimoire/<slug>.<locale>.yaml into one `grimoire` item + its
+// `grimoire_translations`. It is idempotent at the POST level (existing slugs
+// are skipped) — it rehydrates missing items, it does NOT reconcile
+// per-translation diffs on items that already exist. The normal authoring loop
 // is author-in-Directus -> content:pull -> commit; restore is the reverse trip
 // for standing the stack back up from the committed snapshot.
 import { readdir, readFile } from 'node:fs/promises';
@@ -68,6 +70,9 @@ const docsBySlug = new Map();
 for (const file of docFiles) {
   const d = parseDoc(await readFile(join(GRIMOIRE_DIR, file), 'utf8'));
   if (!docsBySlug.has(d.slug)) {
+    // Base fields (order/realm/game/updated) are non-translatable; content:pull
+    // writes them identically to every locale file of a doc, so the first locale
+    // file seen for a slug sets them and the rest only add a translation.
     docsBySlug.set(d.slug, {
       slug: d.slug,
       order: d.order,

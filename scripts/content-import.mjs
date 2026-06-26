@@ -1,3 +1,4 @@
+// One-time seed: import existing un-suffixed blog (.md) and grimoire (.yaml) files into Directus as the en base.
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { readItems, createItem } from '@directus/sdk';
