@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import { readItems, createItem } from '@directus/sdk';
 import { connect, done } from './lib/directus-client.mjs';
 import { parsePost } from './lib/post-markdown.mjs';
+import { parseDoc } from './lib/grimoire-yaml.mjs';
 
 const BLOG_DIR = 'src/content/blog';
 const client = await connect();
@@ -59,4 +60,41 @@ for (const [slug, item] of bySlug) {
   console.log('restored:', slug, '(' + item.translations.map((t) => t.languages_code).join(', ') + ')');
 }
 console.log(`done — ${created} restored, ${bySlug.size - created} skipped, ${bySlug.size} post(s) in snapshot`);
+
+// --- grimoire: group <slug>.<locale>.yaml by slug -> one grimoire item + translations ---
+const GRIMOIRE_DIR = 'src/content/grimoire';
+const docFiles = (await readdir(GRIMOIRE_DIR)).filter((f) => /\.(is|en|ja)\.yaml$/.test(f));
+const docsBySlug = new Map();
+for (const file of docFiles) {
+  const d = parseDoc(await readFile(join(GRIMOIRE_DIR, file), 'utf8'));
+  if (!docsBySlug.has(d.slug)) {
+    docsBySlug.set(d.slug, {
+      slug: d.slug,
+      order: d.order,
+      realm: d.realm,
+      game: d.game ?? null,
+      updated: d.updated,
+      translations: [],
+    });
+  }
+  docsBySlug.get(d.slug).translations.push({
+    languages_code: d.locale,
+    title: d.title,
+    cat: d.cat,
+    tags: d.tags ?? [],
+    body: d.body,
+  });
+}
+
+const existingDocs = new Set(
+  (await client.request(readItems('grimoire', { fields: ['slug'], limit: -1 }))).map((d) => d.slug),
+);
+let docsCreated = 0;
+for (const [slug, item] of docsBySlug) {
+  if (existingDocs.has(slug)) { console.log('skip grimoire (exists):', slug); continue; }
+  await client.request(createItem('grimoire', item));
+  docsCreated++;
+  console.log('restored grimoire:', slug, '(' + item.translations.map((t) => t.languages_code).join(', ') + ')');
+}
+console.log(`grimoire done — ${docsCreated} restored, ${docsBySlug.size - docsCreated} skipped, ${docsBySlug.size} doc(s) in snapshot`);
 done();
