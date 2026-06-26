@@ -62,7 +62,7 @@ for (const doc of docs) {
     const out = serializeDoc({
       slug: doc.slug, locale: t.languages_code,
       order: doc.order, realm: doc.realm, game: doc.game ?? undefined,
-      cat: t.cat, title: t.title, tags: t.tags ?? [], updated: doc.updated, body: t.body ?? '',
+      cat: t.cat, title: t.title, tags: t.tags ?? [], updated: typeof doc.updated === 'string' ? doc.updated.slice(0, 10) : doc.updated, body: t.body ?? '',
     });
     await writeFile(join(GRIMOIRE_DIR, file), out, 'utf8');
   }
@@ -71,6 +71,7 @@ for (const doc of docs) {
 // prune: drop generated locale files no longer backed by Directus, plus the
 // original un-suffixed *.yaml (now superseded by <slug>.en.yaml)
 for (const ent of await readdir(GRIMOIRE_DIR, { withFileTypes: true })) {
+  // Skip non-files so unlink can't throw EISDIR and abort the prune mid-run.
   if (!ent.isFile()) continue;
   const f = ent.name;
   const isLocaleFile = /\.(is|en|ja)\.yaml$/.test(f);

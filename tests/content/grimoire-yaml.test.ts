@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import jsYaml from 'js-yaml';
 import { parseDoc, serializeDoc } from '../../scripts/lib/grimoire-yaml.mjs';
 
 const record = {
@@ -36,8 +37,11 @@ describe('serializeDoc', () => {
     const out = serializeDoc(withGame);
     expect(serializeDoc(parseDoc(out))).toBe(out);
   });
-  it('quotes the updated date so a YAML 1.1 loader keeps it a string (not a Date)', () => {
+  it('quotes updated so Astro\'s YAML 1.1 (js-yaml) loader parses it as a string, not a Date', () => {
     const out = serializeDoc(record);
     expect(out).toMatch(/updated: "2026-05-26"/);
+    const parsed = jsYaml.load(out) as Record<string, unknown>;
+    expect(typeof parsed.updated).toBe('string');
+    expect(parsed.updated).toBe('2026-05-26');
   });
 });
