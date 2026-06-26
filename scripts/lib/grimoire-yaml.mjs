@@ -1,6 +1,12 @@
 import YAML, { Scalar } from 'yaml';
 
-/** Parse a per-locale grimoire YAML file string into a plain record object. */
+/**
+ * Parse a per-locale grimoire YAML file string into a plain record object.
+ * Relies on the `yaml` package default (YAML 1.2 core) schema, under which the
+ * bare-date `updated` field (e.g. 2026-05-26) parses as a string, not a Date —
+ * which keeps serializeDoc's output stable on round-trip. Don't switch the parse
+ * schema without re-checking determinism.
+ */
 export function parseDoc(raw) {
   return YAML.parse(raw);
 }

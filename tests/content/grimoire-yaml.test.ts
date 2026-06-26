@@ -31,4 +31,9 @@ describe('serializeDoc', () => {
     const out = serializeDoc(record);
     expect(serializeDoc(parseDoc(out))).toBe(out);
   });
+  it('is deterministic with a game field (round-trips through parse)', () => {
+    const withGame = { ...record, game: 'Elden Ring' };
+    const out = serializeDoc(withGame);
+    expect(serializeDoc(parseDoc(out))).toBe(out);
+  });
 });
