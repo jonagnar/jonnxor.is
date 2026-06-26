@@ -10,7 +10,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run"
+    "test": "vitest run",
+    "directus:up": "docker compose -f directus/docker-compose.yml up -d",
+    "directus:down": "docker compose -f directus/docker-compose.yml down",
+    "directus:schema": "node --env-file=directus/.env directus/scripts/setup-schema.mjs",
+    "content:import": "node --env-file=directus/.env scripts/content-import.mjs",
+    "content:pull": "node --env-file=directus/.env scripts/content-pull.mjs"
   },
   "dependencies": {
     "astro": "^6.4.7"
@@ -18,6 +23,8 @@
   "packageManager": "pnpm@10.34.4",
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@directus/sdk": "^22.0.0",
+    "gray-matter": "^4.0.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   }
