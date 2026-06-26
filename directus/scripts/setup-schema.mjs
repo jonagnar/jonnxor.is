@@ -107,3 +107,7 @@ const want = [
 if (want.length) await client.request(createItems('languages', want));
 
 console.log('schema setup complete');
+
+// The authenticated SDK client keeps a token-refresh timer alive, which would
+// otherwise hang the process after the work is done (matches content-pull/content-restore).
+process.exit(0);
