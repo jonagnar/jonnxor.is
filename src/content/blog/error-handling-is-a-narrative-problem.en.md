@@ -1,9 +1,15 @@
 ---
-title: "Error handling is a narrative problem"
-date: 2026-05-28
-category: "Engineering"
-excerpt: "Every error message is a moment where your software tells the user a story about what just happened. Most of our stories are terrible. Here's how I structure errors like a saga — context, conflict, and a path home."
-readTime: "9 min"
+title: Error handling is a narrative problem
+date: '2026-05-28'
+category: Engineering
+excerpt: >-
+  Every error message is a moment where your software tells the user a story
+  about what just happened. Most of our stories are terrible. Here's how I
+  structure errors like a saga — context, conflict, and a path home.
+readTime: 9 min
+draft: false
+locale: en
+slug: error-handling-is-a-narrative-problem
 ---
 
 Every error is a moment where your software has to tell a story: *something went wrong, here is what it was, here is what you can do about it.* Most software tells this story the way a drunk skald tells the fall of kings — out of order, missing the important parts, and somehow blaming the audience.

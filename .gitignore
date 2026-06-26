@@ -22,3 +22,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Directus (local authoring stack)
+directus/.env
+directus/data/
+directus/uploads/

@@ -5,7 +5,17 @@ import { glob } from 'astro/loaders';
 // appears on /blog and at /blog/<filename>. The frontmatter below is validated
 // at build time, so a typo in a date or a missing title fails the build, loudly.
 const blog = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+  // Each post exists as one file per locale: `<slug>.<locale>.md`. The glob
+  // loader's default generateId returns the frontmatter `slug` verbatim, which
+  // is identical across a post's locale files — so they'd collide on the same
+  // collection id and silently overwrite each other (the en base would vanish).
+  // Derive the id from the filename instead (which keeps the locale suffix), so
+  // `<slug>.en` and `<slug>.is` are distinct entries.
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/blog',
+    generateId: ({ entry }) => entry.replace(/\.md$/, ''),
+  }),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -13,6 +23,8 @@ const blog = defineCollection({
     excerpt: z.string(),
     readTime: z.string(), // e.g. "9 min"
     draft: z.boolean().default(false),
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
   }),
 });
 
