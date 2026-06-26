@@ -12,4 +12,7 @@ describe('localeEntryId', () => {
     expect(localeEntryId({ entry: 'bar.ja.yaml' })).toBe('bar.ja');
     expect(localeEntryId({ entry: 'bar.en.yaml' })).not.toBe(localeEntryId({ entry: 'bar.ja.yaml' }));
   });
+  it('preserves subdirectory paths in the id', () => {
+    expect(localeEntryId({ entry: 'posts/foo.en.md' })).toBe('posts/foo.en');
+  });
 });
