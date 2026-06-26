@@ -15,7 +15,8 @@
     "directus:down": "docker compose -f directus/docker-compose.yml down",
     "directus:schema": "node --env-file=directus/.env directus/scripts/setup-schema.mjs",
     "content:import": "node --env-file=directus/.env scripts/content-import.mjs",
-    "content:pull": "node --env-file=directus/.env scripts/content-pull.mjs"
+    "content:pull": "node --env-file=directus/.env scripts/content-pull.mjs",
+    "content:restore": "node --env-file=directus/.env scripts/content-restore.mjs"
   },
   "dependencies": {
     "astro": "^6.4.7"
