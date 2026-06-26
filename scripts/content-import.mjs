@@ -1,11 +1,13 @@
+// One-time seed: import existing un-suffixed blog (.md) and grimoire (.yaml) files into Directus as the en base.
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createDirectus, rest, authentication, readItems, createItem } from '@directus/sdk';
+import { readItems, createItem } from '@directus/sdk';
+import { connect, done } from './lib/directus-client.mjs';
 import { parsePost } from './lib/post-markdown.mjs';
+import { parseDoc } from './lib/grimoire-yaml.mjs';
 
 const BLOG_DIR = 'src/content/blog';
-const client = createDirectus(process.env.DIRECTUS_URL).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const existing = new Set(
   (await client.request(readItems('blog', { fields: ['slug'], limit: -1 }))).map((p) => p.slug),
@@ -35,6 +37,33 @@ for (const file of files) {
 }
 console.log(`done — ${created} created, ${existing.size} pre-existing`);
 
-// The authenticated SDK client keeps a token-refresh timer alive, which would
-// otherwise hang the process after the work is done (matches content-pull/content-restore).
-process.exit(0);
+// --- grimoire: seed the existing un-suffixed YAML docs as the en base ---
+const GRIMOIRE_DIR = 'src/content/grimoire';
+const existingDocs = new Set(
+  (await client.request(readItems('grimoire', { fields: ['slug'], limit: -1 }))).map((d) => d.slug),
+);
+const docFiles = (await readdir(GRIMOIRE_DIR)).filter((f) => f.endsWith('.yaml') && !/\.(is|en|ja)\.yaml$/.test(f));
+let docsCreated = 0;
+for (const file of docFiles) {
+  const slug = file.replace(/\.yaml$/, '');
+  if (existingDocs.has(slug)) { console.log('skip grimoire (exists):', slug); continue; }
+  const d = parseDoc(await readFile(join(GRIMOIRE_DIR, file), 'utf8'));
+  await client.request(createItem('grimoire', {
+    slug,
+    order: d.order,
+    realm: d.realm,
+    game: d.game ?? null,
+    updated: d.updated,
+    translations: [{
+      languages_code: 'en',
+      title: d.title,
+      cat: d.cat,
+      tags: d.tags ?? [],
+      body: d.body,
+    }],
+  }));
+  docsCreated++;
+  console.log('imported grimoire:', slug);
+}
+console.log(`grimoire — ${docsCreated} created, ${existingDocs.size} pre-existing`);
+done();

@@ -14,6 +14,7 @@
     "directus:up": "docker compose -f directus/docker-compose.yml up -d",
     "directus:down": "docker compose -f directus/docker-compose.yml down",
     "directus:schema": "node --env-file=directus/.env directus/scripts/setup-schema.mjs",
+    "directus:snapshot": "docker compose -f directus/docker-compose.yml exec -T directus node /directus/cli.js schema snapshot --yes /directus/snapshot.yaml && docker compose -f directus/docker-compose.yml exec -T directus cat /directus/snapshot.yaml | tee directus/schema/snapshot.yaml > /dev/null",
     "content:import": "node --env-file=directus/.env scripts/content-import.mjs",
     "content:pull": "node --env-file=directus/.env scripts/content-pull.mjs",
     "content:restore": "node --env-file=directus/.env scripts/content-restore.mjs"
@@ -25,8 +26,11 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@directus/sdk": "^22.0.0",
+    "@types/js-yaml": "^4.0.9",
     "gray-matter": "^4.0.3",
+    "js-yaml": "^4.2.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "yaml": "^2.9.0"
   }
 }

@@ -1,8 +1,12 @@
+slug: wsl-setup
+locale: en
 order: 10
-realm: "code"
-cat: "Guides"
-title: "My WSL dev environment, from zero"
-tags: ["wsl", "setup"]
+realm: code
+cat: Guides
+title: My WSL dev environment, from zero
+tags:
+  - wsl
+  - setup
 updated: "2026-06-10"
 body: |
   <p>Gaming PC by night, dev rig by day. The exact order that avoids the usual traps.</p><h2>The order</h2><ol><li><kbd>wsl --install -d Ubuntu</kbd> in an admin terminal, reboot, create the unix user.</li><li><strong>Keep code inside WSL</strong> (<code class="inline">~/dev</code>), never on <code class="inline">/mnt/c</code> — file watching and git are 10× faster.</li><li>Install via apt: <code class="inline">build-essential git curl unzip</code>; then mise (or asdf) for Node/Go/Python versions.</li><li>Git credentials: <kbd>git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"</kbd> — one credential store for both worlds.</li><li>Editor connects <em>into</em> WSL (VS Code Remote / JetBrains Gateway); terminals live in Windows Terminal with a proper Nerd Font.</li><li>Claude Code runs inside the WSL shell, next to the code. Hand it a README and a design system and let it cook.</li></ol><h2>When it misbehaves</h2><div class="tip"><b>Memory rune</b>If WSL eats your RAM, cap it in <code class="inline">%UserProfile%\.wslconfig</code>: <kbd>[wsl2]</kbd> then <kbd>memory=8GB</kbd>. Vmmem will thank you.</div>

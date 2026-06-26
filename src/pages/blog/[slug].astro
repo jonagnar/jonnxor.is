@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import { localizedPost, uniqueSlugs } from "../../i18n/blog";
+import { localizedEntry, uniqueSlugs } from "../../i18n/localized";
 import { defaultLocale, type Locale } from "../../i18n/ui";
 import { getRelativeLocaleUrl } from "astro:i18n";
 
@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const all = (await getCollection("blog")).filter((p) => !p.data.draft);
 const ordered = uniqueSlugs(all)
-  .map((slug) => localizedPost(all, slug, locale))
+  .map((slug) => localizedEntry(all, slug, locale))
   .filter((p): p is NonNullable<typeof p> => p != null)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 

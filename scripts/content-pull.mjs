@@ -1,11 +1,12 @@
 import { readdir, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createDirectus, rest, authentication, readItems } from '@directus/sdk';
+import { readItems } from '@directus/sdk';
+import { connect, done } from './lib/directus-client.mjs';
 import { serializePost } from './lib/post-markdown.mjs';
+import { serializeDoc } from './lib/grimoire-yaml.mjs';
 
 const BLOG_DIR = 'src/content/blog';
-const client = createDirectus(process.env.DIRECTUS_URL).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const posts = await client.request(readItems('blog', {
   limit: -1,
@@ -46,7 +47,39 @@ for (const ent of await readdir(BLOG_DIR, { withFileTypes: true })) {
 }
 console.log(`pulled — ${wanted.size} locale file(s) from ${posts.length} post(s)`);
 
-// The authenticated SDK client keeps a token-refresh timer on the event loop,
-// so Node won't exit on its own. Exit explicitly so `content:pull` terminates
-// (required for `content:pull && …` chaining and the dev/CI workflow).
-process.exit(0);
+// --- grimoire ---
+const GRIMOIRE_DIR = 'src/content/grimoire';
+const docs = await client.request(readItems('grimoire', {
+  limit: -1,
+  fields: ['slug', 'order', 'realm', 'game', 'updated', { translations: ['languages_code', 'title', 'cat', 'tags', 'body'] }],
+}));
+
+const wantedDocs = new Set();
+for (const doc of docs) {
+  for (const t of doc.translations ?? []) {
+    const file = `${doc.slug}.${t.languages_code}.yaml`;
+    wantedDocs.add(file);
+    const out = serializeDoc({
+      slug: doc.slug, locale: t.languages_code,
+      order: doc.order, realm: doc.realm, game: doc.game ?? undefined,
+      cat: t.cat, title: t.title, tags: t.tags ?? [], updated: typeof doc.updated === 'string' ? doc.updated.slice(0, 10) : doc.updated, body: t.body ?? '',
+    });
+    await writeFile(join(GRIMOIRE_DIR, file), out, 'utf8');
+  }
+}
+
+// prune: drop generated locale files no longer backed by Directus, plus the
+// original un-suffixed *.yaml (now superseded by <slug>.en.yaml)
+for (const ent of await readdir(GRIMOIRE_DIR, { withFileTypes: true })) {
+  // Skip non-files so unlink can't throw EISDIR and abort the prune mid-run.
+  if (!ent.isFile()) continue;
+  const f = ent.name;
+  const isLocaleFile = /\.(is|en|ja)\.yaml$/.test(f);
+  const isLegacy = f.endsWith('.yaml') && !isLocaleFile;
+  if ((isLocaleFile && !wantedDocs.has(f)) || isLegacy) {
+    await unlink(join(GRIMOIRE_DIR, f));
+    console.log('removed:', f);
+  }
+}
+console.log(`pulled grimoire — ${wantedDocs.size} locale file(s) from ${docs.length} doc(s)`);
+done();
