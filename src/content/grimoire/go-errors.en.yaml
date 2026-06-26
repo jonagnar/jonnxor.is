@@ -1,9 +1,13 @@
+slug: go-errors
+locale: en
 order: 7
-realm: "code"
-cat: "Code patterns"
-title: "Go error wrapping, the saga pattern"
-tags: ["go", "errors"]
-updated: "2026-05-26"
+realm: code
+cat: Code patterns
+title: Go error wrapping, the saga pattern
+tags:
+  - go
+  - errors
+updated: 2026-05-26
 body: |
   <p>Every error should read like a saga line: who attempted what, and what stood in the way. Wrap with context at every boundary; never log <em>and</em> return.</p><h2>The pattern</h2><pre class="code"><span class="kw">func</span> (s *Store) <span class="fn">LoadSaga</span>(ctx context.Context, id <span class="kw">string</span>) (*Saga, <span class="kw">error</span>) {
       row, err := s.db.<span class="fn">QueryRow</span>(ctx, qSaga, id)
@@ -13,7 +17,7 @@ body: |
       }
       <span class="kw">return</span> row, <span class="kw">nil</span>
   }
-  
+
   <span class="cm">// at the top of the world, choose the reaction once:</span>
   <span class="kw">if</span> errors.<span class="fn">Is</span>(err, pgx.ErrNoRows) { <span class="kw">return</span> http.StatusNotFound }
   <span class="kw">var</span> qe *QuotaError

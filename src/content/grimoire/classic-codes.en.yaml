@@ -1,9 +1,13 @@
+slug: classic-codes
+locale: en
 order: 0
-realm: "games"
-game: "Classics"
-cat: "Cheat codes"
-title: "Classic codes every gamer should know"
-tags: ["history", "consoles"]
-updated: "2026-06-02"
+realm: games
+game: Classics
+cat: Cheat codes
+title: Classic codes every gamer should know
+tags:
+  - history
+  - consoles
+updated: 2026-06-02
 body: |
   <p>The old incantations. Some still work, most live on as cultural runes — but a developer who doesn’t know the Konami code is like a skald who can’t name Odin.</p><h2>The canon</h2><table class="doc-table"><thead><tr><th>Incantation</th><th>Game</th><th>Effect</th></tr></thead><tbody><tr><td>↑ ↑ ↓ ↓ ← → ← → B A</td><td>Contra (NES)</td><td>30 lives — the Konami code itself</td></tr><tr><td>IDDQD</td><td>Doom</td><td>God mode</td></tr><tr><td>IDKFA</td><td>Doom</td><td>All weapons, keys, full ammo</td></tr><tr><td>justin bailey</td><td>Metroid (NES)</td><td>Samus without the suit, fully kitted</td></tr><tr><td>HESOYAM</td><td>GTA: San Andreas</td><td>Health, armor, $250k</td></tr><tr><td>motherlode</td><td>The Sims</td><td>§50,000 — the honest economy</td></tr></tbody></table><h2>House rules</h2><div class="tip"><b>House rule</b>Cheat codes in single-player are a save-rescue tool and a museum exhibit, never a first playthrough. Souls games have no codes. That is the point of Souls games.</div>

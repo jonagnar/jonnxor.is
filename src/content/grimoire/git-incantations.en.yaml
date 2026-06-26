@@ -1,9 +1,13 @@
+slug: git-incantations
+locale: en
 order: 4
-realm: "code"
-cat: "Cheat sheets"
-title: "Git incantations for when things go wrong"
-tags: ["git", "recovery"]
-updated: "2026-05-30"
+realm: code
+cat: Cheat sheets
+title: Git incantations for when things go wrong
+tags:
+  - git
+  - recovery
+updated: 2026-05-30
 body: |
   <p>The panic-page. Bookmark this, breathe, and remember: if it was ever committed, it is almost never lost.</p><h2>Undo, by severity</h2><table class="doc-table"><thead><tr><th>Spell</th><th>When</th></tr></thead><tbody><tr><td>git restore .</td><td>Uncommitted mess, want it gone</td></tr><tr><td>git reset --soft HEAD~1</td><td>Committed too early, keep the work staged</td></tr><tr><td>git commit --amend</td><td>Typo in the message / forgot one file</td></tr><tr><td>git revert &lt;sha&gt;</td><td>Bad commit already pushed — undo in public, honestly</td></tr><tr><td>git reflog</td><td>“I have destroyed everything” — you haven’t; find the sha, reset to it</td></tr></tbody></table><h2>The interactive rebase ritual</h2><pre class="code"><span class="cm"># rewrite the last 4 commits — NEVER on a shared branch</span>
   git rebase -i HEAD~4
