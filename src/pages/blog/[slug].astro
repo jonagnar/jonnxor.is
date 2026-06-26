@@ -1,24 +1,35 @@
 ---
 import { getCollection, render } from "astro:content";
 import Base from "../../layouts/Base.astro";
+import { localizedPost, uniqueSlugs } from "../../i18n/blog";
+import { defaultLocale, type Locale } from "../../i18n/ui";
+import { getRelativeLocaleUrl } from "astro:i18n";
 
 export async function getStaticPaths() {
-  const posts = (await getCollection("blog"))
-    .filter((p) => !p.data.draft)
-    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-  return posts.map((post, i) => ({
-    params: { slug: post.id },
-    props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
-  }));
+  const all = (await getCollection("blog")).filter((p) => !p.data.draft);
+  return uniqueSlugs(all).map((slug) => ({ params: { slug } }));
 }
 
-const { post, newer, older } = Astro.props;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+const all = (await getCollection("blog")).filter((p) => !p.data.draft);
+const ordered = uniqueSlugs(all)
+  .map((slug) => localizedPost(all, slug, locale))
+  .filter((p): p is NonNullable<typeof p> => p != null)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const i = ordered.findIndex((p) => p.data.slug === Astro.params.slug);
+const post = ordered[i];
+if (!post) {
+  throw new Error(`No renderable entry for blog slug "${Astro.params.slug}" in locale "${locale}" (and no en fallback). Every post needs an en base.`);
+}
+const newer = ordered[i - 1] ?? null;
+const older = ordered[i + 1] ?? null;
 const { Content } = await render(post);
 
-const ACCENT = { "Engineering": "tq", "Games × Code": "gold" };
-const fmtDate = (d) =>
-  d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-const isoDate = (d) => d.toISOString().slice(0, 10);
+const ACCENT: Record<string, string> = { "Engineering": "tq", "Games × Code": "gold" };
+const dateLocale = { is: "is-IS", en: "en-GB", ja: "ja-JP" }[locale] ?? "en-GB";
+const fmtDate = (d: Date) => d.toLocaleDateString(dateLocale, { day: "numeric", month: "short", year: "numeric" });
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 ---
 
 <Base title={`${post.data.title} — JonnXor`} page="blog">
@@ -45,11 +56,11 @@ const isoDate = (d) => d.toISOString().slice(0, 10);
 
         <div class="article-foot">
           {older
-            ? <a class="btn btn-ghost" href={`/blog/${older.id}`}>← {older.data.title}</a>
-            : <a class="btn btn-ghost" href="/blog">← All posts</a>}
+            ? <a class="btn btn-ghost" href={getRelativeLocaleUrl(locale, `/blog/${older.data.slug}`)}>← {older.data.title}</a>
+            : <a class="btn btn-ghost" href={getRelativeLocaleUrl(locale, "/blog")}>← All posts</a>}
           {newer
-            ? <a class="btn btn-gold" href={`/blog/${newer.id}`}>{newer.data.title} →</a>
-            : <a class="btn btn-gold" href="/blog">All posts →</a>}
+            ? <a class="btn btn-gold" href={getRelativeLocaleUrl(locale, `/blog/${newer.data.slug}`)}>{newer.data.title} →</a>
+            : <a class="btn btn-gold" href={getRelativeLocaleUrl(locale, "/blog")}>All posts →</a>}
         </div>
       </article>
     </div>

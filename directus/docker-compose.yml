@@ -1,0 +1,32 @@
+name: jonnxor-directus
+services:
+  database:
+    image: postgres:16
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username=${DB_USER}", "--dbname=${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  directus:
+    image: directus/directus:11.3.5
+    ports:
+      - "8055:8055"
+    env_file: .env
+    volumes:
+      - ./uploads:/directus/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8055/server/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
