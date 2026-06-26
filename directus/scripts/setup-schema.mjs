@@ -93,7 +93,7 @@ if (need('blog_translations')) {
   }));
 }
 
-// 5. grimoire (base, non-translatable)
+// 4. grimoire (base, non-translatable)
 if (need('grimoire')) {
   await client.request(createCollection({
     collection: 'grimoire',
@@ -110,7 +110,7 @@ if (need('grimoire')) {
   }));
 }
 
-// 6. grimoire_translations (junction)
+// 5. grimoire_translations (junction)
 if (need('grimoire_translations')) {
   await client.request(createCollection({
     collection: 'grimoire_translations',
@@ -144,7 +144,7 @@ if (need('grimoire_translations')) {
   }));
 }
 
-// 4. seed the three languages
+// 6. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
