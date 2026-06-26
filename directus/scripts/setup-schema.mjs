@@ -1,12 +1,10 @@
 import {
-  createDirectus, rest, authentication,
   createCollection, createField, createRelation, readCollections,
   readFieldsByCollection, updateField,
 } from '@directus/sdk';
+import { connect, done } from '../../scripts/lib/directus-client.mjs';
 
-const url = process.env.DIRECTUS_URL;
-const client = createDirectus(url).with(rest()).with(authentication());
-await client.login({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+const client = await connect();
 
 const existing = new Set((await client.request(readCollections())).map((c) => c.collection));
 const need = (name) => !existing.has(name);
@@ -95,7 +93,58 @@ if (need('blog_translations')) {
   }));
 }
 
-// 4. seed the three languages
+// 4. grimoire (base, non-translatable)
+if (need('grimoire')) {
+  await client.request(createCollection({
+    collection: 'grimoire',
+    meta: { icon: 'menu_book', note: 'The Grimoire — guides & cheat sheets' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'realm', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'games', value: 'games' }, { text: 'code', value: 'code' }, { text: 'life', value: 'life' }] } } },
+      { field: 'game', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input' } },
+      { field: 'updated', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+}
+
+// 5. grimoire_translations (junction)
+if (need('grimoire_translations')) {
+  await client.request(createCollection({
+    collection: 'grimoire_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'grimoire', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'cat', type: 'string', meta: { interface: 'input' } },
+      { field: 'tags', type: 'json', meta: { interface: 'tags' } },
+      { field: 'body', type: 'text', meta: { interface: 'input-rich-text-md' } },
+    ],
+  }));
+
+  // translations alias on grimoire
+  await client.request(createField('grimoire', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+
+  // relations: grimoire_translations.grimoire -> grimoire (O2M via "translations"); .languages_code -> languages
+  await client.request(createRelation({
+    collection: 'grimoire_translations', field: 'grimoire', related_collection: 'grimoire',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'grimoire_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'grimoire' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 6. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
@@ -107,7 +156,4 @@ const want = [
 if (want.length) await client.request(createItems('languages', want));
 
 console.log('schema setup complete');
-
-// The authenticated SDK client keeps a token-refresh timer alive, which would
-// otherwise hang the process after the work is done (matches content-pull/content-restore).
-process.exit(0);
+done();

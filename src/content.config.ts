@@ -1,5 +1,9 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+// localeEntryId gives each locale file a distinct collection id; both loaders below
+// MUST keep `generateId: localeEntryId` or a slug's locale files collide on one id
+// (guarded by tests/content/config-wiring.test.ts).
+import { localeEntryId } from './content/loaders';
 
 // The Codex — long-form posts. Drop a Markdown file in src/content/blog/ and it
 // appears on /blog and at /blog/<filename>. The frontmatter below is validated
@@ -14,7 +18,7 @@ const blog = defineCollection({
   loader: glob({
     pattern: '**/*.md',
     base: './src/content/blog',
-    generateId: ({ entry }) => entry.replace(/\.md$/, ''),
+    generateId: localeEntryId,
   }),
   schema: z.object({
     title: z.string(),
@@ -28,12 +32,20 @@ const blog = defineCollection({
   }),
 });
 
-// The Grimoire — reference docs. YAML data (not Markdown) because each body is
-// rich hand-authored HTML (tables, .tip callouts, hand-coloured code) that the
-// client-side reader injects as-is. One file per doc, validated at build time.
+// The Grimoire — reference docs, one file per locale: `<slug>.<locale>.yaml`.
+// YAML (not Markdown) because each body is rich hand-authored HTML the client-side
+// reader injects as-is. Locale-keyed like blog; `localeEntryId` keeps a slug's
+// locale files from colliding on one id. `docs.astro` remaps id back to slug so
+// deep-links/localStorage stay locale-stable.
 const grimoire = defineCollection({
-  loader: glob({ pattern: '**/*.yaml', base: './src/content/grimoire' }),
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/grimoire',
+    generateId: localeEntryId,
+  }),
   schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
     order: z.number(),
     realm: z.enum(['games', 'code', 'life']),
     game: z.string().optional(),

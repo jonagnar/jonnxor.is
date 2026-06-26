@@ -1,14 +1,22 @@
 ---
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
+import { localizedEntry, uniqueSlugs } from "../i18n/localized";
+import { defaultLocale, type Locale } from "../i18n/ui";
 
-// Feed the (unchanged) client-side reader from the grimoire collection instead of
-// a hand-maintained JS blob. Sort by the explicit `order` field to keep the curated
-// category sequence; shape each entry to exactly what the reader expects, then
-// serialise (escaping "<" so no doc body can break out of the <script>).
-const docs = (await getCollection("grimoire"))
-  .sort((a, b) => a.data.order - b.data.order)
-  .map((e) => ({ id: e.id, ...e.data }));
+// Feed the (unchanged) client-side reader from the grimoire collection. For the
+// current locale, pick each doc's locale entry or its English fallback, sort by the
+// curated `order`, and shape to exactly what the reader expects. The serialised `id`
+// is the locale-stable `slug` (not `<slug>.<locale>`) so deep-links (?doc=) and the
+// saved reading position survive a language switch. Escape "<" so no body can break
+// out of the <script>.
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+const all = await getCollection("grimoire");
+const docs = uniqueSlugs(all)
+  .map((slug) => localizedEntry(all, slug, locale))
+  .filter((e): e is NonNullable<typeof e> => e != null)
+  .map((e) => ({ ...e.data, id: e.data.slug }))
+  .sort((a, b) => a.order - b.order);
 const docsJson = JSON.stringify(docs).replace(/</g, "\\u003c");
 ---
 
