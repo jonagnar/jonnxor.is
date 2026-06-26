@@ -27,6 +27,7 @@
     "@directus/sdk": "^22.0.0",
     "gray-matter": "^4.0.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "yaml": "^2.9.0"
   }
 }
