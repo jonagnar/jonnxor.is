@@ -27,10 +27,13 @@
     "@astrojs/check": "^0.9.9",
     "@directus/sdk": "^22.0.0",
     "@types/js-yaml": "^4.0.9",
+    "fontkit": "^2.0.4",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.2.0",
+    "sharp": "^0.35.2",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9",
+    "wawoff2": "^2.0.1",
     "yaml": "^2.9.0"
   }
 }

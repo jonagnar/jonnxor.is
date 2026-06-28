@@ -26,6 +26,12 @@ const { title, page = "", dragonfly, theme = "rune" } = Astro.props;
         } catch (e) {}
       })();
     </script>
+    {/* Favicon / app icons — raster set generated from favicon.svg by scripts/generate-icons.mjs */}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#07060c" />
     <link rel="stylesheet" href="/assets/fonts.css" />
     <link rel="stylesheet" href="/assets/tokens.css" />
     <link rel="stylesheet" href="/assets/site.css" />
