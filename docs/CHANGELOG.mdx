@@ -1,0 +1,64 @@
+# Changelog
+
+All notable changes to **jonnxor.is** are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Deploys flow `preview` → `main` → Vercel (see [the release process](./release/RELEASE.mdx)).
+
+## [Unreleased]
+
+### Added
+
+- **Directus content layer.** Local Postgres + Directus 11 compose stack, with
+  the blog and grimoire modeled as schema-as-code (base collections + per-locale
+  translations). Existing posts and grimoire docs were imported one-time into
+  Directus on an English base.
+- **Snapshot workflow.** `content:pull` writes per-locale blog and grimoire
+  snapshots out of Directus; `content:restore` rehydrates Directus from the
+  committed snapshot. The site renders both the blog and `/docs` per-locale from
+  those snapshots with English fallback and stable ids (via the
+  `localizedEntry` / `localizedPost` helpers in `localized.ts`).
+- **Test coverage** for the content pipeline: `generateId` collision guards,
+  grimoire YAML determinism, and string-date parsing.
+
+### Changed
+
+- Snapshots are tee'd to disk so a mid-run failure can't truncate committed
+  content; SDK scripts now clean-exit so the auth-refresh timer can't hang them.
+
+## [0.1.0] — 2026-06-21
+
+The full Astro rebuild of jonnxor.is, shipped live to production.
+
+### Added
+
+- **Astro 6 rebuild.** Scaffolded a fresh Astro 6 project with the full
+  dev-tooling chain (mise, sops/direnv for secrets) and ported all **11 pages**
+  from the design handoff onto a single shared `Base.astro` layout.
+- **Server-rendered chrome.** `Nav.astro` and `Footer.astro` are now
+  server-rendered Astro components wired into the Base layout; the old
+  client-side nav/dock builders were removed from `site.js`.
+- **Self-hosted fonts** — Orbitron, Montserrat, and JetBrains Mono are served
+  from the site rather than a third-party CDN.
+- **Internationalization (is / en / ja).** Native Astro i18n routing with
+  Icelandic as the default; English and Japanese are served through a fallback
+  rewrite. `t()` and `stripLocale` helpers back the dictionary with an
+  English-base fallback. Nav and Footer are localized end-to-end (locale-aware
+  links and hrefs, a working locale switcher), and `<html lang>` reflects the
+  active locale.
+- **Content collections.** The Codex blog became an Astro content collection and
+  The Grimoire a YAML data collection; grimoire search is served via a JSON
+  endpoint and navigation points at clean Astro routes.
+- **Live deploy pipeline.** `git push` → Forgejo Actions (pnpm install + astro
+  build) → GitHub mirror → Vercel, with `jonnxor.is` as production and
+  `preview.jonnxor.is` as staging.
+
+### Changed
+
+- Pinned the toolchain back to **pnpm 10** to dodge a pnpm 11.x
+  `onlyBuiltDependencies` regression.
+
+[Unreleased]: https://jonnxor.is
+[0.1.0]: https://jonnxor.is

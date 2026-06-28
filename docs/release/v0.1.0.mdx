@@ -1,0 +1,32 @@
+# v0.1.0 — The rebuild
+
+**Released 2026-06-21**
+
+jonnxor.is has been rebuilt from the ground up on **Astro 6** — and it's live on
+Vercel.
+
+## What's new
+
+- **A fresh, faster site.** All 11 pages were ported onto a single shared layout,
+  with the navigation and footer rendered on the server instead of stitched
+  together in the browser. Fonts (Orbitron, Montserrat, JetBrains Mono) are now
+  self-hosted, so there are no third-party font requests.
+
+- **Three languages.** The site speaks **Icelandic, English, and Japanese**.
+  Icelandic is the default; English and Japanese fall back to the English base
+  for anything not yet translated. A locale switcher in the chrome lets you hop
+  between them, and the page's `lang` follows wherever you are.
+
+- **Content, organized.** The Codex blog and The Grimoire are now first-class
+  content collections, with grimoire search served from a fast JSON endpoint.
+
+- **Live, with a real pipeline.** Every push flows through Forgejo and GitHub to
+  Vercel. `jonnxor.is` is production; `preview.jonnxor.is` is staging — so
+  changes get a real preview before they go live.
+
+## For developers
+
+The stack is Astro 6 with native i18n routing, content collections for the blog
+and grimoire, and an `mise` + `pnpm 10` toolchain. Deploys are git-driven:
+`preview` → `main` → Vercel. See [the release process](./RELEASE.mdx) for the
+full flow.
