@@ -10,7 +10,7 @@ deploys flow `preview` → `main` → Vercel.
 - `docs/` scaffold (this changelog + `RELEASE.md`).
 
 ### In progress
-- i18n (is / en / ja) — Directus-backed blog & grimoire slices (planning in `~/dev/notes/projects/jonnxor.is/`).
+- i18n (is / en / ja) — Directus-backed blog & grimoire slices (planning in `~/dev/resources/jonnxor.is/`).
 - Astro-native chrome (nav/footer as components, self-hosted fonts).
 
 ## [0.1.0] — 2026-06-21
