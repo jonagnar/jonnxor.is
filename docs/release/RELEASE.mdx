@@ -1,0 +1,72 @@
+# Release process
+
+Deploys are **git-driven**. `origin` (Forgejo) push-mirrors to GitHub, and
+Vercel builds from the mirror. There are two tracks:
+
+| Branch    | Domain                  | Role       |
+| --------- | ----------------------- | ---------- |
+| `preview` | `preview.jonnxor.is`    | staging    |
+| `main`    | `jonnxor.is`            | production |
+
+> **Never** `git push github …` by hand. The Forgejo push-mirror is the only
+> path to production.
+
+## Cut a release (preview → production)
+
+### 1. Preview
+
+Work on `preview`. Make sure the tree is clean and the build is green:
+
+```sh
+mise exec -- pnpm run build
+```
+
+### 2. Verify staging
+
+Push preview and verify it live:
+
+```sh
+git push origin preview
+```
+
+Then confirm `https://preview.jonnxor.is` loads and looks right.
+
+### 3. Update the changelog
+
+In [`docs/CHANGELOG.mdx`](../CHANGELOG.mdx), move the `[Unreleased]` items under
+a new dated version heading.
+
+### 4. Fast-forward main
+
+```sh
+git switch main
+git merge --ff-only preview
+```
+
+### 5. Push production
+
+```sh
+git push origin main
+```
+
+Forgejo mirrors to GitHub, which Vercel builds as production.
+
+> Vercel needs `ENABLE_EXPERIMENTAL_COREPACK=1` set so it uses the pinned
+> pnpm 10.
+
+### 6. Verify production
+
+- `https://jonnxor.is` loads.
+- `www` → `308` redirect → apex.
+
+### 7. Tag (optional)
+
+```sh
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+## Rollback
+
+- Revert the merge commit on `main` and push, **or**
+- Redeploy a previous deployment from the Vercel dashboard.
