@@ -37,3 +37,5 @@ directus/uploads/
 # Container artefacts (HOME=/work in pw.sh)
 /.cache/
 /.local/
+/.config/
+/.fontconfig/

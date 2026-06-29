@@ -10,6 +10,8 @@
 
 **Conventions:** run node/pnpm via `wsl` + mise; run `git` via Windows git with `safe.directory='*'`. Branch is `chore/testing-foundation` (already created). Commit after each task. Do **not** push (let the author decide).
 
+**Playwright execution — container-only (decided 2026-06-29).** Docker is available in WSL. ALL Playwright runs (E2E **and** visual) execute inside the pinned `mcr.microsoft.com/playwright:v<VERSION>-noble` image — no browsers are installed in WSL. This makes local runs match CI byte-for-byte and visual baselines deterministic. A committed wrapper `scripts/pw.sh` encapsulates the `docker run`, so every Playwright command in Tasks 6–14 is `wsl sh scripts/pw.sh test <args>` (replacing the `pnpm exec playwright test <args>` shown in those tasks). `<VERSION>` is the exact `@playwright/test` version captured in Task 5.
+
 ---
 
 ## File Structure
@@ -21,6 +23,7 @@
 | `tests/render/footer.test.ts` | Container-API render assertions for `Footer.astro` | Create |
 | `tests/render/pages.test.ts` | Smoke render of non-collection static pages | Create |
 | `playwright.config.ts` | Playwright runner: webServer, chromium project, snapshot tolerance | Create |
+| `scripts/pw.sh` | Wrapper: runs Playwright in the pinned container (canonical for dev + CI parity) | Create |
 | `tests/visual/pages.spec.ts` | Self-baseline full-page visual matrix | Create |
 | `tests/visual/pages.spec.ts-snapshots/` | Committed baseline PNGs | Create (generated) |
 | `tests/e2e/theme.spec.ts` | Theme orb cycle + persistence + no-flash | Create |
@@ -147,7 +150,7 @@ git -c safe.directory='*' commit -m "test(render): Nav chrome + active-state"
 
 - [ ] **Step 1: Write the test**
 
-`Footer.astro` is pure chrome: wordmark, contact rows, the constellation caption, and the status chip. `foot.status` is English-only in the dictionary, so it resolves to the same string in every locale.
+`Footer.astro` is pure chrome: wordmark, contact rows, the constellation caption, and the status chip. The Container API leaves `currentLocale` undefined so Footer defaults to `is`; assert the status chip **structurally** (`class="chip tq"`, unique to the status row) rather than by copy, so the test is locale-proof.
 
 ```ts
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
@@ -163,10 +166,10 @@ describe('Footer.astro', () => {
     expect(html).toContain('class="site-footer"');
     expect(html).toContain('jon@jonnxor.is');
     expect(html).toContain('github.com/jonnxor');
-    // status chip text is English-only in the dictionary (stable across locales)
-    expect(html).toContain('Open to interesting quests');
-    // footer links back to cv / wallpapers / 404
-    expect(html).toContain('href="/cv"');
+    // status chip — assert structurally (locale-proof; `chip tq` is unique to the status row)
+    expect(html).toContain('class="chip tq"');
+    // footer links back to cv (href carries a trailing slash via getRelativeLocaleUrl)
+    expect(html).toMatch(/href="\/cv\/?"/);
   });
 });
 ```
@@ -260,16 +263,17 @@ git -c safe.directory='*' commit -m "test(render): static page smoke render"
 - Create: `playwright.config.ts`
 - Modify: `.gitignore`
 
-- [ ] **Step 1: Add Playwright and its browsers**
+- [ ] **Step 1: Add the Playwright test dependency (no local browsers)**
+
+Container-only execution (decided 2026-06-29): browsers live in the Docker image, so we do **not** run `playwright install` in WSL — just add the test runner so `playwright.config.ts` and the wrapper resolve it.
 
 Run:
 ```bash
 wsl pnpm add -D @playwright/test
-wsl pnpm exec playwright install --with-deps chromium
 ```
-Then capture the exact version (needed for the CI container tag in Task 16):
+Then capture the exact resolved version (drives the container image tag everywhere):
 Run: `wsl pnpm exec playwright --version`
-Expected: prints e.g. `Version 1.50.1`. Record this string.
+Expected: prints e.g. `Version 1.50.1`. **Record this string** — it is the `<VERSION>` used in `scripts/pw.sh` (Step 4b) and the CI image (Task 16).
 
 - [ ] **Step 2: Add test scripts to `package.json`**
 
@@ -289,6 +293,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  // Playwright's default testMatch also matches *.test.ts — restrict to *.spec.ts
+  // so it ignores the Vitest unit/render tests that live under tests/.
+  testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -327,16 +334,36 @@ Append to `.gitignore`:
 /playwright/.cache/
 ```
 
-- [ ] **Step 5: Verify the harness boots**
+- [ ] **Step 4b: Create the container wrapper `scripts/pw.sh`**
 
-Run: `wsl pnpm exec playwright test --list`
-Expected: lists 0 tests (no specs yet) without config errors.
+Encapsulates the `docker run` so every later task (and the dev loop) uses one command. Replace `1.50.1` with the exact version from Step 1. Runs as the host uid so baseline PNGs aren't written root-owned, and sets `HOME=/work` so corepack/pnpm have a writable home.
+
+```sh
+#!/usr/bin/env sh
+# Run Playwright inside the pinned container so local runs match CI byte-for-byte
+# and visual baselines are deterministic. Usage: sh scripts/pw.sh test tests/e2e
+set -eu
+PW_IMAGE="mcr.microsoft.com/playwright:v1.50.1-noble"
+exec docker run --rm --init \
+  -v "$PWD":/work -w /work \
+  -e HOME=/work -e CI="${CI:-}" \
+  --user "$(id -u):$(id -g)" \
+  "$PW_IMAGE" \
+  sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec playwright $*"
+```
+
+Make it executable: `wsl chmod +x scripts/pw.sh`
+
+- [ ] **Step 5: Verify the harness boots in the container**
+
+Run: `wsl sh scripts/pw.sh test --list`
+Expected: the container pulls (first time), installs deps, and lists 0 tests (no specs yet) without config errors. If `pnpm install` complains about the store or a read-only home, confirm `-e HOME=/work` and the `--user` mapping are present.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git -c safe.directory='*' add package.json pnpm-lock.yaml playwright.config.ts .gitignore
-git -c safe.directory='*' commit -m "test: add Playwright + base config (preview webServer, chromium)"
+git -c safe.directory='*' add package.json pnpm-lock.yaml playwright.config.ts scripts/pw.sh .gitignore
+git -c safe.directory='*' commit -m "test: add Playwright + container wrapper (pw.sh) + base config"
 ```
 
 ---
@@ -347,12 +374,10 @@ git -c safe.directory='*' commit -m "test: add Playwright + base config (preview
 - Create: `tests/visual/pages.spec.ts`
 - Create (generated): `tests/visual/pages.spec.ts-snapshots/`
 
-> **Determinism:** baselines are font/OS-sensitive. Generate and compare them **only inside** the pinned container so dev (WSL) and Forgejo CI match. Run the `--update-snapshots` step (Step 2) via the same container image used in CI (Task 16), e.g.:
+> **Determinism:** baselines are font/OS-sensitive. Generate and compare them **only inside** the pinned container (via `scripts/pw.sh` from Task 5) so dev (WSL) and Forgejo CI match. Generate baselines with:
 > ```bash
-> docker run --rm -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<VERSION>-noble \
->   sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec playwright test tests/visual --update-snapshots"
+> wsl sh scripts/pw.sh test tests/visual --update-snapshots
 > ```
-> Replace `<VERSION>` with the string from Task 5 Step 1.
 
 - [ ] **Step 1: Write the visual spec**
 
@@ -361,19 +386,20 @@ Sets the theme via `localStorage('jx-theme')` *before* load (matches the pre-pai
 ```ts
 import { test, expect, type Page } from '@playwright/test';
 
+// /countdowns is excluded: its grids are live data whose layout height shifts as values
+// tick, so a full-page diff is non-deterministic (masking hides pixels, not reflow).
+// Its behaviour is covered by tests/e2e/countdowns.spec.ts instead.
 const ROUTES = [
   '/', '/about', '/cv', '/portfolio', '/blog',
   '/blog/what-sekiro-taught-me-about-code-review',
-  '/docs', '/games', '/countdowns', '/wallpapers', '/404',
+  '/docs', '/games', '/wallpapers', '/404',
 ];
 
 // regions that legitimately change between runs — never part of the design diff
 async function masks(page: Page) {
   return [
-    page.locator('#souls'),        // 404 souls counter
-    page.locator('.up-num'),       // countdowns count-ups
-    page.locator('.cd-clock'),     // countdowns clocks
-    page.locator('.post-card time'), // locale dates
+    page.locator('#souls'),          // 404 souls counter
+    page.locator('.post-card time'), // locale dates on the blog list
   ];
 }
 
@@ -443,16 +469,12 @@ test.describe('visual — mobile nav/dock', () => {
 
 - [ ] **Step 2: Generate the baselines inside the container**
 
-Run the container command in the blockquote above (with the real `<VERSION>`).
+Run: `wsl sh scripts/pw.sh test tests/visual --update-snapshots`
 Expected: writes PNGs under `tests/visual/pages.spec.ts-snapshots/` and the run reports all tests passing (first run records, doesn't compare).
 
 - [ ] **Step 3: Verify the gate compares clean on a second run**
 
-Run the same container command **without** `--update-snapshots`:
-```bash
-docker run --rm -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v<VERSION>-noble \
-  sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec playwright test tests/visual"
-```
+Run: `wsl sh scripts/pw.sh test tests/visual`
 Expected: PASS (0 diffs) — the site matches its own freshly-captured baselines.
 
 - [ ] **Step 4: Commit (baselines included)**
