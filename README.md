@@ -72,6 +72,33 @@ pnpm preview     # preview the production build locally
 The build has **zero runtime dependency** on Directus or any API — the committed snapshot
 is the only content source, so the site builds with the stack stopped.
 
+## Testing
+
+| Command | Scope |
+|---|---|
+| `pnpm test` | Vitest — content/i18n logic + Astro Container-API rendering tests (`tests/{content,i18n,render}`) |
+| `sh scripts/pw.sh test tests/e2e` | Playwright E2E of the interactive pages (`tests/e2e`) |
+| `sh scripts/pw.sh test tests/visual` | Playwright self-baseline visual regression (`tests/visual`) |
+
+**Playwright runs in a pinned container.** Browsers are not installed in WSL; all Playwright
+(E2E + visual) runs inside `mcr.microsoft.com/playwright:v1.61.1-noble` via `scripts/pw.sh`,
+so local runs match CI byte-for-byte and visual baselines are deterministic.
+
+```sh
+sh scripts/pw.sh test tests/visual --update-snapshots  # re-record baselines (review the diff in the PR)
+```
+
+Visual baselines are captured from the current site (self-baseline): a change that alters
+rendered output fails the gate, and an *intended* change passes only after a reviewed
+`--update-snapshots`. CI runs Vitest on every push; the Playwright e2e + visual suite runs
+on pull requests and on the `preview` branch.
+
+### Convention: .NET layers ship their own tests
+
+When the cycle-3 Business API (.NET 10) and cycle-4 Blazor admin land, each **ships its own
+xUnit test project from day one**, wired into CI — the same way no feature merges here
+without a test.
+
 ## Deploy
 
 Deploys flow through self-hosted git: `git push` → **Forgejo** → push-mirror to
@@ -94,7 +121,7 @@ Vercel must run with `ENABLE_EXPERIMENTAL_COREPACK=1` so the pinned pnpm version
 │   └── i18n/         # chrome/UI string dictionary (ui.ts + utils.ts)
 ├── directus/         # local Directus: docker-compose, schema-as-code, scripts
 ├── scripts/          # content import / pull / restore
-├── tests/            # Vitest unit tests (content/**, i18n/**)
+├── tests/            # Vitest (content/**, i18n/**, render/**) + Playwright (e2e/**, visual/**)
 ├── public/           # static assets (site.css, site.js, fonts)
 ├── docs/             # project documentation (see below)
 └── astro.config.mjs
