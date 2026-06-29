@@ -19,7 +19,8 @@ jobs:
         run: pnpm test
 
   e2e-visual:
-    # heavier browser suite — only where it gates a deploy
+    # heavier browser suite — only where it gates a deploy; don't bother if units fail
+    needs: build-test
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/preview'
     runs-on: ubuntu-latest
     container:
