@@ -27,3 +27,13 @@ pnpm-debug.log*
 directus/.env
 directus/data/
 directus/uploads/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.pnpm/
+# Container artefacts (HOME=/work in pw.sh)
+/.cache/
+/.local/
