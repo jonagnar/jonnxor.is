@@ -11,6 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
+    "test:e2e": "sh scripts/pw.sh test tests/e2e",
+    "test:visual": "sh scripts/pw.sh test tests/visual",
     "directus:up": "docker compose -f directus/docker-compose.yml up -d",
     "directus:down": "docker compose -f directus/docker-compose.yml down",
     "directus:schema": "node --env-file=directus/.env directus/scripts/setup-schema.mjs",
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@directus/sdk": "^22.0.0",
+    "@playwright/test": "^1.61.1",
     "@types/js-yaml": "^4.0.9",
     "fontkit": "^2.0.4",
     "gray-matter": "^4.0.3",
