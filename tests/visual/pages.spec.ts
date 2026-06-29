@@ -1,18 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// /countdowns is intentionally excluded: its grids are live data whose layout HEIGHT
+// shifts as values tick, so a full-page diff is non-deterministic (masking hides pixels,
+// not reflow). Its behaviour is covered by tests/e2e/countdowns.spec.ts instead.
 const ROUTES = [
   '/', '/about', '/cv', '/portfolio', '/blog',
   '/blog/what-sekiro-taught-me-about-code-review',
-  '/docs', '/games', '/countdowns', '/wallpapers', '/404',
+  '/docs', '/games', '/wallpapers', '/404',
 ];
 
 // regions that legitimately change between runs — never part of the design diff
 async function masks(page: Page) {
   return [
-    page.locator('#souls'),        // 404 souls counter
-    page.locator('.up-num'),       // countdowns count-ups
-    page.locator('.cd-clock'),     // countdowns clocks
-    page.locator('.post-card time'), // locale dates
+    page.locator('#souls'),          // 404 souls counter
+    page.locator('.post-card time'), // locale dates on the blog list
   ];
 }
 
