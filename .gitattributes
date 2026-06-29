@@ -1,0 +1,12 @@
+# Normalize line endings: LF in the repo and working tree, on every OS.
+# Prevents WSL-git vs Windows-git churn when editors re-save with CRLF.
+* text=auto eol=lf
+
+# Treat as binary (never touch their bytes)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ico binary
