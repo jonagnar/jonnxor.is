@@ -105,7 +105,7 @@ const pages = defineCollection({
       }).strict();
       const r = shape.safeParse(p.sections);
       if (!r.success) {
-        ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${r.error.message}` });
+        ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${z.prettifyError(r.error)}` });
       }
     }
   }),
@@ -126,23 +126,22 @@ const countdowns = defineCollection({
     when: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     gold: z.boolean().default(false),
     icon: z.string().optional(),
-    start: z.string().optional(),
-    rate: z.number().optional(),
+    start: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).optional(),
+    rate: z.number().positive().max(24).optional(),
     what: z.string(),
     note: z.string(),
   }).superRefine((c, ctx) => {
     // Kind coherence: the data layer can't enforce which nullable fields belong
     // to which kind — the build is the only gate under the snapshot seam.
     if (c.kind === 'countup') {
-      if (!c.icon || !c.start || c.rate === undefined) {
-        ctx.addIssue({ code: 'custom', message: `countup '${c.slug}' requires icon, start and rate` });
+      for (const k of ['icon', 'start', 'rate'] as const) {
+        if (c[k] === undefined) ctx.addIssue({ code: 'custom', path: [k], message: `countup '${c.slug}' requires ${k}` });
       }
-      if (c.when !== undefined || c.gold) {
-        ctx.addIssue({ code: 'custom', message: `countup '${c.slug}' must not carry when/gold` });
-      }
+      if (c.when !== undefined) ctx.addIssue({ code: 'custom', path: ['when'], message: `countup '${c.slug}' must not carry when` });
+      if (c.gold) ctx.addIssue({ code: 'custom', path: ['gold'], message: `countup '${c.slug}' must not carry gold` });
     } else {
-      if (c.icon !== undefined || c.start !== undefined || c.rate !== undefined) {
-        ctx.addIssue({ code: 'custom', message: `countdown '${c.slug}' must not carry icon/start/rate` });
+      for (const k of ['icon', 'start', 'rate'] as const) {
+        if (c[k] !== undefined) ctx.addIssue({ code: 'custom', path: [k], message: `countdown '${c.slug}' must not carry ${k}` });
       }
     }
   }),

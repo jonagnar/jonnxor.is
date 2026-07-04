@@ -1,31 +1,53 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import CountdownCard from "../components/CountdownCard.astro";
+import CountUpCard from "../components/CountUpCard.astro";
+import { localizedEntry, requirePageHead, uniqueSlugs } from "../i18n/localized";
+import type { Locale } from "../i18n/ui";
+
+const locale = (Astro.currentLocale ?? 'is') as Locale;
+
+const all = await getCollection('countdowns');
+const entries = uniqueSlugs(all)
+  .map((s) => localizedEntry(all, s, locale))
+  .filter((e): e is NonNullable<typeof e> => Boolean(e))
+  .sort((a, b) => a.data.order - b.data.order);
+const downs = entries.filter((e) => e.data.kind === 'countdown');
+const ups = entries.filter((e) => e.data.kind === 'countup');
+
+const pagesAll = await getCollection('pages');
+const page = requirePageHead(pagesAll, 'countdowns', locale).data;
+const sections = page.sections as { countdown_kicker: string; countup_kicker: string; methodology: string };
 ---
 
 <Base title="Countdowns — JonnXor" page="countdowns">
   <main>
-    <section class="page-head" data-screen-label="Countdowns head">
-      <div class="container">
-        <p class="kicker">Countdowns &amp; count-ups</p>
-        <h1>The Reckoning</h1>
-        <p class="lede">Time until the things worth waiting for — and a brutally honest accounting of where a life actually goes.</p>
-      </div>
-    </section>
+    <PageHead kicker={page.kicker} title={page.title} lede={page.lede} label="Countdowns head" />
 
     <div class="container">
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
       <section data-screen-label="Countdowns">
-        <p class="kicker">Counting down</p>
-        <div class="cd-grid" id="cd-grid"></div>
+        <p class="kicker">{sections.countdown_kicker}</p>
+        <div class="cd-grid" id="cd-grid">
+          {downs.map((e) => (
+            <CountdownCard what={e.data.what} when={e.data.when} note={e.data.note} gold={e.data.gold} />
+          ))}
+        </div>
       </section>
 
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
       <section data-screen-label="Count-ups">
-        <p class="kicker gold">Counting up — days of my life spent…</p>
-        <div class="up-grid" id="up-grid"></div>
-        <p class="up-method">Methodology: extremely scientific estimates since age 10, updated live. The toilet number includes time spent reading patch notes. No further questions.</p>
+        <p class="kicker gold">{sections.countup_kicker}</p>
+        <div class="up-grid" id="up-grid">
+          {ups.map((e, i) => (
+            <CountUpCard icon={e.data.icon} what={e.data.what} note={e.data.note} start={e.data.start} rate={e.data.rate} index={i} />
+          ))}
+        </div>
+        <p class="up-method">{sections.methodology}</p>
       </section>
     </div>
   </main>
@@ -33,73 +55,33 @@ import Base from "../layouts/Base.astro";
   <script is:inline slot="end">
 (function () {
   'use strict';
-
-  var COUNTDOWNS = [
-    { what: 'Þjóðhátíðardagurinn', when: '2026-06-17', note: 'Iceland National Day', gold: true },
-    { what: 'Summer solstice', when: '2026-06-21', note: 'Midnight sun, peak Iceland' },
-    { what: 'Fable', when: '2026-10-09', note: 'Release day' },
-    { what: 'GTA VI', when: '2026-11-19', note: 'Release day, allegedly' },
-    { what: 'Jól (Christmas Eve)', when: '2026-12-24', note: 'Hangikjöt o’clock', gold: true },
-    { what: 'Hollow Knight: Silksong', when: null, note: 'Any day now. Any day.' }
-  ];
-
-  // count-ups: (hours/day since start) → days total, ticking live
-  var BORN = new Date('1992-05-05T08:00:00'); // Taurus, as the footer attests
-  var AGE10 = new Date('2002-05-05T08:00:00');
-  var COUNTUPS = [
-    { icon: '⚒', what: 'Working', start: new Date('2014-06-01T09:00:00'), rate: 7.4, note: 'Code, meetings, and meetings about code.' },
-    { icon: '🎮', what: 'Gaming', start: AGE10, rate: 2.6, note: 'Souls games are at least a third of this.' },
-    { icon: '📖', what: 'Studying', start: AGE10, rate: 1.7, note: 'School, docs, and 日本語 flashcards.' },
-    { icon: '🚽', what: 'On the toilet', start: BORN, rate: 0.35, note: 'A king on a porcelain throne.' }
-  ];
-
-  var cdGrid = document.getElementById('cd-grid');
-  var upGrid = document.getElementById('up-grid');
-
-  cdGrid.innerHTML = COUNTDOWNS.map(function (c, i) {
-    var cells = c.when
-      ? ['d', 'h', 'm', 's'].map(function (u) {
-          return '<div class="cd-cell"><div class="cd-num" data-cd="' + i + '" data-u="' + u + '">–</div><div class="cd-lbl">' + { d: 'days', h: 'hrs', m: 'min', s: 'sec' }[u] + '</div></div>';
-        }).join('')
-      : '<div class="cd-cell" style="flex: 4;"><div class="cd-num">∞</div><div class="cd-lbl">soon™</div></div>';
-    return (
-      '<article class="card cd-card' + (c.gold ? ' gold' : '') + '">' +
-        '<div class="cd-what">' + c.what + '</div>' +
-        '<div class="cd-when">' + (c.when ? c.when + ' · ' : '') + c.note + '</div>' +
-        '<div class="cd-clock">' + cells + '</div>' +
-      '</article>'
-    );
-  }).join('');
-
-  upGrid.innerHTML = COUNTUPS.map(function (u, i) {
-    return (
-      '<article class="card up-card">' +
-        '<div class="up-icon">' + u.icon + '</div>' +
-        '<div class="up-num"><span data-up="' + i + '">0</span> <small>days</small></div>' +
-        '<div class="up-what">' + u.what + '</div>' +
-        '<p class="up-note">' + u.note + '</p>' +
-      '</article>'
-    );
-  }).join('');
-
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  var cdCards = document.querySelectorAll('#cd-grid .cd-card[data-when]');
+  var upEntries = Array.prototype.map.call(
+    document.querySelectorAll('#up-grid [data-up]'),
+    function (el) {
+      return {
+        el: el,
+        start: new Date(el.getAttribute('data-start')),
+        rate: parseFloat(el.getAttribute('data-rate')),
+      };
+    }
+  );
 
   function tick() {
     var now = Date.now();
-    COUNTDOWNS.forEach(function (c, i) {
-      if (!c.when) return;
-      var r = window.JX.daysUntil(c.when);
-      var sel = '[data-cd="' + i + '"]';
-      var map = { d: r.past ? 0 : r.d, h: r.past ? 0 : r.h, m: r.past ? 0 : r.m, s: r.past ? 0 : r.s };
-      document.querySelectorAll(sel).forEach(function (el) {
+    cdCards.forEach(function (card) {
+      var r = window.JX.daysUntil(card.getAttribute('data-when'));
+      card.querySelectorAll('.cd-num[data-u]').forEach(function (el) {
         var u = el.getAttribute('data-u');
-        el.textContent = u === 'd' ? map.d : pad(map[u]);
+        var v = r.past ? 0 : r[u];
+        el.textContent = u === 'd' ? v : pad(v);
       });
     });
-    COUNTUPS.forEach(function (u, i) {
-      var days = (now - u.start.getTime()) / 86400000 * (u.rate / 24);
-      var el = document.querySelector('[data-up="' + i + '"]');
-      if (el) el.textContent = days.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    upEntries.forEach(function (entry) {
+      var days = (now - entry.start.getTime()) / 86400000 * (entry.rate / 24);
+      entry.el.textContent = days.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
     });
   }
 
