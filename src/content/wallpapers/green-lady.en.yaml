@@ -1,0 +1,11 @@
+slug: green-lady
+locale: en
+order: 9
+tag: Aurora
+aspect_ratio: 3/4
+gradient:
+  - "#060a12"
+  - "#0d3b4f"
+  - "#7ef0cf"
+angle: 25
+title: Green Lady

@@ -77,4 +77,12 @@ describe('collection descriptors', () => {
     expect(cd.toItem(parsed)).toEqual(item);
     expect(parsed.rate).toBe(0.35);
   });
+  it('wallpapers round-trips', () => {
+    const w = COLLECTIONS.find((c) => c.name === 'wallpapers')!;
+    const item = { slug: 'grid-runner', order: 3, tag: 'Synthwave', aspect_ratio: '3/4', gradient: ['#120724', '#5d1d8f', '#00f5d4'], angle: 35 };
+    const t = { languages_code: 'en', title: 'Grid Runner' };
+    const parsed = w.parse(w.serialize(w.toRecord(item, t)));
+    expect(w.toItem(parsed)).toEqual(item);
+    expect(w.toTranslation(parsed)).toEqual(t);
+  });
 });

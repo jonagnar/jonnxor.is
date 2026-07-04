@@ -37,6 +37,10 @@ const countdownsCodec = makeEntryCodec({
   quoteKeys: ['when', 'start'],
   omitEmpty: ['gold'],
 });
+const wallpapersCodec = makeEntryCodec({
+  keyOrder: ['slug', 'locale', 'order', 'tag', 'aspect_ratio', 'gradient', 'angle', 'title'],
+  omitEmpty: [],
+});
 
 export const COLLECTIONS = [
   {
@@ -128,5 +132,20 @@ export const COLLECTIONS = [
     toTranslation: (r) => ({ languages_code: r.locale, what: r.what, note: r.note }),
     serialize: countdownsCodec.serialize,
     parse: countdownsCodec.parse,
+  },
+  {
+    name: 'wallpapers',
+    dir: 'src/content/wallpapers',
+    ext: '.yaml',
+    fileRe: /\.(is|en|ja)\.yaml$/,
+    fields: ['slug', 'order', 'tag', 'aspect_ratio', 'gradient', 'angle', { translations: ['languages_code', 'title'] }],
+    toRecord: (w, t) => ({
+      slug: w.slug, locale: t.languages_code, order: w.order, tag: w.tag,
+      aspect_ratio: w.aspect_ratio, gradient: w.gradient ?? [], angle: w.angle, title: t.title,
+    }),
+    toItem: (r) => ({ slug: r.slug, order: r.order, tag: r.tag, aspect_ratio: r.aspect_ratio, gradient: r.gradient, angle: r.angle }),
+    toTranslation: (r) => ({ languages_code: r.locale, title: r.title }),
+    serialize: wallpapersCodec.serialize,
+    parse: wallpapersCodec.parse,
   },
 ];

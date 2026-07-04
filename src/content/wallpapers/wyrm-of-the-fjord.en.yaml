@@ -1,0 +1,11 @@
+slug: wyrm-of-the-fjord
+locale: en
+order: 6
+tag: Dragons
+aspect_ratio: 16/9
+gradient:
+  - "#0a1410"
+  - "#1e5e46"
+  - "#9fe8c4"
+angle: 145
+title: Wyrm of the Fjord

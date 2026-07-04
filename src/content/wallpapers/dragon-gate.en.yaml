@@ -1,0 +1,11 @@
+slug: dragon-gate
+locale: en
+order: 11
+tag: Dragons
+aspect_ratio: 3/4
+gradient:
+  - "#160a0a"
+  - "#6e2230"
+  - "#f2c94c"
+angle: 10
+title: Dragon Gate

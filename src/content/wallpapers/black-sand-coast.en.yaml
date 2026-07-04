@@ -1,0 +1,11 @@
+slug: black-sand-coast
+locale: en
+order: 4
+tag: Landscapes
+aspect_ratio: 4/3
+gradient:
+  - "#0d0f10"
+  - "#33414a"
+  - "#cfd8d2"
+angle: 200
+title: Black Sand Coast
