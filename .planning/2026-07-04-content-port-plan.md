@@ -1355,6 +1355,11 @@ git commit -m "feat(components): CountdownCard + CountUpCard, countdowns collect
 
 ## Task 12: Refactor `countdowns.astro`
 
+> **Template note (post-Task-9 review):** copy the page-head and empty-state patterns
+> from the CURRENT `src/pages/games.astro`, not this plan's older inline listings —
+> use `requirePageHead(pagesAll, '<slug>', locale)` (src/i18n/localized.ts) instead of
+> `localizedEntry(...)!`, and compute any empty-state `hidden` server-side.
+
 **Files:**
 - Modify: `src/pages/countdowns.astro` (full rewrite)
 - Modify: `tests/render/pages.test.ts` (remove Countdowns import/row + its landmark assertion, same comment pattern as games)
