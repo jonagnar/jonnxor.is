@@ -1,7 +1,7 @@
 // scripts/content-pull.mjs — Directus -> committed snapshot, one file per
 // (slug, locale), driven by the descriptor table. Prune removes generated
 // locale files no longer backed by Directus plus legacy un-suffixed files.
-import { readdir, writeFile, unlink } from 'node:fs/promises';
+import { readdir, writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { readItems } from '@directus/sdk';
 import { connect, done } from './lib/directus-client.mjs';
@@ -10,6 +10,7 @@ import { COLLECTIONS } from './lib/collections.mjs';
 const client = await connect();
 
 for (const c of COLLECTIONS) {
+  await mkdir(c.dir, { recursive: true });
   const items = await client.request(readItems(c.name, { limit: -1, fields: c.fields }));
   const wanted = new Set();
   for (const item of items) {
@@ -18,6 +19,12 @@ for (const c of COLLECTIONS) {
       wanted.add(file);
       await writeFile(join(c.dir, file), c.serialize(c.toRecord(item, t)), 'utf8');
     }
+  }
+  // An empty collection almost always means "restore hasn't run yet", not
+  // "delete everything" — pruning here would wipe freshly committed seed files.
+  if (items.length === 0) {
+    console.warn(`${c.name}: collection empty — skipping prune (restore before first pull?)`);
+    continue;
   }
   // prune: skip non-files so unlink can't EISDIR; any un-suffixed file with the
   // collection's extension is legacy by definition (superseded by <slug>.en.*).
