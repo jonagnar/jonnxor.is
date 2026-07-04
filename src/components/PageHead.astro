@@ -1,0 +1,13 @@
+---
+// src/components/PageHead.astro — the shared page-head trio. Content comes from
+// the `pages` collection; this component is presentational only.
+interface Props { kicker: string; title: string; lede: string; label?: string }
+const { kicker, title, lede, label } = Astro.props;
+---
+<section class="page-head" data-screen-label={label}>
+  <div class="container">
+    <p class="kicker">{kicker}</p>
+    <h1>{title}</h1>
+    <p class="lede">{lede}</p>
+  </div>
+</section>

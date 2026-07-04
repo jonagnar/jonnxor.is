@@ -3,13 +3,15 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { COLLECTIONS } from '../../scripts/lib/collections.mjs';
 
 // The canonical serializer never emits YAML comments — so a comment node in a
 // committed snapshot file is evidence that a hand-authored seed had an
 // unquoted " #" mid-scalar, which silently truncates the value (a real bug
 // caught during the games seeding). Fail loudly on any comment anywhere.
-const ROOT = fileURLToPath(new URL('../../src/content', import.meta.url));
-const YAML_DIRS = ['grimoire', 'games', 'pages'];
+// dirs are repo-relative (e.g. src/content/games) — resolve from the repo root.
+const ROOT = fileURLToPath(new URL('../..', import.meta.url));
+const YAML_DIRS = COLLECTIONS.filter((c) => c.ext === '.yaml').map((c) => c.dir);
 
 function* yamlFiles() {
   for (const dir of YAML_DIRS) {

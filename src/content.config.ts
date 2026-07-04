@@ -69,7 +69,7 @@ const games = defineCollection({
     locale: z.enum(['is', 'en', 'ja']),
     order: z.number(),
     tab: z.enum(['upcoming', 'playing', 'played', 'favorites']),
-    date: z.string().optional(), // "YYYY-MM-DD"; absent = TBA
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // "YYYY-MM-DD"; absent = TBA
     platforms: z.array(z.string()),
     gradient: z.array(z.string()).length(3),
     initials: z.string(),

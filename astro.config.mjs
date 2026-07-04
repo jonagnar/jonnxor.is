@@ -3,6 +3,10 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
+  // Off so the Container API (tests/render/**) emits plain markup — with it on,
+  // the compiler injects data-astro-source-* debug attributes into every element,
+  // which breaks exact-tag assertions like `toContain('<h1>...</h1>')`.
+  devToolbar: { enabled: false },
   i18n: {
     locales: ['is', 'en', 'ja'],
     defaultLocale: 'is',

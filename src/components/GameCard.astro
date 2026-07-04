@@ -1,0 +1,31 @@
+---
+// src/components/GameCard.astro — one tracker card, server-rendered. The tab
+// filter toggles [hidden]; the countdown badge is filled client-side from
+// data-date (window.JX.daysUntil).
+interface Props {
+  tab: 'upcoming' | 'playing' | 'played' | 'favorites';
+  date?: string;
+  platforms: string[];
+  gradient: string[];
+  initials: string;
+  favorite: boolean;
+  title: string;
+  sub: string;
+  hidden: boolean;
+}
+const { tab, date, platforms, gradient, initials, favorite, title, sub, hidden } = Astro.props;
+const grad = `linear-gradient(150deg, ${gradient[0]}, ${gradient[1]} 58%, ${gradient[2]} 150%)`;
+---
+<article class="card lift game-card" data-tab={tab} hidden={hidden}>
+  <div class="cover" style={`background: ${grad};`}>
+    <span class="gi">{initials}</span>
+    {tab === 'upcoming' && date && <span class="badge tq countdown" data-date={date}></span>}
+    {tab === 'upcoming' && !date && <span class="badge quiet countdown">TBA</span>}
+    {favorite && <span class="fav" aria-label="Favorite">★</span>}
+  </div>
+  <div class="body">
+    <h3>{title}</h3>
+    <p class="sub">{sub}</p>
+    <div class="plats">{platforms.map((p) => <span class="chip">{p}</span>)}</div>
+  </div>
+</article>
