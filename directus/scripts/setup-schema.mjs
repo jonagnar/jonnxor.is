@@ -157,7 +157,7 @@ if (need('games')) {
       { field: 'tab', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'upcoming', value: 'upcoming' }, { text: 'playing', value: 'playing' }, { text: 'played', value: 'played' }, { text: 'favorites', value: 'favorites' }] } } },
       { field: 'date', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'YYYY-MM-DD or empty = TBA' } },
       { field: 'platforms', type: 'json', meta: { interface: 'tags' } },
-      { field: 'gradient', type: 'json', meta: { interface: 'input-code', note: '3 hex colors' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
       { field: 'initials', type: 'string', meta: { interface: 'input' } },
       { field: 'favorite', type: 'boolean', schema: { default_value: false }, meta: { interface: 'boolean' } },
     ],
@@ -235,7 +235,55 @@ if (need('pages_translations')) {
   }));
 }
 
-// 10. seed the three languages
+// 10. countdowns (base, non-translatable)
+if (need('countdowns')) {
+  await client.request(createCollection({
+    collection: 'countdowns',
+    meta: { icon: 'hourglass_top', note: 'The Reckoning — countdowns & count-ups' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'kind', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'countdown', value: 'countdown' }, { text: 'countup', value: 'countup' }] } } },
+      { field: 'when', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'YYYY-MM-DD or empty = indefinite' } },
+      { field: 'gold', type: 'boolean', schema: { default_value: false }, meta: { interface: 'boolean' } },
+      { field: 'icon', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input' } },
+      { field: 'start', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'ISO datetime literal, countups only' } },
+      { field: 'rate', type: 'float', schema: { is_nullable: true }, meta: { interface: 'input', note: 'hours/day, countups only' } },
+    ],
+  }));
+}
+
+// 11. countdowns_translations (junction)
+if (need('countdowns_translations')) {
+  await client.request(createCollection({
+    collection: 'countdowns_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'countdowns', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'what', type: 'string', meta: { interface: 'input' } },
+      { field: 'note', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('countdowns', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'countdowns_translations', field: 'countdowns', related_collection: 'countdowns',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'countdowns_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'countdowns' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 12. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
