@@ -18,10 +18,10 @@ describe('content.config.ts wires the locale-aware id', () => {
     expect(configSrc).toMatch(/import\s*\{\s*localeEntryId\s*\}\s*from\s*['"]\.\/content\/loaders['"]/);
   });
 
-  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages)', () => {
+  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns)', () => {
     // Count only non-comment lines to exclude the cross-reference comment in the import block.
     const codeLines = configSrc.split('\n').filter(l => !/^\s*\/\//.test(l));
     const matches = codeLines.join('\n').match(/generateId:\s*localeEntryId/g) ?? [];
-    expect(matches.length).toBe(4);
+    expect(matches.length).toBe(5);
   });
 });

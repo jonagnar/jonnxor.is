@@ -20,19 +20,22 @@ import { makeEntryCodec } from './entry-yaml.mjs';
  * @property {(raw: string) => object} parse - Parses on-disk file contents back into a flat record shaped like `toRecord`'s output. Guarantee (2): `parse(serialize(toRecord(item, t)))` must round-trip losslessly enough that `toItem`/`toTranslation` can rebuild an equivalent Directus create payload from the parsed record — lossy serialization (e.g. dropping precision, reordering array items, coercing types) silently corrupts content:restore.
  */
 
+// omitEmpty only needs keys whose "empty" value is `false` — entry-yaml.mjs
+// already drops undefined/null unconditionally, so listing date-like/optional
+// string keys here would be inert (they can never equal `false`).
 const gamesCodec = makeEntryCodec({
   keyOrder: ['slug', 'locale', 'order', 'tab', 'date', 'platforms', 'gradient', 'initials', 'favorite', 'title', 'sub'],
   quoteKeys: ['date'],
-  omitEmpty: ['date', 'favorite'],
+  omitEmpty: ['favorite'],
 });
 const pagesCodec = makeEntryCodec({
   keyOrder: ['slug', 'locale', 'kicker', 'title', 'lede', 'sections'],
-  omitEmpty: ['sections'],
+  omitEmpty: [],
 });
 const countdownsCodec = makeEntryCodec({
   keyOrder: ['slug', 'locale', 'order', 'kind', 'when', 'gold', 'icon', 'start', 'rate', 'what', 'note'],
   quoteKeys: ['when', 'start'],
-  omitEmpty: ['when', 'gold', 'icon', 'start', 'rate'],
+  omitEmpty: ['gold'],
 });
 
 export const COLLECTIONS = [

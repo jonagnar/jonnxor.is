@@ -2,6 +2,8 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
 import PageHead from '../../src/components/PageHead.astro';
 import GameCard from '../../src/components/GameCard.astro';
+import CountdownCard from '../../src/components/CountdownCard.astro';
+import CountUpCard from '../../src/components/CountUpCard.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {
@@ -42,5 +44,37 @@ describe('GameCard', () => {
     expect(dated).toContain('data-date="2026-11-19"');
     const tba = await c.renderToString(GameCard, { props: { ...base, tab: 'upcoming' } });
     expect(tba).toContain('>TBA<');
+  });
+});
+
+describe('CountdownCard', () => {
+  it('renders dated card with four clock cells and data-when', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CountdownCard, {
+      props: { what: 'Jól', when: '2026-12-24', note: 'Hangikjöt o’clock', gold: true },
+    });
+    expect(html).toContain('data-when="2026-12-24"');
+    expect(html).toContain('cd-card gold');
+    expect((html.match(/data-u=/g) ?? []).length).toBe(4);
+  });
+  it('renders the ∞ cell when undated', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CountdownCard, {
+      props: { what: 'Silksong', note: 'Any day now.', gold: false },
+    });
+    expect(html).toContain('∞');
+    expect(html).not.toContain('data-when');
+  });
+});
+
+describe('CountUpCard', () => {
+  it('renders icon, data-up index and start/rate data attributes', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CountUpCard, {
+      props: { icon: '⚒', what: 'Working', note: 'Code.', start: '2014-06-01T09:00:00', rate: 7.4, index: 0 },
+    });
+    expect(html).toContain('data-up="0"');
+    expect(html).toContain('data-start="2014-06-01T09:00:00"');
+    expect(html).toContain('data-rate="7.4"');
   });
 });

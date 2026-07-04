@@ -95,7 +95,57 @@ const pages = defineCollection({
     title: z.string(),
     lede: z.string(),
     sections: z.record(z.string(), z.unknown()).optional(),
+  }).superRefine((p, ctx) => {
+    // Per-page section shapes, validated as pages are ported (design §3).
+    if (p.slug === 'countdowns') {
+      const shape = z.object({
+        countdown_kicker: z.string(),
+        countup_kicker: z.string(),
+        methodology: z.string(),
+      }).strict();
+      const r = shape.safeParse(p.sections);
+      if (!r.success) {
+        ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${r.error.message}` });
+      }
+    }
   }),
 });
 
-export const collections = { blog, grimoire, games, pages };
+// The Reckoning — countdowns and count-ups, discriminated by `kind`.
+const countdowns = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/countdowns',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    kind: z.enum(['countdown', 'countup']),
+    when: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    gold: z.boolean().default(false),
+    icon: z.string().optional(),
+    start: z.string().optional(),
+    rate: z.number().optional(),
+    what: z.string(),
+    note: z.string(),
+  }).superRefine((c, ctx) => {
+    // Kind coherence: the data layer can't enforce which nullable fields belong
+    // to which kind — the build is the only gate under the snapshot seam.
+    if (c.kind === 'countup') {
+      if (!c.icon || !c.start || c.rate === undefined) {
+        ctx.addIssue({ code: 'custom', message: `countup '${c.slug}' requires icon, start and rate` });
+      }
+      if (c.when !== undefined || c.gold) {
+        ctx.addIssue({ code: 'custom', message: `countup '${c.slug}' must not carry when/gold` });
+      }
+    } else {
+      if (c.icon !== undefined || c.start !== undefined || c.rate !== undefined) {
+        ctx.addIssue({ code: 'custom', message: `countdown '${c.slug}' must not carry icon/start/rate` });
+      }
+    }
+  }),
+});
+
+export const collections = { blog, grimoire, games, pages, countdowns };

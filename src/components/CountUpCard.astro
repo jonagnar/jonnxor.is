@@ -1,0 +1,12 @@
+---
+// src/components/CountUpCard.astro — ticking accumulator shell; data-up keeps
+// the e2e contract ([data-up="0"]), data-start/data-rate feed the ticker.
+interface Props { icon?: string; what: string; note: string; start?: string; rate?: number; index: number }
+const { icon, what, note, start, rate, index } = Astro.props;
+---
+<article class="card up-card">
+  <div class="up-icon">{icon}</div>
+  <div class="up-num"><span data-up={index} data-start={start} data-rate={rate}>0</span> <small>days</small></div>
+  <div class="up-what">{what}</div>
+  <p class="up-note">{note}</p>
+</article>

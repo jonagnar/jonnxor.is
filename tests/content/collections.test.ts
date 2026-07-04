@@ -54,4 +54,27 @@ describe('collection descriptors', () => {
     expect(pages.toItem(parsed)).toEqual(item);
     expect(pages.toTranslation(parsed)).toEqual(t);
   });
+  it('countdowns round-trips a dated gold countdown', () => {
+    const cd = COLLECTIONS.find((c) => c.name === 'countdowns')!;
+    const item = { slug: 'jol-christmas-eve', order: 5, kind: 'countdown', when: '2026-12-24', gold: true, icon: null, start: null, rate: null };
+    const t = { languages_code: 'en', what: 'Jól (Christmas Eve)', note: 'Hangikjöt o’clock' };
+    const out = cd.serialize(cd.toRecord(item, t));
+    expect(out).toMatch(/when: "2026-12-24"/);   // quoted — YAML 1.1 date-coercion guard
+    expect(out).not.toContain('icon:');
+    const parsed = cd.parse(out);
+    expect(cd.toItem(parsed)).toEqual(item);
+    expect(cd.toTranslation(parsed)).toEqual(t);
+  });
+  it('countdowns round-trips a countup with float rate', () => {
+    const cd = COLLECTIONS.find((c) => c.name === 'countdowns')!;
+    const item = { slug: 'on-the-toilet', order: 10, kind: 'countup', when: null, gold: false, icon: '🚽', start: '1992-05-05T08:00:00', rate: 0.35 };
+    const t = { languages_code: 'en', what: 'On the toilet', note: 'A king on a porcelain throne.' };
+    const out = cd.serialize(cd.toRecord(item, t));
+    expect(out).toMatch(/start: "1992-05-05T08:00:00"/);
+    expect(out).not.toContain('when:');
+    expect(out).not.toContain('gold:');
+    const parsed = cd.parse(out);
+    expect(cd.toItem(parsed)).toEqual(item);
+    expect(parsed.rate).toBe(0.35);
+  });
 });
