@@ -1,0 +1,36 @@
+import { describe, it, expect } from 'vitest';
+import { COLLECTIONS } from '../../scripts/lib/collections.mjs';
+
+const REQUIRED = ['name', 'dir', 'ext', 'fileRe', 'fields', 'toRecord', 'toItem', 'toTranslation', 'serialize', 'parse'];
+
+describe('collection descriptors', () => {
+  it('every descriptor is complete', () => {
+    expect(COLLECTIONS.length).toBeGreaterThanOrEqual(2);
+    for (const c of COLLECTIONS) {
+      for (const k of REQUIRED) expect(c[k], `${c.name}.${k}`).toBeDefined();
+      expect(c.fileRe.test(`x.en${c.ext}`)).toBe(true);
+      expect(c.fileRe.test(`x${c.ext}`)).toBe(false);
+    }
+  });
+  it('blog round-trips pull-shape -> file -> restore-shape', () => {
+    const blog = COLLECTIONS.find((c) => c.name === 'blog')!;
+    const item = { slug: 'p1', date: '2026-05-28T00:00:00', category: 'Myth', draft: false };
+    const t = { languages_code: 'en', title: 'T', excerpt: 'E', read_time: '9 min', body: 'Body.' };
+    const rec = blog.toRecord(item, t);
+    const parsed = blog.parse(blog.serialize(rec));
+    // gray-matter (post-markdown.mjs) always terminates the body with a single
+    // trailing newline on stringify — matches the on-disk file convention (every
+    // committed *.md snapshot file ends in \n) and is pre-existing, unchanged
+    // behavior of the wrapped serializer.
+    expect(blog.toTranslation(parsed)).toEqual({ languages_code: 'en', title: 'T', excerpt: 'E', read_time: '9 min', body: 'Body.\n' });
+    expect(blog.toItem(parsed).slug).toBe('p1');
+  });
+  it('grimoire round-trips', () => {
+    const g = COLLECTIONS.find((c) => c.name === 'grimoire')!;
+    const item = { slug: 'd1', order: 7, realm: 'code', game: null, updated: '2026-05-26' };
+    const t = { languages_code: 'en', title: 'T', cat: 'C', tags: ['a'], body: '<p>x</p>' };
+    const parsed = g.parse(g.serialize(g.toRecord(item, t)));
+    expect(g.toItem(parsed)).toMatchObject({ slug: 'd1', order: 7, realm: 'code', updated: '2026-05-26' });
+    expect(g.toTranslation(parsed)).toMatchObject({ languages_code: 'en', tags: ['a'] });
+  });
+});

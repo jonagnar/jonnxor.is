@@ -5,10 +5,13 @@ import YAML, { Scalar } from 'yaml';
  * discipline grimoire-yaml.mjs established: fixed key order for stable diffs,
  * block-literal scalars for long text, line-wrapping disabled, date-like
  * strings double-quoted (Astro's js-yaml loader is YAML 1.1 and would coerce
- * a bare date to a Date object). `omitEmpty` keys are dropped when
- * undefined/null/false so optional fields don't pollute every file.
+ * a bare date to a Date object). undefined/null values are always skipped;
+ * `omitEmpty` keys are additionally dropped when `false` so optional flags
+ * don't pollute every file.
  */
 export function makeEntryCodec({ keyOrder, blockKeys = [], quoteKeys = [], omitEmpty = [] }) {
+  const collision = blockKeys.find((k) => quoteKeys.includes(k));
+  if (collision) throw new Error(`entry-yaml: key "${collision}" cannot be in both blockKeys and quoteKeys`);
   function serialize(r) {
     const obj = {};
     for (const k of keyOrder) {
