@@ -50,7 +50,8 @@ junction keyed `languages_code` → `languages.code`, added idempotently to
 | Field | Where | Type | Notes |
 |---|---|---|---|
 | slug | base | string | kebab of title |
-| tab | base | enum `upcoming/playing/played` | Favorites is a filter, not a tab |
+| tab | base | enum `upcoming/playing/played/favorites` | matches the data: favorites is a disjoint bucket, not a view over played (pixel parity) |
+| order | base | integer | position within tab — glob order is alphabetical, so ordering must be explicit |
 | date | base | date, nullable | release date; null = "any day now" |
 | platforms | base | json (string[]) | e.g. `["PS5","Xbox"]` — chips, untranslated |
 | gradient | base | json (3× hex) | cover art |
@@ -64,6 +65,7 @@ One collection for countdowns *and* count-ups (`kind` discriminator — they sha
 | Field | Where | Type | Notes |
 |---|---|---|---|
 | slug | base | string | |
+| order | base | integer | explicit display order (see games) |
 | kind | base | enum `countdown/countup` | |
 | when | base | date, nullable | countdowns; null = indefinite |
 | gold | base | boolean | accent styling |
@@ -76,6 +78,7 @@ One collection for countdowns *and* count-ups (`kind` discriminator — they sha
 | Field | Where | Type | Notes |
 |---|---|---|---|
 | slug | base | string | also the download filename |
+| order | base | integer | explicit display order (see games) |
 | tag | base | string | filter category; label treated as data (untranslated for now) |
 | aspect_ratio | base | string | e.g. `16/10` |
 | gradient | base | json (3× hex) | |
@@ -202,7 +205,10 @@ Per slice, riding the existing pyramid (no feature merges without a test):
   `tests/content/grimoire-yaml.test.ts`); `config-wiring.test.ts` extended so every new
   collection is guarded for `generateId: localeEntryId`; per-page `sections` Zod schemas
   exercised with the seed data.
-- **Render (Container API):** componentized page renders for `is`/`en` with fallback.
+- **Render (Container API):** the new components render with fixture props (`PageHead`,
+  `GameCard`, …). Collection-backed pages leave the Container smoke list — the Container
+  can't load `astro:content` under Vitest, the same reason blog/docs are absent today;
+  full-page coverage moves to e2e.
 - **E2E (containerized Playwright):** existing games/countdowns/wallpapers behavior specs
   (tabs, ticking, filtering, lightbox) stay green against the server-rendered DOM.
 - **Visual:** baselines unchanged for all slices except home (§6), whose re-record is
