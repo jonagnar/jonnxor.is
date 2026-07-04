@@ -147,4 +147,23 @@ const countdowns = defineCollection({
   }),
 });
 
-export const collections = { blog, grimoire, games, pages, countdowns };
+// The Hoard — generated gradient wallpapers.
+const wallpapers = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/wallpapers',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    tag: z.string(),
+    aspect_ratio: z.string().regex(/^\d+\s*\/\s*\d+$/), // raw CSS aspect-ratio fragment
+    gradient: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).length(3),
+    angle: z.number().int().min(0).max(360),
+    title: z.string(),
+  }),
+});
+
+export const collections = { blog, grimoire, games, pages, countdowns, wallpapers };
