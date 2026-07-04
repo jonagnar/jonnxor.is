@@ -61,6 +61,11 @@ export const ui = {
     'foot.link.wallpapers': 'Wallpapers',
     'foot.link.dragons': 'Here be dragons',
     'foot.copyright': '© 2026 Jón Agnar Stefánsson',
+    'games.tab.upcoming': 'Upcoming',
+    'games.tab.playing': 'Playing',
+    'games.tab.played': 'Played',
+    'games.tab.favorites': 'Favorites',
+    'games.empty': 'The hall is quiet… for now.',
   },
   is: {
     'nav.home': 'Heim',

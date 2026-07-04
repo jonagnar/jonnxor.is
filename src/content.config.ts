@@ -71,7 +71,7 @@ const games = defineCollection({
     tab: z.enum(['upcoming', 'playing', 'played', 'favorites']),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // "YYYY-MM-DD"; absent = TBA
     platforms: z.array(z.string()),
-    gradient: z.array(z.string()).length(3),
+    gradient: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).length(3),
     initials: z.string(),
     favorite: z.boolean().default(false),
     title: z.string(),
