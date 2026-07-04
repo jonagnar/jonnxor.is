@@ -30,9 +30,9 @@ const DEFAULT_TAB = 'playing';
     <div class="container">
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
-      <div class="tabs tracker-tabs" role="tablist" data-screen-label="Tracker tabs">
+      <div class="tabs tracker-tabs" role="group" aria-label={t('games.tabsLabel')} data-screen-label="Tracker tabs">
         {TABS.map((tab) => (
-          <button class:list={["tab", { active: tab === DEFAULT_TAB }]} role="tab" data-tab={tab} type="button">{t(`games.tab.${tab}`)}</button>
+          <button class:list={["tab", { active: tab === DEFAULT_TAB }]} aria-pressed={tab === DEFAULT_TAB ? 'true' : 'false'} data-tab={tab} type="button">{t(`games.tab.${tab}`)}</button>
         ))}
       </div>
 
@@ -68,8 +68,9 @@ const DEFAULT_TAB = 'playing';
 
   tabs.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      tabs.forEach(function (b) { b.classList.remove('active'); });
+      tabs.forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       show(btn.getAttribute('data-tab'));
       try { localStorage.setItem('jx-games-tab', btn.getAttribute('data-tab')); } catch (e) {}
     });
@@ -84,7 +85,11 @@ const DEFAULT_TAB = 'playing';
   var saved = null;
   try { saved = localStorage.getItem('jx-games-tab'); } catch (e) {}
   if (saved && saved !== 'playing') {
-    tabs.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === saved); });
+    tabs.forEach(function (b) {
+      var on = b.getAttribute('data-tab') === saved;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     show(saved);
   }
 })();
