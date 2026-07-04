@@ -10,6 +10,15 @@ export function localizedEntry<T extends Entry>(entries: T[], slug: string, loca
   );
 }
 
+/** The pages entry for `slug`, else a build-failing error naming the missing file. */
+export function requirePageHead<T extends Entry>(entries: T[], slug: string, locale: Locale): T {
+  const entry = localizedEntry(entries, slug, locale);
+  if (!entry) {
+    throw new Error(`pages entry '${slug}' missing (no en fallback) — re-run content:pull?`);
+  }
+  return entry;
+}
+
 /** Unique slugs across all locale entries. */
 export function uniqueSlugs(entries: Entry[]): string[] {
   return [...new Set(entries.map((e) => e.data.slug))];

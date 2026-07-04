@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localizedEntry, uniqueSlugs } from '../../src/i18n/localized';
+import { localizedEntry, requirePageHead, uniqueSlugs } from '../../src/i18n/localized';
 
 const entries = [
   { id: 'a.en', data: { slug: 'a', locale: 'en' as const, title: 'A' } },
@@ -20,6 +20,15 @@ describe('localizedEntry', () => {
   });
   it('returns undefined when only a non-fallback, non-requested locale exists', () => {
     expect(localizedEntry(entries, 'c', 'is')).toBeUndefined();
+  });
+});
+
+describe('requirePageHead', () => {
+  it('returns the en-fallback entry when the locale entry is missing', () => {
+    expect(requirePageHead(entries, 'b', 'is').data.title).toBe('B');
+  });
+  it('throws a message naming the slug when no entry exists at all', () => {
+    expect(() => requirePageHead(entries, 'z', 'en')).toThrow(/'z' missing/);
   });
 });
 
