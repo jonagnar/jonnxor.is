@@ -20,9 +20,10 @@ for (const c of COLLECTIONS) {
       await writeFile(join(c.dir, file), c.serialize(c.toRecord(item, t)), 'utf8');
     }
   }
-  // An empty collection almost always means "restore hasn't run yet", not
-  // "delete everything" — pruning here would wipe freshly committed seed files.
-  if (items.length === 0) {
+  // Nothing written this pass (empty collection OR items without translations)
+  // almost always means "restore hasn't run yet", not "delete everything" —
+  // pruning here would wipe freshly committed seed files.
+  if (wanted.size === 0) {
     console.warn(`${c.name}: collection empty — skipping prune (restore before first pull?)`);
     continue;
   }
