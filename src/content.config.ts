@@ -57,4 +57,45 @@ const grimoire = defineCollection({
   }),
 });
 
-export const collections = { blog, grimoire };
+// The Game Hall — tracker entries, one file per locale: `<slug>.<locale>.yaml`.
+const games = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/games',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    tab: z.enum(['upcoming', 'playing', 'played', 'favorites']),
+    date: z.string().optional(), // "YYYY-MM-DD"; absent = TBA
+    platforms: z.array(z.string()),
+    gradient: z.array(z.string()).length(3),
+    initials: z.string(),
+    favorite: z.boolean().default(false),
+    title: z.string(),
+    sub: z.string(),
+  }),
+});
+
+// Page prose — heads (kicker/title/lede) + per-page structured `sections`.
+// Section shapes are validated per page slug as pages are ported (superRefine
+// arrives with the first sections consumer in the countdowns slice).
+const pages = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/pages',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    kicker: z.string(),
+    title: z.string(),
+    lede: z.string(),
+    sections: z.record(z.string(), z.unknown()).optional(),
+  }),
+});
+
+export const collections = { blog, grimoire, games, pages };

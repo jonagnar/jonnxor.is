@@ -33,4 +33,25 @@ describe('collection descriptors', () => {
     expect(g.toItem(parsed)).toMatchObject({ slug: 'd1', order: 7, realm: 'code', updated: '2026-05-26' });
     expect(g.toTranslation(parsed)).toMatchObject({ languages_code: 'en', tags: ['a'] });
   });
+  it('games round-trips, restoring omitted favorite/date to false/null', () => {
+    const games = COLLECTIONS.find((c) => c.name === 'games')!;
+    const item = { slug: 'fable', order: 2, tab: 'upcoming', date: null, platforms: ['Xbox', 'PC'], gradient: ['#0e2d1c', '#2e7d4f', '#ecbd3e'], initials: 'FA', favorite: false };
+    const t = { languages_code: 'en', title: 'Fable', sub: 'Playground · RPG' };
+    const out = games.serialize(games.toRecord(item, t));
+    expect(out).not.toContain('date:');      // null date omitted from file
+    expect(out).not.toContain('favorite:');  // false favorite omitted from file
+    const parsed = games.parse(out);
+    expect(games.toItem(parsed)).toEqual(item);           // ...but restored as null/false
+    expect(games.toTranslation(parsed)).toEqual(t);
+  });
+  it('pages round-trips, restoring omitted sections to null', () => {
+    const pages = COLLECTIONS.find((c) => c.name === 'pages')!;
+    const item = { slug: 'games' };
+    const t = { languages_code: 'en', kicker: 'Game tracker', title: 'The Game Hall', lede: 'Lede — with a dash.', sections: null };
+    const out = pages.serialize(pages.toRecord(item, t));
+    expect(out).not.toContain('sections:');
+    const parsed = pages.parse(out);
+    expect(pages.toItem(parsed)).toEqual(item);
+    expect(pages.toTranslation(parsed)).toEqual(t);
+  });
 });
