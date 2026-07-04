@@ -293,7 +293,52 @@ if (need('countdowns_translations')) {
   }));
 }
 
-// 12. seed the three languages
+// 12. wallpapers (base, non-translatable)
+if (need('wallpapers')) {
+  await client.request(createCollection({
+    collection: 'wallpapers',
+    meta: { icon: 'wallpaper', note: 'The Hoard — generated gradient wallpapers' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'tag', type: 'string', meta: { interface: 'input' } },
+      { field: 'aspect_ratio', type: 'string', meta: { interface: 'input', note: 'CSS aspect-ratio, e.g. 16/10' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
+      { field: 'angle', type: 'integer', meta: { interface: 'input', note: 'gradient angle 0-360' } },
+    ],
+  }));
+}
+
+// 13. wallpapers_translations (junction)
+if (need('wallpapers_translations')) {
+  await client.request(createCollection({
+    collection: 'wallpapers_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'wallpapers', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('wallpapers', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'wallpapers_translations', field: 'wallpapers', related_collection: 'wallpapers',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'wallpapers_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'wallpapers' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 14. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
