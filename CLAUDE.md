@@ -62,7 +62,11 @@ Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API 
 
 ### Deploy & secrets
 
-`git push` → Forgejo → push-mirror to GitHub → Vercel. `preview` branch → preview.jonnxor.is; `main` → production — **never push main casually**. Vercel needs `ENABLE_EXPERIMENTAL_COREPACK=1`. Secrets are sops-encrypted (`.sops.yaml`, direnv via `.envrc`); never commit plaintext env files.
+`git push` → Forgejo → push-mirror to GitHub → Vercel. `preview` branch → preview.jonnxor.is; `main` → production — **never push main casually**.
+Production is currently in **construction mode**: `vercel.json` on `main` 307-redirects
+everything to `/construction/` while the site is rebuilt on `preview`; go-live = merge
+`preview` → `main` and delete `vercel.json` + `public/construction/` in that commit
+(spec: `.planning/2026-07-04-under-construction-design.md` §3). Vercel needs `ENABLE_EXPERIMENTAL_COREPACK=1`. Secrets are sops-encrypted (`.sops.yaml`, direnv via `.envrc`); never commit plaintext env files.
 
 ### Planning docs
 
