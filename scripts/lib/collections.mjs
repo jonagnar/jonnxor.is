@@ -5,6 +5,20 @@
 import { parsePost, serializePost } from './post-markdown.mjs';
 import { parseDoc, serializeDoc } from './grimoire-yaml.mjs';
 
+/**
+ * @typedef {object} CollectionDescriptor
+ * @property {string} name - Directus collection name (e.g. 'blog', 'grimoire').
+ * @property {string} dir - Repo-relative directory holding the committed snapshot files for this collection.
+ * @property {string} ext - File extension for this collection's snapshot files, including the leading dot (e.g. '.md', '.yaml').
+ * @property {RegExp} fileRe - Matches a valid `<slug>.<locale>.<ext>` filename in `dir`; used by content:pull's prune step to distinguish current locale files from legacy/orphaned ones.
+ * @property {Array<string|object>} fields - Directus `readItems` fields selector: top-level item fields plus a nested `translations` field list, passed straight through to the SDK.
+ * @property {(item: object, translation: object) => object} toRecord - Flattens one Directus item + one of its translations into a single flat record ready for `serialize`. Guarantee (1): the returned record's `slug` MUST equal `item.slug` and its `locale` MUST equal `translation.languages_code` — content:pull derives the on-disk filename from `item.slug`/`translation.languages_code` directly, while content:restore regroups parsed records back into items by reading `record.slug`/`record.locale`. If `toRecord` ever diverges from the item/translation it was given, the two directions disagree about which file belongs to which Directus row.
+ * @property {(record: object) => object} toItem - Rebuilds the Directus item (top-level) create payload from one record. Only needs the fields captured in `toRecord`'s output.
+ * @property {(record: object) => object} toTranslation - Rebuilds the Directus translation create payload from one record. Guarantee (3): any field this (or `toItem`) reads that a codec's `quoteKeys` forces to QUOTE_DOUBLE (see entry-yaml.mjs) must already be a plain string in the record produced by `toRecord` — quoting a non-string breaks the round-trip and would hand a stringified value to a typed Directus column on restore.
+ * @property {(record: object) => string} serialize - Renders a flat record to the exact on-disk file contents (front matter + body, or YAML). Must be the left inverse of `parse`.
+ * @property {(raw: string) => object} parse - Parses on-disk file contents back into a flat record shaped like `toRecord`'s output. Guarantee (2): `parse(serialize(toRecord(item, t)))` must round-trip losslessly enough that `toItem`/`toTranslation` can rebuild an equivalent Directus create payload from the parsed record — lossy serialization (e.g. dropping precision, reordering array items, coercing types) silently corrupts content:restore.
+ */
+
 export const COLLECTIONS = [
   {
     name: 'blog',
