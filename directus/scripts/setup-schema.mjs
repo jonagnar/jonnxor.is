@@ -192,6 +192,16 @@ if (need('games_translations')) {
   }));
 }
 
+// Converge games.gradient's editor to JSON highlighting — the option was added
+// after the collection first shipped, and createCollection above only runs on
+// fresh installs.
+{
+  const gradientField = (await client.request(readFieldsByCollection('games'))).find((f) => f.field === 'gradient');
+  if (gradientField && gradientField.meta?.options?.language !== 'json') {
+    await client.request(updateField('games', 'gradient', { meta: { options: { language: 'json' } } }));
+  }
+}
+
 // 8. pages (base) — prose surfaces; one row per routed page
 if (need('pages')) {
   await client.request(createCollection({
