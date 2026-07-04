@@ -1,0 +1,13 @@
+slug: baldurs-gate-3
+locale: en
+order: 7
+tab: playing
+platforms:
+  - PC
+gradient:
+  - "#1c0f0f"
+  - "#6e2230"
+  - "#ecbd3e"
+initials: BG
+title: Baldur’s Gate 3
+sub: "Honour mode · attempt #3, pray for us"

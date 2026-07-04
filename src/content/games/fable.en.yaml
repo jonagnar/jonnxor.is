@@ -1,0 +1,15 @@
+slug: fable
+locale: en
+order: 2
+tab: upcoming
+date: "2026-10-09"
+platforms:
+  - Xbox
+  - PC
+gradient:
+  - "#0e2d1c"
+  - "#2e7d4f"
+  - "#ecbd3e"
+initials: FA
+title: Fable
+sub: Playground · RPG

@@ -1,0 +1,14 @@
+slug: dragons-dogma
+locale: en
+order: 12
+tab: favorites
+platforms:
+  - Series
+gradient:
+  - "#231307"
+  - "#94501c"
+  - "#f2c94c"
+initials: DD
+favorite: true
+title: Dragon’s Dogma
+sub: They’re masterworks all, you can’t go wrong

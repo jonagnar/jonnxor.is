@@ -4,6 +4,7 @@
 // pre-existing serializers so the committed snapshot stays byte-identical.
 import { parsePost, serializePost } from './post-markdown.mjs';
 import { parseDoc, serializeDoc } from './grimoire-yaml.mjs';
+import { makeEntryCodec } from './entry-yaml.mjs';
 
 /**
  * @typedef {object} CollectionDescriptor
@@ -18,6 +19,16 @@ import { parseDoc, serializeDoc } from './grimoire-yaml.mjs';
  * @property {(record: object) => string} serialize - Renders a flat record to the exact on-disk file contents (front matter + body, or YAML). Must be the left inverse of `parse`.
  * @property {(raw: string) => object} parse - Parses on-disk file contents back into a flat record shaped like `toRecord`'s output. Guarantee (2): `parse(serialize(toRecord(item, t)))` must round-trip losslessly enough that `toItem`/`toTranslation` can rebuild an equivalent Directus create payload from the parsed record — lossy serialization (e.g. dropping precision, reordering array items, coercing types) silently corrupts content:restore.
  */
+
+const gamesCodec = makeEntryCodec({
+  keyOrder: ['slug', 'locale', 'order', 'tab', 'date', 'platforms', 'gradient', 'initials', 'favorite', 'title', 'sub'],
+  quoteKeys: ['date'],
+  omitEmpty: ['date', 'favorite'],
+});
+const pagesCodec = makeEntryCodec({
+  keyOrder: ['slug', 'locale', 'kicker', 'title', 'lede', 'sections'],
+  omitEmpty: ['sections'],
+});
 
 export const COLLECTIONS = [
   {
@@ -54,5 +65,40 @@ export const COLLECTIONS = [
     toTranslation: (r) => ({ languages_code: r.locale, title: r.title, cat: r.cat, tags: r.tags ?? [], body: r.body }),
     serialize: serializeDoc,
     parse: parseDoc,
+  },
+  {
+    name: 'games',
+    dir: 'src/content/games',
+    ext: '.yaml',
+    fileRe: /\.(is|en|ja)\.yaml$/,
+    fields: ['slug', 'order', 'tab', 'date', 'platforms', 'gradient', 'initials', 'favorite', { translations: ['languages_code', 'title', 'sub'] }],
+    toRecord: (g, t) => ({
+      slug: g.slug, locale: t.languages_code, order: g.order, tab: g.tab,
+      date: g.date ?? undefined, platforms: g.platforms ?? [], gradient: g.gradient ?? [],
+      initials: g.initials, favorite: g.favorite || undefined,
+      title: t.title, sub: t.sub,
+    }),
+    toItem: (r) => ({
+      slug: r.slug, order: r.order, tab: r.tab, date: r.date ?? null,
+      platforms: r.platforms, gradient: r.gradient, initials: r.initials, favorite: r.favorite ?? false,
+    }),
+    toTranslation: (r) => ({ languages_code: r.locale, title: r.title, sub: r.sub }),
+    serialize: gamesCodec.serialize,
+    parse: gamesCodec.parse,
+  },
+  {
+    name: 'pages',
+    dir: 'src/content/pages',
+    ext: '.yaml',
+    fileRe: /\.(is|en|ja)\.yaml$/,
+    fields: ['slug', { translations: ['languages_code', 'kicker', 'title', 'lede', 'sections'] }],
+    toRecord: (p, t) => ({
+      slug: p.slug, locale: t.languages_code,
+      kicker: t.kicker, title: t.title, lede: t.lede, sections: t.sections ?? undefined,
+    }),
+    toItem: (r) => ({ slug: r.slug }),
+    toTranslation: (r) => ({ languages_code: r.locale, kicker: r.kicker, title: r.title, lede: r.lede, sections: r.sections ?? null }),
+    serialize: pagesCodec.serialize,
+    parse: pagesCodec.parse,
   },
 ];

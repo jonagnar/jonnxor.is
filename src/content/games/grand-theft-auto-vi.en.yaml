@@ -1,0 +1,15 @@
+slug: grand-theft-auto-vi
+locale: en
+order: 1
+tab: upcoming
+date: "2026-11-19"
+platforms:
+  - PS5
+  - Xbox
+gradient:
+  - "#2b0a3d"
+  - "#b0316e"
+  - "#f5e642"
+initials: VI
+title: Grand Theft Auto VI
+sub: Rockstar · open world
