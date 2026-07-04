@@ -29,6 +29,11 @@ const pagesCodec = makeEntryCodec({
   keyOrder: ['slug', 'locale', 'kicker', 'title', 'lede', 'sections'],
   omitEmpty: ['sections'],
 });
+const countdownsCodec = makeEntryCodec({
+  keyOrder: ['slug', 'locale', 'order', 'kind', 'when', 'gold', 'icon', 'start', 'rate', 'what', 'note'],
+  quoteKeys: ['when', 'start'],
+  omitEmpty: ['when', 'gold', 'icon', 'start', 'rate'],
+});
 
 export const COLLECTIONS = [
   {
@@ -100,5 +105,25 @@ export const COLLECTIONS = [
     toTranslation: (r) => ({ languages_code: r.locale, kicker: r.kicker, title: r.title, lede: r.lede, sections: r.sections ?? null }),
     serialize: pagesCodec.serialize,
     parse: pagesCodec.parse,
+  },
+  {
+    name: 'countdowns',
+    dir: 'src/content/countdowns',
+    ext: '.yaml',
+    fileRe: /\.(is|en|ja)\.yaml$/,
+    fields: ['slug', 'order', 'kind', 'when', 'gold', 'icon', 'start', 'rate', { translations: ['languages_code', 'what', 'note'] }],
+    toRecord: (c, t) => ({
+      slug: c.slug, locale: t.languages_code, order: c.order, kind: c.kind,
+      when: c.when ?? undefined, gold: c.gold || undefined, icon: c.icon ?? undefined,
+      start: c.start ?? undefined, rate: c.rate ?? undefined,
+      what: t.what, note: t.note,
+    }),
+    toItem: (r) => ({
+      slug: r.slug, order: r.order, kind: r.kind, when: r.when ?? null,
+      gold: r.gold ?? false, icon: r.icon ?? null, start: r.start ?? null, rate: r.rate ?? null,
+    }),
+    toTranslation: (r) => ({ languages_code: r.locale, what: r.what, note: r.note }),
+    serialize: countdownsCodec.serialize,
+    parse: countdownsCodec.parse,
   },
 ];

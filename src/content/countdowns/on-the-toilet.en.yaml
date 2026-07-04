@@ -1,0 +1,9 @@
+slug: on-the-toilet
+locale: en
+order: 10
+kind: countup
+icon: 🚽
+start: "1992-05-05T08:00:00"
+rate: 0.35
+what: On the toilet
+note: A king on a porcelain throne.
