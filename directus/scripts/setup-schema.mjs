@@ -144,7 +144,98 @@ if (need('grimoire_translations')) {
   }));
 }
 
-// 6. seed the three languages
+// 6. games (base, non-translatable)
+if (need('games')) {
+  await client.request(createCollection({
+    collection: 'games',
+    meta: { icon: 'sports_esports', note: 'The Game Hall — tracker & favorites' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'tab', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'upcoming', value: 'upcoming' }, { text: 'playing', value: 'playing' }, { text: 'played', value: 'played' }, { text: 'favorites', value: 'favorites' }] } } },
+      { field: 'date', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'YYYY-MM-DD or empty = TBA' } },
+      { field: 'platforms', type: 'json', meta: { interface: 'tags' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', note: '3 hex colors' } },
+      { field: 'initials', type: 'string', meta: { interface: 'input' } },
+      { field: 'favorite', type: 'boolean', schema: { default_value: false }, meta: { interface: 'boolean' } },
+    ],
+  }));
+}
+
+// 7. games_translations (junction)
+if (need('games_translations')) {
+  await client.request(createCollection({
+    collection: 'games_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'games', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'sub', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('games', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'games_translations', field: 'games', related_collection: 'games',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'games_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'games' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 8. pages (base) — prose surfaces; one row per routed page
+if (need('pages')) {
+  await client.request(createCollection({
+    collection: 'pages',
+    meta: { icon: 'description', note: 'Page prose — heads + structured sections' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+    ],
+  }));
+}
+
+// 9. pages_translations (junction)
+if (need('pages_translations')) {
+  await client.request(createCollection({
+    collection: 'pages_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'pages', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'kicker', type: 'string', meta: { interface: 'input' } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'lede', type: 'text', meta: { interface: 'input-multiline' } },
+      { field: 'sections', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: 'Per-page structured prose; shape validated by the Astro build' } },
+    ],
+  }));
+  await client.request(createField('pages', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'pages_translations', field: 'pages', related_collection: 'pages',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'pages_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'pages' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 10. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
