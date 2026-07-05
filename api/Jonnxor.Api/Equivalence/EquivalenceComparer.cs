@@ -28,7 +28,19 @@ namespace Jonnxor.Api.Equivalence;
 ///
 /// `slug` and `locale` are snapshot-only bookkeeping (the filename already encodes them) and
 /// are excluded from the field walk; Directus-only system fields (`id`, junction ids, the
-/// `translations` container) are excluded upstream by <see cref="DirectusItem.FromJson"/>.
+/// `translations` container, and the translation row's collection-named parent FK) are
+/// excluded upstream by <see cref="DirectusItem.FromJson"/>.
+///
+/// The walk runs both directions: the forward pass above visits every SNAPSHOT field and
+/// checks it against Directus; a second reverse pass (<see cref="CompareReverse"/>) visits
+/// every populated DIRECTUS field and flags any whose name is entirely missing from the
+/// snapshot entry — catching a field Directus carries that the snapshot dropped outright,
+/// which the forward walk can never see since it only iterates the snapshot's own keys. Two
+/// exclusions keep that pass from false-positiving on documented, deliberate shape gaps
+/// (both live-verified against the real Directus stack on 2026-07-05): a Directus `false` on
+/// an `omitEmpty`/"flag"-convention field (`entry-yaml.mjs`) the snapshot never writes when
+/// false, and blog's `body` (<see cref="ReverseWalkStructuralExclusions"/>), which lives after
+/// the frontmatter fences rather than as a frontmatter key <c>SnapshotReader</c> can see.
 /// </summary>
 public static class EquivalenceComparer
 {
@@ -46,6 +58,27 @@ public static class EquivalenceComparer
         };
 
     private static readonly HashSet<string> BookkeepingFields = ["slug", "locale"];
+
+    /// <summary>
+    /// Fields the reverse walk must not flag as "missing in snapshot" even though they are
+    /// absent from <see cref="SnapshotEntry.Fields"/>, because they are absent from the
+    /// SNAPSHOT FILE ITSELF by a documented, structural convention rather than by drift:
+    ///
+    /// <list type="bullet">
+    /// <item>blog's `body`: `serializePost`/`parsePost` (`client/scripts/lib/collections.mjs`)
+    /// store the post body as Markdown text AFTER the frontmatter fences, not as a frontmatter
+    /// key — <see cref="Jonnxor.Api.Snapshot.SnapshotReader"/> only parses the frontmatter into
+    /// <c>Fields</c> (by design: `RawFrontmatter` is "the whole file for YAML, the fenced
+    /// region for Markdown"), so `body` can never appear there for blog even though the
+    /// record genuinely carries it. This is a reader-coverage gap, not content drift; live-
+    /// verified against the real Directus stack (2026-07-05).</item>
+    /// </list>
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> ReverseWalkStructuralExclusions =
+        new Dictionary<string, HashSet<string>>
+        {
+            ["blog"] = ["body"],
+        };
 
     public static IReadOnlyList<Finding> Compare(
         string collection,
@@ -109,7 +142,67 @@ public static class EquivalenceComparer
             var entry = snapshotByLocale[locale];
             var translation = directusItem.TranslationsByLocale[locale];
             CompareFields(collection, slug, locale, entry, directusItem.Base, translation, findings);
+            CompareReverse(collection, slug, locale, entry, directusItem.Base, translation, findings);
         }
+    }
+
+    /// <summary>
+    /// The reverse walk: after the snapshot->Directus field pass (which only visits fields the
+    /// SNAPSHOT carries), walk every Directus base + translation field and flag any populated
+    /// value whose (rename-reversed) name is missing from the snapshot entry entirely. This
+    /// catches drift the forward walk structurally cannot see — a field Directus carries that
+    /// the snapshot dropped outright — while still treating null/absent-per-kind Directus
+    /// values as "nothing to report" (a genuinely unset column is not drift). System fields are
+    /// already excluded upstream by <see cref="DirectusItem.FromJson"/>, including the
+    /// translation parent FK (named after the collection, e.g. `games_translations.games`).
+    /// </summary>
+    private static void CompareReverse(
+        string collection,
+        string slug,
+        string locale,
+        SnapshotEntry entry,
+        IReadOnlyDictionary<string, object?> directusBase,
+        IReadOnlyDictionary<string, object?> directusTranslation,
+        List<Finding> findings)
+    {
+        var renames = FieldRenames.GetValueOrDefault(collection, EmptyRenames);
+        var reverseRenames = renames.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+        var structuralExclusions = ReverseWalkStructuralExclusions.GetValueOrDefault(collection, EmptyExclusions);
+
+        void CheckSide(IReadOnlyDictionary<string, object?> directusFields)
+        {
+            foreach (var (directusFieldName, directusValue) in directusFields)
+            {
+                // null/empty-per-kind ≈ absent (same rule the forward walk applies), PLUS
+                // `false` specifically: `entry-yaml.mjs`'s documented `omitEmpty` convention
+                // drops boolean "flag" fields from the snapshot file entirely when false
+                // (`out: (v) => v || undefined` in `collections.mjs`) — so a Directus `false`
+                // with no snapshot key is that convention working as designed, not drift.
+                // Scoped to the reverse walk only: the forward walk still flags a snapshot
+                // `draft: false` missing from Directus, since non-flag booleans ARE written.
+                if (IsAbsent(directusValue) || directusValue is false)
+                {
+                    continue;
+                }
+
+                var snapshotFieldName = reverseRenames.GetValueOrDefault(directusFieldName, directusFieldName);
+                if (BookkeepingFields.Contains(snapshotFieldName) || structuralExclusions.Contains(snapshotFieldName))
+                {
+                    continue;
+                }
+
+                if (!entry.Fields.ContainsKey(snapshotFieldName))
+                {
+                    findings.Add(FieldFinding(
+                        collection, slug, locale, snapshotFieldName, null, directusValue,
+                        "field present on Directus item/translation, missing in snapshot"));
+                }
+            }
+        }
+
+        CheckSide(directusBase);
+        CheckSide(directusTranslation);
     }
 
     private static void CompareFields(
@@ -173,6 +266,7 @@ public static class EquivalenceComparer
     }
 
     private static readonly IReadOnlyDictionary<string, string> EmptyRenames = new Dictionary<string, string>();
+    private static readonly HashSet<string> EmptyExclusions = [];
 
     private static Finding FieldFinding(
         string collection, string slug, string locale, string field, object? snapshotValue, object? directusValue, string reason) =>
@@ -192,7 +286,11 @@ public static class EquivalenceComparer
     /// EITHER side is treated as equivalent to null/absent on the other, since Directus and
     /// the snapshot serializer disagree about representing "nothing" (Directus often returns
     /// `null` for an unset array/object field where the snapshot has none of the key at all,
-    /// or an empty array where the snapshot omits the key via `??[]` defaulting).</summary>
+    /// or an empty array where the snapshot omits the key via `??[]` defaulting). Honesty note:
+    /// this predicate is kind-agnostic by construction — it inspects the value alone (a single
+    /// switch over null/string/list/map), never which side (snapshot vs Directus) or which
+    /// collection produced it, so "empty-per-kind" above means "per the value's own .NET
+    /// runtime type," not per any collection-specific field-kind knowledge.</summary>
     private static bool IsAbsent(object? value) => value switch
     {
         null => true,

@@ -49,6 +49,40 @@ public class DirectusItemTests
     {
         Assert.Throws<InvalidOperationException>(() => DirectusItem.FromJson(Parse("""{ "id": 1, "translations": [] }""")));
     }
+
+    [Fact]
+    public void FromJson_ExcludesTranslationParentForeignKeyNamedAfterCollection()
+    {
+        // games_translations carries a hidden `games` column (foreign_key_table: games, per
+        // directus/schema/snapshot.yaml) pointing back at the parent row — it is bookkeeping,
+        // not a content field, and must not leak into TranslationsByLocale.
+        var item = DirectusItem.FromJson(Parse("""
+            {
+              "id": 7, "slug": "astro-bot",
+              "translations": [
+                { "id": 100, "languages_code": "en", "games": 7, "title": "Astro Bot" }
+              ]
+            }
+            """), collection: "games");
+
+        Assert.DoesNotContain("games", item.TranslationsByLocale["en"].Keys);
+        Assert.Equal("Astro Bot", item.TranslationsByLocale["en"]["title"]);
+    }
+
+    [Fact]
+    public void FromJson_WithoutCollectionArgument_DoesNotExcludeAnyExtraField()
+    {
+        // The collection parameter is optional (defaults to null) so existing call sites that
+        // don't pass it keep their prior behavior — nothing named `null` will ever match.
+        var item = DirectusItem.FromJson(Parse("""
+            {
+              "id": 7, "slug": "astro-bot",
+              "translations": [ { "id": 100, "languages_code": "en", "games": 7 } ]
+            }
+            """));
+
+        Assert.Equal(7L, item.TranslationsByLocale["en"]["games"]);
+    }
 }
 
 public class JsonValueConverterTests

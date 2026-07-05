@@ -15,11 +15,24 @@ public sealed class DirectusClient : IDisposable
     private readonly HttpClient _http;
     private string? _accessToken;
 
+    /// <summary>
+    /// Throws <see cref="DirectusUnreachableException"/> (rather than letting a raw
+    /// <see cref="UriFormatException"/> escape) when <paramref name="baseUrl"/> is not a
+    /// well-formed absolute URL — e.g. a malformed `DIRECTUS_URL` env value. This keeps the
+    /// clean-error exit-2 path in <c>CliRunner</c> the only way a bad --live setup surfaces.
+    /// </summary>
     public DirectusClient(string baseUrl, TimeSpan? timeout = null)
     {
+        if (!Uri.TryCreate(baseUrl.TrimEnd('/') + "/", UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new DirectusUnreachableException(
+                $"DIRECTUS_URL is not a valid absolute http(s) URL: '{baseUrl}'");
+        }
+
         _http = new HttpClient
         {
-            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            BaseAddress = uri,
             Timeout = timeout ?? TimeSpan.FromSeconds(30),
         };
     }

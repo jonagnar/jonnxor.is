@@ -25,7 +25,14 @@ namespace Jonnxor.Api.Snapshot;
 /// </summary>
 public static class SnapshotReader
 {
-    private static readonly string[] Locales = ["is", "en", "ja"];
+    /// <summary>
+    /// The locales the content seam recognizes, in the project's canonical is/en/ja order
+    /// (`astro.config.mjs`'s `locales`). Shared beyond filename parsing: `CoverageReporter`
+    /// reuses this exact list so its per-locale columns can never drift from what the reader
+    /// actually accepts as a locale suffix.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Locales = ["is", "en", "ja"];
+
     private static readonly IReadOnlyDictionary<string, object?> EmptyFields = new Dictionary<string, object?>();
 
     // YAML 1.2 core schema resolution patterns for plain scalars.

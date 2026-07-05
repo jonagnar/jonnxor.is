@@ -24,9 +24,12 @@ public sealed class DirectusItem
     /// Builds a <see cref="DirectusItem"/> from the raw JSON returned by
     /// `GET /items/{collection}?fields=*,translations.*`. Requires a `slug` field (every
     /// collection's item has one) and a `translations` array of objects, each carrying
-    /// `languages_code`.
+    /// `languages_code`. <paramref name="collection"/> excludes the one per-collection system
+    /// field the schema doesn't name uniformly: the translation row's parent foreign key, whose
+    /// column name is the collection name itself (e.g. `games_translations.games` — live-
+    /// verified against `directus/schema/snapshot.yaml`), not a fixed name like `languages_code`.
     /// </summary>
-    public static DirectusItem FromJson(JsonElement item)
+    public static DirectusItem FromJson(JsonElement item, string? collection = null)
     {
         var slug = item.TryGetProperty("slug", out var slugEl) && slugEl.ValueKind == JsonValueKind.String
             ? slugEl.GetString()!
@@ -50,7 +53,7 @@ public sealed class DirectusItem
                             locale = tprop.Value.GetString();
                         }
 
-                        if (!SystemFields.Contains(tprop.Name))
+                        if (!SystemFields.Contains(tprop.Name) && tprop.Name != collection)
                         {
                             localeFields[tprop.Name] = JsonValueConverter.Convert(tprop.Value);
                         }

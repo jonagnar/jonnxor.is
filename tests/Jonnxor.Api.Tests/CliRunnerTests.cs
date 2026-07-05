@@ -64,16 +64,38 @@ public class CliRunnerTests
     }
 
     [Fact]
-    public void Report_RoutesToReport_NotImplementedYet()
+    public void Verify_Live_ExportedEnvVarWinsOverEnvFile()
     {
+        // Resolve() checks Environment.GetEnvironmentVariable before the --env file — an
+        // explicitly exported var must win even when a --env file defines the same key
+        // differently. Proven here via a malformed exported DIRECTUS_URL: if the file's
+        // (well-formed but unreachable) value won the race, this would fail on a network
+        // attempt/timeout instead of the immediate ctor-validation error.
+        using var envFileDir = new TempDir();
+        var envPath = System.IO.Path.Combine(envFileDir.Path, ".env");
+        File.WriteAllText(envPath, """
+            DIRECTUS_URL=http://localhost:8055
+            ADMIN_EMAIL=admin@jonnxor.is
+            ADMIN_PASSWORD=hunter2
+            """);
+
         var stdout = new StringWriter();
         var stderr = new StringWriter();
+        var root = FixturePath.For("valid");
 
-        var exitCode = CliRunner.Run(["report", "--json", "out.json"], stdout, stderr);
+        Environment.SetEnvironmentVariable("DIRECTUS_URL", "not-a-valid-url");
+        try
+        {
+            var exitCode = CliRunner.Run(
+                ["verify", "--live", "--content", root, "--env", envPath], stdout, stderr);
 
-        Assert.Equal(2, exitCode);
-        Assert.Empty(stdout.ToString());
-        Assert.Contains("not implemented", stderr.ToString());
+            Assert.Equal(2, exitCode);
+            Assert.Contains("not-a-valid-url", stderr.ToString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DIRECTUS_URL", null);
+        }
     }
 
     [Fact]

@@ -463,6 +463,208 @@ public class EquivalenceComparerTests
     }
 
     [Fact]
+    public void ReverseWalk_PopulatedDirectusBaseFieldMissingInSnapshot_ProducesFinding()
+    {
+        // The forward walk only ever iterates the SNAPSHOT's own field names, so a field
+        // Directus carries that the snapshot dropped outright is invisible to it — this is
+        // exactly the gap the reverse walk closes.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("games", "astro-bot", "en", new Dictionary<string, object?> { ["slug"] = "astro-bot", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "astro-bot", "order": 10, "translations": [ { "id": 1, "languages_code": "en" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("games", snapshot, directus);
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("astro-bot/en/order", finding.Detail);
+        Assert.Contains("missing in snapshot", finding.Detail);
+    }
+
+    [Fact]
+    public void ReverseWalk_PopulatedDirectusTranslationFieldMissingInSnapshot_ProducesFinding()
+    {
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("games", "astro-bot", "en", new Dictionary<string, object?> { ["slug"] = "astro-bot", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                {
+                  "id": 1, "slug": "astro-bot",
+                  "translations": [ { "id": 1, "languages_code": "en", "title": "Astro Bot" } ]
+                }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("games", snapshot, directus);
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("astro-bot/en/title", finding.Detail);
+        Assert.Contains("missing in snapshot", finding.Detail);
+    }
+
+    [Fact]
+    public void ReverseWalk_NullDirectusBaseFieldMissingInSnapshot_NoFinding()
+    {
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("projects", "drekis-vault", "en", new Dictionary<string, object?> { ["slug"] = "drekis-vault", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "drekis-vault", "status": null, "translations": [ { "id": 1, "languages_code": "en" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("projects", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void ReverseWalk_EmptyArrayDirectusTranslationFieldMissingInSnapshot_NoFinding()
+    {
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("games", "astro-bot", "en", new Dictionary<string, object?> { ["slug"] = "astro-bot", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                {
+                  "id": 1, "slug": "astro-bot",
+                  "translations": [ { "id": 1, "languages_code": "en", "tags": [] } ]
+                }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("games", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void ReverseWalk_FalseFlagFieldMissingInSnapshot_NoFinding()
+    {
+        // games.favorite is an `omitEmpty`/"flag" field (entry-yaml.mjs): the snapshot
+        // serializer drops it from the file entirely when false. Live-verified against the
+        // real stack — every game's `favorite: false` would otherwise false-positive here.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("games", "astro-bot", "en", new Dictionary<string, object?> { ["slug"] = "astro-bot", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "astro-bot", "favorite": false, "translations": [ { "id": 1, "languages_code": "en" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("games", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void ReverseWalk_TrueFlagFieldMissingInSnapshot_StillProducesFinding()
+    {
+        // The false-flag exclusion must not swallow a genuinely missing `true` value — only
+        // `false` is the documented "omitted" convention.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("games", "astro-bot", "en", new Dictionary<string, object?> { ["slug"] = "astro-bot", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "astro-bot", "favorite": true, "translations": [ { "id": 1, "languages_code": "en" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("games", snapshot, directus);
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("favorite", finding.Detail);
+        Assert.Contains("missing in snapshot", finding.Detail);
+    }
+
+    [Fact]
+    public void ReverseWalk_BlogBodyMissingInSnapshotFields_NoFinding()
+    {
+        // blog's `body` lives after the frontmatter fences (serializePost), never as a
+        // frontmatter key — SnapshotReader.Fields structurally cannot contain it for blog,
+        // so the reverse walk must not flag it as dropped content. Live-verified.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("blog", "some-post", "en", new Dictionary<string, object?> { ["slug"] = "some-post", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "some-post", "translations": [ { "id": 1, "languages_code": "en", "body": "Some real body text." } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("blog", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void ReverseWalk_GrimoireBodyMissingInSnapshotFields_StillProducesFinding()
+    {
+        // The blog-body exclusion is scoped to blog only — grimoire's `body` IS a real
+        // frontmatter YAML key (grimoire files are .yaml, not .md), so a grimoire entry
+        // missing `body` in its Fields is genuine drift and must still be flagged.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("grimoire", "chai", "en", new Dictionary<string, object?> { ["slug"] = "chai", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "chai", "translations": [ { "id": 1, "languages_code": "en", "body": "Real body text." } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("grimoire", snapshot, directus);
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("body", finding.Detail);
+        Assert.Contains("missing in snapshot", finding.Detail);
+    }
+
+    [Fact]
+    public void ReverseWalk_AppliesRenameReversal_NoFalsePositiveOnBlogReadTime()
+    {
+        // Directus's `read_time` reverse-renames to the snapshot's `readTime` before the
+        // presence check — without the reversal this would false-positive as "missing" even
+        // though the forward-walk rename test proves the same pair equivalent.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("blog", "some-post", "en", new Dictionary<string, object?> { ["slug"] = "some-post", ["locale"] = "en", ["readTime"] = "4 min" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "some-post", "translations": [ { "id": 1, "languages_code": "en", "read_time": "4 min" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("blog", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
     public void ParseErrorEntries_ExcludedFromComparison()
     {
         var snapshot = new List<SnapshotEntry>

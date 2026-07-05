@@ -17,7 +17,7 @@ public static class CliRunner
         Usage:
           jonnxor-api verify --offline [--content <dir>]
           jonnxor-api verify --live [--content <dir>] [--env <path>]
-          jonnxor-api report [--json <path>]
+          jonnxor-api report [--content <dir>] [--json <path>]
           jonnxor-api --help
 
         Verbs:
@@ -29,8 +29,10 @@ public static class CliRunner
                    Directus. --live credentials come from DIRECTUS_URL/ADMIN_EMAIL/
                    ADMIN_PASSWORD — either already exported, or loaded from a
                    KEY=VALUE file via --env (explicit env vars win over the file).
-          report   Emit a translation coverage report. --json writes a JSON artifact
-                   to the given path in addition to the console table.
+          report   Emit a per-locale translation coverage table from the snapshot
+                   alone (offline, no Directus). --content overrides the default
+                   content directory. --json writes the same data as a JSON
+                   artifact to the given path, in addition to the console table.
         """;
 
     /// <summary>Console-backed convenience overload for Program.cs.</summary>
@@ -163,11 +165,10 @@ public static class CliRunner
         string directusUrl, string adminEmail, string adminPassword,
         string contentDir, IReadOnlyList<SnapshotEntry> entries, TextWriter stdout, TextWriter stderr)
     {
-        using var client = new DirectusClient(directusUrl);
-
+        DirectusClient client;
         try
         {
-            await client.LoginAsync(adminEmail, adminPassword);
+            client = new DirectusClient(directusUrl);
         }
         catch (DirectusUnreachableException ex)
         {
@@ -175,15 +176,11 @@ public static class CliRunner
             return 2;
         }
 
-        var findings = new List<Finding>();
-        var collectionsChecked = 0;
-
-        foreach (var collection in LiveCollections)
+        using (client)
         {
-            IReadOnlyList<System.Text.Json.JsonElement> rawItems;
             try
             {
-                rawItems = await client.GetItemsAsync(collection);
+                await client.LoginAsync(adminEmail, adminPassword);
             }
             catch (DirectusUnreachableException ex)
             {
@@ -191,30 +188,73 @@ public static class CliRunner
                 return 2;
             }
 
-            var directusItems = rawItems.Select(Equivalence.DirectusItem.FromJson).ToList();
-            var snapshotEntries = entries.Where(e => e.Collection == collection).ToList();
+            var findings = new List<Finding>();
+            var collectionsChecked = 0;
 
-            findings.AddRange(EquivalenceComparer.Compare(collection, snapshotEntries, directusItems));
-            collectionsChecked++;
-        }
-
-        if (findings.Count > 0)
-        {
-            foreach (var finding in findings)
+            foreach (var collection in LiveCollections)
             {
-                stderr.WriteLine(finding.ToString());
+                IReadOnlyList<System.Text.Json.JsonElement> rawItems;
+                try
+                {
+                    rawItems = await client.GetItemsAsync(collection);
+                }
+                catch (DirectusUnreachableException ex)
+                {
+                    stderr.WriteLine($"verify --live: {ex.Message}");
+                    return 2;
+                }
+
+                List<Equivalence.DirectusItem> directusItems;
+                try
+                {
+                    directusItems = rawItems.Select(raw => Equivalence.DirectusItem.FromJson(raw, collection)).ToList();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    stderr.WriteLine($"verify --live: Directus collection '{collection}' returned malformed item data: {ex.Message}");
+                    return 2;
+                }
+                catch (ArgumentException ex)
+                {
+                    stderr.WriteLine($"verify --live: Directus collection '{collection}' returned malformed item data: {ex.Message}");
+                    return 2;
+                }
+
+                var snapshotEntries = entries.Where(e => e.Collection == collection).ToList();
+
+                IReadOnlyList<Finding> collectionFindings;
+                try
+                {
+                    collectionFindings = EquivalenceComparer.Compare(collection, snapshotEntries, directusItems);
+                }
+                catch (ArgumentException ex)
+                {
+                    stderr.WriteLine($"verify --live: Directus collection '{collection}' returned malformed item data: {ex.Message}");
+                    return 2;
+                }
+
+                findings.AddRange(collectionFindings);
+                collectionsChecked++;
             }
 
-            stderr.WriteLine($"verify --live: {findings.Count} finding(s) across {collectionsChecked} collection(s)");
-            return 1;
-        }
+            if (findings.Count > 0)
+            {
+                foreach (var finding in findings)
+                {
+                    stderr.WriteLine(finding.ToString());
+                }
 
-        stdout.WriteLine("verify --live: OK");
-        stdout.WriteLine($"  content dir : {contentDir}");
-        stdout.WriteLine($"  directus    : {directusUrl}");
-        stdout.WriteLine($"  collections : {collectionsChecked} ({string.Join(", ", LiveCollections)})");
-        stdout.WriteLine("  offline rules passed, snapshot equivalent to Directus for every collection above");
-        return 0;
+                stderr.WriteLine($"verify --live: {findings.Count} finding(s) across {collectionsChecked} collection(s)");
+                return 1;
+            }
+
+            stdout.WriteLine("verify --live: OK");
+            stdout.WriteLine($"  content dir : {contentDir}");
+            stdout.WriteLine($"  directus    : {directusUrl}");
+            stdout.WriteLine($"  collections : {collectionsChecked} ({string.Join(", ", LiveCollections)})");
+            stdout.WriteLine("  offline rules passed, snapshot equivalent to Directus for every collection above");
+            return 0;
+        }
     }
 
     private static string? ReadOption(string[] args, string name)
@@ -225,8 +265,40 @@ public static class CliRunner
 
     private static int RunReport(string[] args, TextWriter stdout, TextWriter stderr)
     {
-        stderr.WriteLine("report: not implemented");
-        return 2;
+        var contentDir = ReadOption(args, "--content") ?? DefaultContentDir;
+        var jsonPath = ReadOption(args, "--json");
+
+        IReadOnlyList<SnapshotEntry> entries;
+        try
+        {
+            entries = SnapshotReader.ReadAll(contentDir).ToList();
+        }
+        catch (DirectoryNotFoundException ex)
+        {
+            stderr.WriteLine($"report: {ex.Message}");
+            return 2;
+        }
+
+        var report = Report.CoverageReporter.Build(entries, DateTimeOffset.UtcNow);
+
+        Report.ReportTable.Write(report, stdout);
+
+        if (jsonPath is not null)
+        {
+            try
+            {
+                File.WriteAllText(jsonPath, Report.ReportJson.Serialize(report));
+            }
+            catch (IOException ex)
+            {
+                stderr.WriteLine($"report: could not write --json artifact '{jsonPath}': {ex.Message}");
+                return 2;
+            }
+
+            stdout.WriteLine($"  json artifact written to {jsonPath}");
+        }
+
+        return 0;
     }
 
     private static int UnknownVerb(string verb, TextWriter stderr)
