@@ -49,4 +49,10 @@ test('lightbox traps Tab focus while open and never leaks to the page', async ({
     document.getElementById('lightbox')?.contains(document.activeElement) ?? false
   );
   expect(stillInside).toBe(true);
+
+  // Clicking the artwork drops focus to <body>; the next Tab must recapture it
+  // inside the lightbox (first focusable = Download), not leak to the page behind.
+  await page.locator('#lb-art').click();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#lb-download')).toBeFocused();
 });

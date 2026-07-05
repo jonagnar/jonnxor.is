@@ -112,6 +112,9 @@ const head = requirePageHead(pagesAll, 'wallpapers', locale).data;
     var focusables = lb.querySelectorAll('#lb-download, #lb-close');
     var first = focusables[0];
     var last = focusables[focusables.length - 1];
+    // Recapture focus dropped to the backdrop (e.g. clicking the artwork
+    // moves focus to <body>) so Tab can never reach the page behind the modal.
+    if (!lb.contains(document.activeElement)) { e.preventDefault(); first.focus(); return; }
     if (e.shiftKey) {
       if (document.activeElement === first) { e.preventDefault(); last.focus(); }
     } else {
