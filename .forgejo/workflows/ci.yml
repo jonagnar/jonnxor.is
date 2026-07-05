@@ -21,6 +21,17 @@ jobs:
       - name: Unit + render tests
         run: pnpm test
 
+  dotnet:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: dotnet build jonnxor.sln --configuration Release
+      - name: Test
+        run: dotnet test jonnxor.sln --configuration Release --no-build
+
   e2e-visual:
     # heavier browser suite — only where it gates a deploy; don't bother if units fail
     needs: build-test
