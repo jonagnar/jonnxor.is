@@ -90,4 +90,28 @@ describe('collection descriptors', () => {
     expect(w.toItem(parsed)).toEqual(item);
     expect(w.toTranslation(parsed)).toEqual(t);
   });
+  it('projects round-trips, preserving links object key order (label before href)', () => {
+    const p = COLLECTIONS.find((c) => c.name === 'projects')!;
+    const item = {
+      slug: 'runakefli',
+      order: 6,
+      sigil: 'RK',
+      gradient: ['#101418', '#2e3a45', '#ecbd3e'],
+      tech: ['Go', 'CLI'],
+      links: [
+        { label: 'GitHub', href: 'https://github.com/example/runakefli' },
+        { label: 'Docs', href: '#' },
+      ],
+    };
+    const t = { languages_code: 'en', title: 'Runakefli', description: 'A changelog CLI.', plate: 'open source' };
+    const out = p.serialize(p.toRecord(item, t));
+    // `label` must precede `href` within each links entry — this is what feeds
+    // byte-determinism through the Directus json round-trip (see collections.mjs).
+    for (const m of out.matchAll(/- label:.*\n\s*href:/g)) {
+      expect(m[0].indexOf('label:')).toBeLessThan(m[0].indexOf('href:'));
+    }
+    const parsed = p.parse(out);
+    expect(p.toItem(parsed)).toEqual(item);
+    expect(p.toTranslation(parsed)).toEqual(t);
+  });
 });

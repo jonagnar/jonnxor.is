@@ -1,0 +1,19 @@
+slug: hrafn-validator
+locale: en
+order: 3
+sigil: HV
+gradient:
+  - "#3a2c08"
+  - "#b58a1d"
+  - "#faf6ec"
+tech:
+  - TypeScript
+  - OSS
+links:
+  - label: GitHub
+    href: "#"
+  - label: Docs
+    href: "#"
+title: Hrafn Validator
+description: Tiny, zero-dependency schema validation for TypeScript with error messages a human can actually read. 4.2k stars.
+plate: open source

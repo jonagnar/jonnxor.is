@@ -130,4 +130,9 @@ export const COLLECTIONS = [
     item: { order: 'req', tag: 'req', aspect_ratio: 'req', gradient: 'array', angle: 'req' },
     translation: { title: 'req' },
   }),
+  simpleDescriptor({
+    name: 'projects',
+    item: { order: 'req', sigil: 'req', gradient: 'array', tech: 'array', links: 'array' },
+    translation: { title: 'req', description: 'req', plate: 'req' },
+  }),
 ];

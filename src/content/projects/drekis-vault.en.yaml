@@ -1,0 +1,19 @@
+slug: drekis-vault
+locale: en
+order: 5
+sigil: DV
+gradient:
+  - "#2b0a1e"
+  - "#8c1d4f"
+  - "#f5e642"
+tech:
+  - Godot
+  - Jam winner
+links:
+  - label: Play
+    href: "#"
+  - label: Source
+    href: "#"
+title: Dreki's Vault
+description: A 72-hour game-jam roguelike where the dungeon is your git history and merge conflicts are the boss. Won "most cursed concept."
+plate: game jam

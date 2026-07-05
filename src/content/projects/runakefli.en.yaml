@@ -1,0 +1,17 @@
+slug: runakefli
+locale: en
+order: 6
+sigil: RK
+gradient:
+  - "#101418"
+  - "#2e3a45"
+  - "#ecbd3e"
+tech:
+  - Go
+  - CLI
+links:
+  - label: GitHub
+    href: "#"
+title: Runakefli
+description: CLI that turns your changelog into release notes people want to read — with templates, emoji policies, and an Icelandic mode.
+plate: open source

@@ -22,9 +22,9 @@ describe('content.config.ts wires the locale-aware id', () => {
     expect(configSrc).toMatch(/import\s*\{\s*localeEntryId\s*\}\s*from\s*['"]\.\/content\/loaders['"]/);
   });
 
-  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns, wallpapers)', () => {
+  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns, wallpapers, projects)', () => {
     const matches = codeLines.match(/generateId:\s*localeEntryId/g) ?? [];
-    expect(matches.length).toBe(6);
+    expect(matches.length).toBe(7);
   });
 });
 

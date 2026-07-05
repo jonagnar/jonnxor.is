@@ -1,0 +1,20 @@
+slug: saga-tracker
+locale: en
+order: 2
+sigil: ST
+gradient:
+  - "#1a1233"
+  - "#2b2a72"
+  - "#00f5d4"
+tech:
+  - Go
+  - PWA
+  - In progress
+links:
+  - label: GitHub
+    href: "#"
+  - label: Devlog
+    href: "#"
+title: Saga Tracker
+description: "A quest log for real life: track long-running goals as sagas with chapters, XP, and boss fights. Go API + React PWA."
+plate: side quest

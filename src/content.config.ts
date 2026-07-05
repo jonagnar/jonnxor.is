@@ -162,4 +162,25 @@ const wallpapers = defineCollection({
   }),
 });
 
-export const collections = { blog, grimoire, games, pages, countdowns, wallpapers };
+// The Forge — portfolio project cards.
+const projects = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/projects',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    sigil: z.string(),
+    gradient: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).length(3),
+    tech: z.array(z.string()),
+    links: z.array(z.object({ label: z.string(), href: z.string() }).strict()),
+    title: z.string(),
+    description: z.string(),
+    plate: z.string(),
+  }),
+});
+
+export const collections = { blog, grimoire, games, pages, countdowns, wallpapers, projects };
