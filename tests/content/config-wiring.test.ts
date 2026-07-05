@@ -13,15 +13,17 @@ const configSrc = readFileSync(
   'utf8',
 );
 
+// Count only non-comment lines to exclude cross-reference comments (e.g. in the import block)
+// from matching source-level guard regexes below.
+const codeLines = configSrc.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
+
 describe('content.config.ts wires the locale-aware id', () => {
   it('imports localeEntryId', () => {
     expect(configSrc).toMatch(/import\s*\{\s*localeEntryId\s*\}\s*from\s*['"]\.\/content\/loaders['"]/);
   });
 
   it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns, wallpapers)', () => {
-    // Count only non-comment lines to exclude the cross-reference comment in the import block.
-    const codeLines = configSrc.split('\n').filter(l => !/^\s*\/\//.test(l));
-    const matches = codeLines.join('\n').match(/generateId:\s*localeEntryId/g) ?? [];
+    const matches = codeLines.match(/generateId:\s*localeEntryId/g) ?? [];
     expect(matches.length).toBe(6);
   });
 });
@@ -36,6 +38,6 @@ describe('content.config.ts wires the sections schema map', () => {
   });
 
   it('validates pages sections through a sectionSchemas lookup', () => {
-    expect(configSrc).toMatch(/sectionSchemas\[[^\]]*\]/);
+    expect(codeLines).toMatch(/sectionSchemas\[[^\]]*\]/);
   });
 });

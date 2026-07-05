@@ -26,7 +26,7 @@ const KIND = {
   opt: { out: (v) => v ?? undefined, back: (v) => v ?? null },
   'opt-quoted': { out: (v) => v ?? undefined, back: (v) => v ?? null }, // date-like strings
   array: { out: (v) => v ?? [], back: (v) => v },
-  flag: { out: (v) => v || undefined, back: (v) => v ?? false }, // false omitted from files
+  flag: { out: (v) => v || undefined, back: (v) => v ?? false }, // booleans only — `||` would drop falsy-but-valid 0/'' for other kinds
 };
 const LOCALE_YAML_RE = /\.(is|en|ja)\.yaml$/;
 
@@ -37,6 +37,9 @@ const LOCALE_YAML_RE = /\.(is|en|ja)\.yaml$/;
  * grimoire stay hand-rolled (custom serializers, date normalization, renames).
  */
 export function simpleDescriptor({ name, item, translation }) {
+  for (const [k, kind] of [...Object.entries(item), ...Object.entries(translation)]) {
+    if (!KIND[kind]) throw new Error(`simpleDescriptor(${name}): unknown kind "${kind}" for field "${k}"`);
+  }
   const itemKeys = Object.keys(item);
   const trKeys = Object.keys(translation);
   const codec = makeEntryCodec({

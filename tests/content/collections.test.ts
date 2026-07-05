@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { COLLECTIONS } from '../../scripts/lib/collections.mjs';
+import { COLLECTIONS, simpleDescriptor } from '../../scripts/lib/collections.mjs';
 
 const REQUIRED = ['name', 'dir', 'ext', 'fileRe', 'fields', 'toRecord', 'toItem', 'toTranslation', 'serialize', 'parse'];
 
 describe('collection descriptors', () => {
+  it('rejects an unknown field kind', () => {
+    expect(() => simpleDescriptor({ name: 'x', item: { a: 'requ' }, translation: {} })).toThrow(
+      /unknown kind "requ" for field "a"/,
+    );
+  });
   it('every descriptor is complete', () => {
     expect(COLLECTIONS.length).toBeGreaterThanOrEqual(2);
     for (const c of COLLECTIONS) {
