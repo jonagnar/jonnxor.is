@@ -6,10 +6,15 @@ gradient:
   - "#06222b"
   - "#0b5f6e"
   - "#3fe0cb"
+stops:
+  - 55
+  - 145
 tech:
   - Node
   - PostGIS
-  - Shipped
+status:
+  label: Shipped
+  kind: plain
 links:
   - label: Case study
     href: "#"

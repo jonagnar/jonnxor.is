@@ -350,10 +350,31 @@ if (need('projects')) {
       { field: 'order', type: 'integer', meta: { interface: 'input' } },
       { field: 'sigil', type: 'string', meta: { interface: 'input' } },
       { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
+      { field: 'stops', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '2 gradient stop percentages' } },
       { field: 'tech', type: 'json', meta: { interface: 'tags' } },
+      { field: 'status', type: 'json', schema: { is_nullable: true }, meta: { interface: 'input-code', options: { language: 'json' }, note: '{label, kind: plain|gold} — label treated as data' } },
       { field: 'links', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '[{label, href}] — labels treated as data' } },
     ],
   }));
+}
+
+// Converge projects.stops/status onto existing installs — these two fields were
+// added after the collection first shipped, and createCollection above only
+// runs on fresh installs (house pattern, see the games.gradient converge).
+{
+  const projectsFields = new Set((await client.request(readFieldsByCollection('projects'))).map((f) => f.field));
+  if (!projectsFields.has('stops')) {
+    await client.request(createField('projects', {
+      field: 'stops', type: 'json',
+      meta: { interface: 'input-code', options: { language: 'json' }, note: '2 gradient stop percentages' },
+    }));
+  }
+  if (!projectsFields.has('status')) {
+    await client.request(createField('projects', {
+      field: 'status', type: 'json', schema: { is_nullable: true },
+      meta: { interface: 'input-code', options: { language: 'json' }, note: '{label, kind: plain|gold} — label treated as data' },
+    }));
+  }
 }
 
 // 15. projects_translations (junction)

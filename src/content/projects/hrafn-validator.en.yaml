@@ -6,6 +6,9 @@ gradient:
   - "#3a2c08"
   - "#b58a1d"
   - "#faf6ec"
+stops:
+  - 60
+  - 160
 tech:
   - TypeScript
   - OSS

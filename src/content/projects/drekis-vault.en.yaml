@@ -6,9 +6,14 @@ gradient:
   - "#2b0a1e"
   - "#8c1d4f"
   - "#f5e642"
+stops:
+  - 55
+  - 160
 tech:
   - Godot
-  - Jam winner
+status:
+  label: Jam winner
+  kind: gold
 links:
   - label: Play
     href: "#"

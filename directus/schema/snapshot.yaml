@@ -3345,6 +3345,86 @@ fields:
       validation: null
       validation_message: null
       width: full
+  - collection: projects
+    field: stops
+    type: json
+    meta:
+      collection: projects
+      conditions: null
+      display: null
+      display_options: null
+      field: stops
+      group: null
+      hidden: false
+      interface: input-code
+      note: 2 gradient stop percentages
+      options:
+        language: json
+      readonly: false
+      required: false
+      sort: 9
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: stops
+      table: projects
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: projects
+    field: status
+    type: json
+    meta:
+      collection: projects
+      conditions: null
+      display: null
+      display_options: null
+      field: status
+      group: null
+      hidden: false
+      interface: input-code
+      note: '{label, kind: plain|gold} — label treated as data'
+      options:
+        language: json
+      readonly: false
+      required: false
+      sort: 10
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: status
+      table: projects
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: projects_translations
     field: id
     type: integer

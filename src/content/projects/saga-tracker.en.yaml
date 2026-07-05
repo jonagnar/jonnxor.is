@@ -6,10 +6,15 @@ gradient:
   - "#1a1233"
   - "#2b2a72"
   - "#00f5d4"
+stops:
+  - 50
+  - 150
 tech:
   - Go
   - PWA
-  - In progress
+status:
+  label: In progress
+  kind: gold
 links:
   - label: GitHub
     href: "#"

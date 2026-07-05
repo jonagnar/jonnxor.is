@@ -6,11 +6,16 @@ gradient:
   - "#0e3b3a"
   - "#15897b"
   - "#f2c94c"
+stops:
+  - 55
+  - 140
 tech:
   - React
   - Go
   - Postgres
-  - Production
+status:
+  label: Production
+  kind: plain
 links:
   - label: Case study
     href: "#"

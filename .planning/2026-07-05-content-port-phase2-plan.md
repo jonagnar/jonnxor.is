@@ -177,6 +177,8 @@ Round-trip unit test in `collections.test.ts` (mirror the wallpapers one, includ
 - [ ] **Step 3:** Rewrite portfolio.astro: `localizedByOrder(await getCollection('projects'), locale)`, `requirePageHead(pagesAll, 'portfolio', locale)`, PageHead (label "Portfolio head"), grid of ProjectCards, style block verbatim, NO page JS (there was none). Remove Portfolio from `tests/render/pages.test.ts` (extend the comment).
 - [ ] **Step 4:** `pnpm test && pnpm exec astro check && pnpm build && pnpm test:e2e && pnpm test:visual` — portfolio baseline UNCHANGED. Commit `feat(portfolio): port The Forge to Directus-owned collection, server-rendered cards` → push.
 
+**Amendment (post-T3 review):** stops + status added — per-card gradient stops and three chip variants exist on the real page; flat tech[] + 3 hexes were insufficient for pixel parity.
+
 ---
 
 ## Task 5: Home slice — sections, `PostRow`, dynamic latest posts

@@ -132,7 +132,7 @@ export const COLLECTIONS = [
   }),
   simpleDescriptor({
     name: 'projects',
-    item: { order: 'req', sigil: 'req', gradient: 'array', tech: 'array', links: 'array' },
+    item: { order: 'req', sigil: 'req', gradient: 'array', stops: 'array', tech: 'array', status: 'opt', links: 'array' },
     translation: { title: 'req', description: 'req', plate: 'req' },
   }),
 ];

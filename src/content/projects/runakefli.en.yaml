@@ -6,6 +6,9 @@ gradient:
   - "#101418"
   - "#2e3a45"
   - "#ecbd3e"
+stops:
+  - 55
+  - 170
 tech:
   - Go
   - CLI

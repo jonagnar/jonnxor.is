@@ -97,7 +97,9 @@ describe('collection descriptors', () => {
       order: 6,
       sigil: 'RK',
       gradient: ['#101418', '#2e3a45', '#ecbd3e'],
+      stops: [55, 170],
       tech: ['Go', 'CLI'],
+      status: null,
       links: [
         { label: 'GitHub', href: 'https://github.com/example/runakefli' },
         { label: 'Docs', href: '#' },
@@ -107,9 +109,33 @@ describe('collection descriptors', () => {
     const out = p.serialize(p.toRecord(item, t));
     // `label` must precede `href` within each links entry — this is what feeds
     // byte-determinism through the Directus json round-trip (see collections.mjs).
-    for (const m of out.matchAll(/- label:.*\n\s*href:/g)) {
+    const linkMatches = [...out.matchAll(/- label:.*\n\s*href:/g)];
+    expect(linkMatches).toHaveLength(2);
+    for (const m of linkMatches) {
       expect(m[0].indexOf('label:')).toBeLessThan(m[0].indexOf('href:'));
     }
+    // status omitted entirely when null (no status chip on this card).
+    expect(out).not.toContain('status:');
+    const parsed = p.parse(out);
+    expect(p.toItem(parsed)).toEqual(item);
+    expect(p.toTranslation(parsed)).toEqual(t);
+  });
+  it('projects round-trips stops + a gold status chip', () => {
+    const p = COLLECTIONS.find((c) => c.name === 'projects')!;
+    const item = {
+      slug: 'saga-tracker',
+      order: 2,
+      sigil: 'ST',
+      gradient: ['#1a1233', '#2b2a72', '#00f5d4'],
+      stops: [50, 150],
+      tech: ['Go', 'PWA'],
+      status: { label: 'In progress', kind: 'gold' },
+      links: [{ label: 'GitHub', href: '#' }],
+    };
+    const t = { languages_code: 'en', title: 'Saga Tracker', description: 'A quest log.', plate: 'side quest' };
+    const out = p.serialize(p.toRecord(item, t));
+    expect(out).toMatch(/stops:\n\s*- 50\n\s*- 150/);
+    expect(out).toMatch(/status:\n\s*label: In progress\n\s*kind: gold/);
     const parsed = p.parse(out);
     expect(p.toItem(parsed)).toEqual(item);
     expect(p.toTranslation(parsed)).toEqual(t);
