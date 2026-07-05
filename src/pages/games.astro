@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from "../layouts/Base.astro";
 import PageHead from "../components/PageHead.astro";
 import GameCard from "../components/GameCard.astro";
-import { localizedEntry, requirePageHead, uniqueSlugs } from "../i18n/localized";
+import { localizedByOrder, requirePageHead } from "../i18n/localized";
 import { useTranslations } from "../i18n/utils";
 import type { Locale } from "../i18n/ui";
 
@@ -11,10 +11,7 @@ const locale = (Astro.currentLocale ?? 'is') as Locale;
 const t = useTranslations(locale);
 
 const all = await getCollection('games');
-const games = uniqueSlugs(all)
-  .map((s) => localizedEntry(all, s, locale))
-  .filter((g): g is NonNullable<typeof g> => Boolean(g))
-  .sort((a, b) => a.data.order - b.data.order);
+const games = localizedByOrder(all, locale);
 
 const pagesAll = await getCollection('pages');
 const head = requirePageHead(pagesAll, 'games', locale).data;

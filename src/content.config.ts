@@ -4,6 +4,7 @@ import { glob } from 'astro/loaders';
 // MUST keep `generateId: localeEntryId` or a slug's locale files collide on one id
 // (guarded by tests/content/config-wiring.test.ts).
 import { localeEntryId } from './content/loaders';
+import { countdownsSections } from './content/page-sections';
 
 // The Codex — long-form posts. Drop a Markdown file in src/content/blog/ and it
 // appears on /blog and at /blog/<filename>. The frontmatter below is validated
@@ -98,12 +99,7 @@ const pages = defineCollection({
   }).superRefine((p, ctx) => {
     // Per-page section shapes, validated as pages are ported (design §3).
     if (p.slug === 'countdowns') {
-      const shape = z.object({
-        countdown_kicker: z.string(),
-        countup_kicker: z.string(),
-        methodology: z.string(),
-      }).strict();
-      const r = shape.safeParse(p.sections);
+      const r = countdownsSections.safeParse(p.sections);
       if (!r.success) {
         ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${z.prettifyError(r.error)}` });
       }

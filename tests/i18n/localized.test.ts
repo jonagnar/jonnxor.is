@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localizedEntry, requirePageHead, uniqueSlugs } from '../../src/i18n/localized';
+import { localizedByOrder, localizedEntry, requirePageHead, uniqueSlugs } from '../../src/i18n/localized';
 
 const entries = [
   { id: 'a.en', data: { slug: 'a', locale: 'en' as const, title: 'A' } },
@@ -35,5 +35,19 @@ describe('requirePageHead', () => {
 describe('uniqueSlugs', () => {
   it('dedupes slugs across locales', () => {
     expect(uniqueSlugs(entries).sort()).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('localizedByOrder', () => {
+  const ordered = [
+    { id: 'x.en', data: { slug: 'x', locale: 'en' as const, order: 2 } },
+    { id: 'y.en', data: { slug: 'y', locale: 'en' as const, order: 1 } },
+    { id: 'y.is', data: { slug: 'y', locale: 'is' as const, order: 1 } },
+    { id: 'z.ja', data: { slug: 'z', locale: 'ja' as const, order: 3 } },
+  ];
+
+  it('resolves one locale entry per slug (en fallback) and sorts by order', () => {
+    const result = localizedByOrder(ordered, 'is');
+    expect(result.map((e) => e.id)).toEqual(['y.is', 'x.en']);
   });
 });

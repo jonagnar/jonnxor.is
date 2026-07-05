@@ -23,3 +23,13 @@ export function requirePageHead<T extends Entry>(entries: T[], slug: string, loc
 export function uniqueSlugs(entries: Entry[]): string[] {
   return [...new Set(entries.map((e) => e.data.slug))];
 }
+
+type OrderedEntry = { id: string; data: { slug: string; locale: Locale; order: number; [k: string]: unknown } };
+
+/** One locale-resolved entry per slug (en fallback), sorted by `data.order`. */
+export function localizedByOrder<T extends OrderedEntry>(entries: T[], locale: Locale): T[] {
+  return uniqueSlugs(entries)
+    .map((s) => localizedEntry(entries, s, locale))
+    .filter((e): e is T => Boolean(e))
+    .sort((a, b) => a.data.order - b.data.order);
+}

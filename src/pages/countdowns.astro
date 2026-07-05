@@ -4,22 +4,20 @@ import Base from "../layouts/Base.astro";
 import PageHead from "../components/PageHead.astro";
 import CountdownCard from "../components/CountdownCard.astro";
 import CountUpCard from "../components/CountUpCard.astro";
-import { localizedEntry, requirePageHead, uniqueSlugs } from "../i18n/localized";
+import { localizedByOrder, requirePageHead } from "../i18n/localized";
 import type { Locale } from "../i18n/ui";
+import type { CountdownsSections } from "../content/page-sections";
 
 const locale = (Astro.currentLocale ?? 'is') as Locale;
 
 const all = await getCollection('countdowns');
-const entries = uniqueSlugs(all)
-  .map((s) => localizedEntry(all, s, locale))
-  .filter((e): e is NonNullable<typeof e> => Boolean(e))
-  .sort((a, b) => a.data.order - b.data.order);
+const entries = localizedByOrder(all, locale);
 const downs = entries.filter((e) => e.data.kind === 'countdown');
 const ups = entries.filter((e) => e.data.kind === 'countup');
 
 const pagesAll = await getCollection('pages');
 const page = requirePageHead(pagesAll, 'countdowns', locale).data;
-const sections = page.sections as { countdown_kicker: string; countup_kicker: string; methodology: string };
+const sections = page.sections as CountdownsSections;
 ---
 
 <Base title="Countdowns — JonnXor" page="countdowns">
