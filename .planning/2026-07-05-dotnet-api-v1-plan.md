@@ -28,6 +28,22 @@ Two commits on the branch.
 - **Gates (all from `client/`):** `pnpm install` → `pnpm test` (172) → `pnpm exec astro check` (16-error baseline) → `pnpm build` (15 pages) → `pnpm test:e2e` (25) → `pnpm test:visual` (23, `git status` clean — baselines byte-untouched) → live round-trip (`pnpm content:restore` all-skip 68 items, `pnpm content:pull` clean status).
 - Push both commits.
 
+## Task 1.5 (review amendment): consolidate ALL tests to top-level `tests/`
+
+After Task 1 lands. One commit (`refactor: consolidate the JS test pyramid into tests/`):
+- `git mv client/tests/{content,i18n,render,e2e,visual} tests/` (plus any shared fixtures/helpers under client/tests). `tests/Jonnxor.Api.Tests` will join in Task 2.
+- Repath: test imports (`../../src/...` → `../../client/src/...`, `../../scripts/...` → `../../client/scripts/...`); `client/vitest.config.ts` include → `../tests/**/*.test.ts`; `client/playwright.config.ts` testDir → `../tests` (e2e/visual projects) with snapshot paths verified BYTE-STABLE (the visual baselines move with their dir — snapshot resolution must still find them; zero re-records allowed); `client/scripts/pw.sh` mounts must cover the repo root now (tests outside client); CI paths.
+- Gates: full pyramid green from client/ (172/25/23, baselines byte-untouched — `git status` shows only renames under tests/), CLAUDE.md test-section paths updated.
+
+## Task 1.6 (review amendment): Directus runtime → infra repo
+
+Cross-repo; stack-down; canonical checkouts only. Design §2 amendment governs. Steps:
+- READ ~/dev/src/infra first (layout, conventions, sops setup) and follow its stack pattern.
+- Stack down (from the main jonnxor.is checkout — last place compose lives). `git mv`-equivalent: compose file + .env.example to infra per its conventions; stack env sops-encrypted THERE; physically relocate `data/` + `uploads/` (plain mv, same filesystem); bring the stack up FROM INFRA; verify /server/ping + content counts.
+- jonnxor.is side: `directus/` shrinks to `schema/snapshot.yaml` + `scripts/setup-schema.mjs` + client `.env(.example)` (DIRECTUS_URL + service creds; existing sops file stays valid); package.json loses `directus:up/down` (runbook pointer in CLAUDE.md instead); `directus:snapshot` unchanged (execs by container name); content scripts' `--env-file` keeps pointing at `../directus/.env`.
+- Docs: infra runbook/README gains the stack (incl. backup follow-up item for the Postgres dir); jonnxor.is CLAUDE.md Content/CMS section rewritten; both repos commit + push.
+- Gates: from client/ — `content:restore` all-skip 68, `content:pull` clean; `directus:schema` idempotent; `directus:snapshot` produces a clean diff.
+
 ## Task 2: Solution + projects + CI dotnet job
 
 One commit (`feat(api): .NET solution scaffold — Jonnxor.Api + xUnit, CI wired`):
