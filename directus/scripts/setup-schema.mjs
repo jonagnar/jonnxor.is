@@ -1,8 +1,8 @@
 import {
-  createCollection, createField, createRelation, readCollections,
-  readFieldsByCollection, updateField,
-} from '@directus/sdk';
-import { connect, done } from '../../client/scripts/lib/directus-client.mjs';
+  connect, done,
+  createCollection, createField, createRelation, createItems, readItems,
+  readCollections, readFieldsByCollection, updateField,
+} from '../../client/scripts/lib/directus-client.mjs';
 
 const client = await connect();
 
@@ -407,7 +407,6 @@ if (need('projects_translations')) {
 }
 
 // 16. seed the three languages
-import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
 const want = [

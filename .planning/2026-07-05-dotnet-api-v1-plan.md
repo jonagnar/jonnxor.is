@@ -71,7 +71,7 @@ One commit (`feat(api): verify --live — snapshot↔Directus equivalence`):
 - `DirectusClient`: base URL + credentials from env (`DIRECTUS_URL`, `ADMIN_EMAIL`/`ADMIN_PASSWORD` — same names the Node scripts use; load via env, document `--env-file`-style usage: run through `node --env-file`? No — .NET: read `../directus/.env` path passed as `--env <path>` flag parsing KEY=VALUE lines, or rely on exported env; implement the tiny .env file reader, it's 15 lines, test it). Login → token → GET `/items/<collection>?limit=-1&fields=*,translations.*`. Read-only; no create/update/delete methods AT ALL (enforce by not writing them).
 - Equivalence check per collection (blog, grimoire, games, pages, countdowns, wallpapers, projects): slug sets equal both ways; per slug+locale, GENERIC field comparison — snapshot record fields vs Directus base+translation fields (normalize: null≈absent, numbers by value, arrays/objects structurally; date strings sliced like the Node toRecord does for blog/grimoire `date`/`updated`). Differences reported field-precise.
 - Unit tests: comparison logic against in-memory fakes (mismatch cases: missing slug, extra slug, field drift, translation drift). Live Directus NOT required by tests.
-- Manual gate: `verify --live --content client/src/content --env ../directus/.env` (from repo root in the worktree; Directus running from main checkout) → exit 0 against the real stack. Then mutate nothing — this is read-only.
+- Manual gate: `verify --live --content client/src/content --env ../directus/.env` (from repo root in the worktree; Directus running from infra — see design §2 amendment) → exit 0 against the real stack. Then mutate nothing — this is read-only.
 
 ## Task 5: report — translation coverage
 
