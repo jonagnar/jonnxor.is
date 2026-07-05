@@ -7,6 +7,7 @@ import CountUpCard from '../../src/components/CountUpCard.astro';
 import WallpaperTile from '../../src/components/WallpaperTile.astro';
 import ProjectCard from '../../src/components/ProjectCard.astro';
 import PostRow from '../../src/components/PostRow.astro';
+import FactList from '../../src/components/FactList.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {
@@ -142,6 +143,23 @@ describe('ProjectCard', () => {
     const html = await c.renderToString(ProjectCard, { props: { ...base, status: undefined } });
     expect(html).not.toContain('gold');
     expect((html.match(/class="chip tq"/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('FactList', () => {
+  const facts = [
+    { k: 'Class', v: 'Full-stack developer' },
+    { k: 'Home base', v: 'Reykjavík, Iceland' },
+  ];
+  it('renders one li per fact with k/v spans', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(FactList, { props: { facts } });
+    expect(html).toContain('class="fact-list"');
+    expect((html.match(/<li>/g) ?? []).length).toBe(2);
+    expect(html).toContain('<span class="k">Class</span>');
+    expect(html).toContain('<span class="v">Full-stack developer</span>');
+    expect(html).toContain('<span class="k">Home base</span>');
+    expect(html).toContain('<span class="v">Reykjavík, Iceland</span>');
   });
 });
 

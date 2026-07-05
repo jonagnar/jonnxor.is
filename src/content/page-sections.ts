@@ -19,5 +19,22 @@ export const homeSections = z.object({
 }).strict();
 export type HomeSections = z.infer<typeof homeSections>;
 
+export const aboutSections = z.object({
+  body: z.array(z.string()).min(1),
+  sheet_title: z.string(),
+  sheet: z.array(z.object({ k: z.string(), v: z.string() }).strict()).length(8),
+  skills: z.array(z.object({ label: z.string(), gold: z.boolean() }).strict()).min(1),
+  letter: z.object({
+    kicker: z.string(),
+    who: z.string(),
+    when: z.string(),
+    body: z.array(z.string()).min(1),
+    sign_name: z.string(),
+    sign_small: z.string(),
+    cta_label: z.string(),
+  }).strict(),
+}).strict();
+export type AboutSections = z.infer<typeof aboutSections>;
+
 /** slug -> sections schema; content.config.ts validates any pages entry whose slug appears here. */
-export const sectionSchemas = { countdowns: countdownsSections, home: homeSections } as const;
+export const sectionSchemas = { countdowns: countdownsSections, home: homeSections, about: aboutSections } as const;

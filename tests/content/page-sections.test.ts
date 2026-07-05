@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countdownsSections, homeSections, sectionSchemas } from '../../src/content/page-sections';
+import { countdownsSections, homeSections, aboutSections, sectionSchemas } from '../../src/content/page-sections';
 
 const VALID_HOME = {
   hero: { tagline: 'A tagline.', cta_primary: 'View the work', cta_secondary: 'Read the saga' },
@@ -96,6 +96,91 @@ describe('homeSections', () => {
 describe('sectionSchemas.home', () => {
   it('rejects an extra key', () => {
     const r = sectionSchemas.home.safeParse({ ...VALID_HOME, extra: 'x' });
+    expect(r.success).toBe(false);
+  });
+});
+
+const VALID_ABOUT = {
+  body: ['Paragraph one.', 'Paragraph two with <em>emphasis</em>.'],
+  sheet_title: 'Character sheet',
+  sheet: [
+    { k: 'Class', v: 'Full-stack developer' },
+    { k: 'Home base', v: 'Reykjavík, Iceland' },
+    { k: 'Alignment', v: 'Chaotic kind (INFJ)' },
+    { k: 'Patron gods', v: 'Loki · Hermes' },
+    { k: 'Favorite hero', v: 'Odysseus' },
+    { k: 'Familiar', v: 'One cat, one owl (alleged)' },
+    { k: 'Potion', v: 'Masala chai, extra cardamom' },
+    { k: 'Languages', v: 'Íslenska · English · 日本語 (learning)' },
+  ],
+  skills: [
+    { label: 'TypeScript', gold: false },
+    { label: 'Souls veteran', gold: true },
+  ],
+  letter: {
+    kicker: 'Cover letter',
+    who: 'Jón Agnar Stefánsson',
+    when: 'Reykjavík · June 2026',
+    body: ['Dear hiring team,', 'Body paragraph.'],
+    sign_name: 'Jón Agnar Stefánsson',
+    sign_small: 'jon@jonnxor.is · jonnxor.is',
+    cta_label: 'Continue to CV →',
+  },
+};
+
+describe('aboutSections', () => {
+  it('parses a valid shape', () => {
+    expect(aboutSections.safeParse(VALID_ABOUT).success).toBe(true);
+  });
+
+  it('rejects an extra top-level key (strict)', () => {
+    const r = aboutSections.safeParse({ ...VALID_ABOUT, extra: 'nope' });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an extra key inside a sheet item (strict)', () => {
+    const r = aboutSections.safeParse({
+      ...VALID_ABOUT,
+      sheet: [{ ...VALID_ABOUT.sheet[0], extra: 'nope' }, ...VALID_ABOUT.sheet.slice(1)],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects a sheet with fewer or more than 8 entries', () => {
+    expect(aboutSections.safeParse({ ...VALID_ABOUT, sheet: VALID_ABOUT.sheet.slice(0, 7) }).success).toBe(false);
+  });
+
+  it('rejects an empty body array', () => {
+    expect(aboutSections.safeParse({ ...VALID_ABOUT, body: [] }).success).toBe(false);
+  });
+
+  it('rejects an extra key inside a skill item (strict)', () => {
+    const r = aboutSections.safeParse({
+      ...VALID_ABOUT,
+      skills: [{ ...VALID_ABOUT.skills[0], extra: 'nope' }, VALID_ABOUT.skills[1]],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an extra key inside letter (strict)', () => {
+    const r = aboutSections.safeParse({ ...VALID_ABOUT, letter: { ...VALID_ABOUT.letter, extra: 'nope' } });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an empty letter body array', () => {
+    const r = aboutSections.safeParse({ ...VALID_ABOUT, letter: { ...VALID_ABOUT.letter, body: [] } });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects a missing key', () => {
+    const { sheet_title, ...rest } = VALID_ABOUT;
+    expect(aboutSections.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe('sectionSchemas.about', () => {
+  it('rejects an extra key', () => {
+    const r = sectionSchemas.about.safeParse({ ...VALID_ABOUT, extra: 'x' });
     expect(r.success).toBe(false);
   });
 });
