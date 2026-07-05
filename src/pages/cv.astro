@@ -1,102 +1,71 @@
 ---
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import CVRole from "../components/CVRole.astro";
+import CVSkillsRow from "../components/CVSkillsRow.astro";
+import { requirePageHead } from "../i18n/localized";
+import { defaultLocale, type Locale } from "../i18n/ui";
+import { useTranslations } from "../i18n/utils";
+import type { CvSections } from "../content/page-sections";
+
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+const t = useTranslations(locale);
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'cv', locale).data;
+const sections = head.sections as CvSections;
 ---
 
 <Base title="CV — Jón Agnar Stefánsson" page="cv">
   <main>
-    <section class="page-head" data-screen-label="CV head">
-      <div class="container">
-        <p class="kicker">Curriculum vitae</p>
-        <h1>The Record of Deeds</h1>
-        <p class="lede">Clean, scannable, and print-friendly — hit the button and it becomes a sober one-pager, no dragons attached.</p>
-      </div>
-    </section>
+    <PageHead kicker={head.kicker} title={head.title} lede={head.lede} label="CV head" />
 
     <div class="container">
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
       <div class="cv-actions">
-        <button class="btn btn-gold" type="button" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn btn-gold" type="button" onclick="window.print()">{t('cv.print')}</button>
       </div>
 
       <article class="cv-sheet" data-screen-label="CV sheet">
         <div class="cv-head">
           <div>
             <h1>Jón Agnar Stefánsson</h1>
-            <p class="role">Full-stack developer</p>
+            <p class="role">{sections.role}</p>
           </div>
           <div class="cv-contact">
-            Reykjavík, Iceland<br />
-            jon@jonnxor.is · jonnxor.is<br />
-            github.com/jonnxor
+            {sections.contact.location}<br />
+            {sections.contact.web}<br />
+            {sections.contact.github}
           </div>
         </div>
 
         <section class="cv-section">
-          <h2>Profile</h2>
-          <p style="font-size: 14.5px; color: var(--ink-soft); margin: 0;">Full-stack developer with 10 years of experience designing and shipping web platforms end to end. Strong in TypeScript, Go, and React; known for clear technical writing, calm incident response, and finding the lateral solution. Trilingual-in-progress (Icelandic, English, Japanese).</p>
+          <h2>{sections.profile_heading}</h2>
+          <p style="font-size: 14.5px; color: var(--ink-soft); margin: 0;">{sections.profile}</p>
         </section>
 
         <section class="cv-section">
-          <h2>Experience</h2>
-          <div class="cv-role">
-            <span class="when">2022 — now</span>
-            <div>
-              <h3>Senior Full-stack Developer · <span class="org">Straumur Pay</span></h3>
-              <ul>
-                <li>Led rebuild of merchant dashboard (React + Go) serving 40,000 merchants; p75 load time down 70%.</li>
-                <li>Designed event-driven settlement pipeline processing 2M transactions/day on Postgres + NATS.</li>
-                <li>Introduced ADR practice and incident postmortem culture; support tickets halved in one year.</li>
-              </ul>
-            </div>
-          </div>
-          <div class="cv-role">
-            <span class="when">2019 — 2022</span>
-            <div>
-              <h3>Full-stack Developer · <span class="org">Nordsky Software</span></h3>
-              <ul>
-                <li>Built booking and logistics systems for Icelandic tourism operators (Node, TypeScript, PostGIS).</li>
-                <li>Shipped offline-first mobile web client used by guides in zero-signal highland routes.</li>
-              </ul>
-            </div>
-          </div>
-          <div class="cv-role">
-            <span class="when">2016 — 2019</span>
-            <div>
-              <h3>Web Developer · <span class="org">RVK Studio</span></h3>
-              <ul>
-                <li>Delivered 30+ client sites and web apps; owned everything from CMS modeling to deployment.</li>
-              </ul>
-            </div>
-          </div>
+          <h2>{sections.experience_heading}</h2>
+          {sections.experience.map((role) => (
+            <CVRole when={role.when} title={role.title} org={role.org} bullets={role.bullets} />
+          ))}
         </section>
 
         <section class="cv-section">
-          <h2>Skills</h2>
+          <h2>{sections.skills_heading}</h2>
           <div class="cv-skills">
-            <div class="row"><span class="k">Languages</span> <span>TypeScript, Go, Python, SQL</span></div>
-            <div class="row"><span class="k">Frontend</span> <span>React, Next.js, CSS architecture, a11y</span></div>
-            <div class="row"><span class="k">Backend</span> <span>Node, Go services, Postgres, Redis, NATS</span></div>
-            <div class="row"><span class="k">Infra</span> <span>Docker, GitHub Actions, Grafana, AWS</span></div>
-            <div class="row"><span class="k">Practices</span> <span>ADRs, testing strategy, incident response</span></div>
-            <div class="row"><span class="k">Writing</span> <span>Docs, postmortems, long-form technical blog</span></div>
+            {sections.skills.map((s) => <CVSkillsRow k={s.k} v={s.v} />)}
           </div>
         </section>
 
         <section class="cv-section">
-          <h2>Education & languages</h2>
-          <div class="cv-role">
-            <span class="when">2012 — 2015</span>
-            <div>
-              <h3>BSc Computer Science · <span class="org">University of Iceland</span></h3>
-            </div>
-          </div>
-          <div class="cv-role">
-            <span class="when"></span>
-            <div>
-              <h3 style="font-weight: 600;">Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)</h3>
-            </div>
-          </div>
+          <h2>{sections.education_heading}</h2>
+          {sections.education.map((ed) => (
+            <CVRole when={ed.when} title={ed.degree} org={ed.school} bullets={[]} />
+          ))}
+          <CVRole when="" title={sections.languages} bullets={[]} bold />
         </section>
       </article>
     </div>

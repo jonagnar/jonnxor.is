@@ -8,6 +8,8 @@ import WallpaperTile from '../../src/components/WallpaperTile.astro';
 import ProjectCard from '../../src/components/ProjectCard.astro';
 import PostRow from '../../src/components/PostRow.astro';
 import FactList from '../../src/components/FactList.astro';
+import CVRole from '../../src/components/CVRole.astro';
+import CVSkillsRow from '../../src/components/CVSkillsRow.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {
@@ -160,6 +162,54 @@ describe('FactList', () => {
     expect(html).toContain('<span class="v">Full-stack developer</span>');
     expect(html).toContain('<span class="k">Home base</span>');
     expect(html).toContain('<span class="v">Reykjavík, Iceland</span>');
+  });
+});
+
+describe('CVRole', () => {
+  it('renders when/title/org and bullets when present', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CVRole, {
+      props: {
+        when: '2022 — now',
+        title: 'Senior Full-stack Developer',
+        org: 'Straumur Pay',
+        bullets: ['Did a thing.', 'Did another thing.'],
+      },
+    });
+    expect(html).toContain('class="cv-role"');
+    expect(html).toContain('<span class="when">2022 — now</span>');
+    expect(html).toContain('<h3>Senior Full-stack Developer · <span class="org">Straumur Pay</span></h3>');
+    expect((html.match(/<li>/g) ?? []).length).toBe(2);
+    expect(html).toContain('<li>Did a thing.</li>');
+    expect(html).toContain('<li>Did another thing.</li>');
+  });
+
+  it('omits the bullet list when bullets is empty', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CVRole, {
+      props: { when: '2012 — 2015', title: 'BSc Computer Science', org: 'University of Iceland', bullets: [] },
+    });
+    expect(html).not.toContain('<ul>');
+  });
+
+  it('renders an empty when span and no org when org is absent (languages row)', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CVRole, {
+      props: { when: '', title: 'Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)', bullets: [], bold: true },
+    });
+    expect(html).toContain('<span class="when"></span>');
+    expect(html).toContain('<h3 style="font-weight: 600;">Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)</h3>');
+    expect(html).not.toContain('class="org"');
+  });
+});
+
+describe('CVSkillsRow', () => {
+  it('renders a k/v row matching the cv-skills markup', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(CVSkillsRow, { props: { k: 'Languages', v: 'TypeScript, Go, Python, SQL' } });
+    expect(html).toContain('class="row"');
+    expect(html).toContain('<span class="k">Languages</span>');
+    expect(html).toContain('<span>TypeScript, Go, Python, SQL</span>');
   });
 });
 

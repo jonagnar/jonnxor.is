@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countdownsSections, homeSections, aboutSections, sectionSchemas } from '../../src/content/page-sections';
+import { countdownsSections, homeSections, aboutSections, cvSections, sectionSchemas } from '../../src/content/page-sections';
 
 const VALID_HOME = {
   hero: { tagline: 'A tagline.', cta_primary: 'View the work', cta_secondary: 'Read the saga' },
@@ -181,6 +181,96 @@ describe('aboutSections', () => {
 describe('sectionSchemas.about', () => {
   it('rejects an extra key', () => {
     const r = sectionSchemas.about.safeParse({ ...VALID_ABOUT, extra: 'x' });
+    expect(r.success).toBe(false);
+  });
+});
+
+const VALID_CV = {
+  role: 'Full-stack developer',
+  contact: { location: 'Reykjavík, Iceland', web: 'jon@jonnxor.is · jonnxor.is', github: 'github.com/jonnxor' },
+  profile_heading: 'Profile',
+  profile: 'A profile paragraph.',
+  experience_heading: 'Experience',
+  experience: [
+    { when: '2022 — now', title: 'Senior Full-stack Developer', org: 'Straumur Pay', bullets: ['Did a thing.', 'Did another thing.'] },
+    { when: '2019 — 2022', title: 'Full-stack Developer', org: 'Nordsky Software', bullets: ['Built stuff.'] },
+  ],
+  skills_heading: 'Skills',
+  skills: [
+    { k: 'Languages', v: 'TypeScript, Go, Python, SQL' },
+    { k: 'Frontend', v: 'React, Next.js, CSS architecture, a11y' },
+  ],
+  education_heading: 'Education & languages',
+  education: [
+    { when: '2012 — 2015', degree: 'BSc Computer Science', school: 'University of Iceland' },
+  ],
+  languages: 'Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)',
+};
+
+describe('cvSections', () => {
+  it('parses a valid shape', () => {
+    expect(cvSections.safeParse(VALID_CV).success).toBe(true);
+  });
+
+  it('rejects an extra top-level key (strict)', () => {
+    const r = cvSections.safeParse({ ...VALID_CV, extra: 'nope' });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an extra key inside contact (strict)', () => {
+    const r = cvSections.safeParse({ ...VALID_CV, contact: { ...VALID_CV.contact, extra: 'nope' } });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an extra key inside an experience item (strict)', () => {
+    const r = cvSections.safeParse({
+      ...VALID_CV,
+      experience: [{ ...VALID_CV.experience[0], extra: 'nope' }, VALID_CV.experience[1]],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an experience item with empty bullets', () => {
+    const r = cvSections.safeParse({
+      ...VALID_CV,
+      experience: [{ ...VALID_CV.experience[0], bullets: [] }, VALID_CV.experience[1]],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an empty experience array', () => {
+    expect(cvSections.safeParse({ ...VALID_CV, experience: [] }).success).toBe(false);
+  });
+
+  it('rejects an extra key inside a skill item (strict)', () => {
+    const r = cvSections.safeParse({
+      ...VALID_CV,
+      skills: [{ ...VALID_CV.skills[0], extra: 'nope' }, VALID_CV.skills[1]],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an extra key inside an education item (strict)', () => {
+    const r = cvSections.safeParse({
+      ...VALID_CV,
+      education: [{ ...VALID_CV.education[0], extra: 'nope' }],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an empty education array', () => {
+    expect(cvSections.safeParse({ ...VALID_CV, education: [] }).success).toBe(false);
+  });
+
+  it('rejects a missing key', () => {
+    const { languages, ...rest } = VALID_CV;
+    expect(cvSections.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe('sectionSchemas.cv', () => {
+  it('rejects an extra key', () => {
+    const r = sectionSchemas.cv.safeParse({ ...VALID_CV, extra: 'x' });
     expect(r.success).toBe(false);
   });
 });

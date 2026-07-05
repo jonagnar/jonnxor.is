@@ -36,5 +36,30 @@ export const aboutSections = z.object({
 }).strict();
 export type AboutSections = z.infer<typeof aboutSections>;
 
+export const cvSections = z.object({
+  role: z.string(),
+  contact: z.object({ location: z.string(), web: z.string(), github: z.string() }).strict(),
+  profile_heading: z.string(),
+  profile: z.string(),
+  experience_heading: z.string(),
+  experience: z.array(z.object({
+    when: z.string(),
+    title: z.string(),
+    org: z.string(),
+    bullets: z.array(z.string()).min(1),
+  }).strict()).min(1),
+  skills_heading: z.string(),
+  skills: z.array(z.object({ k: z.string(), v: z.string() }).strict()).min(1),
+  education_heading: z.string(),
+  education: z.array(z.object({ when: z.string(), degree: z.string(), school: z.string() }).strict()).min(1),
+  languages: z.string(),
+}).strict();
+export type CvSections = z.infer<typeof cvSections>;
+
 /** slug -> sections schema; content.config.ts validates any pages entry whose slug appears here. */
-export const sectionSchemas = { countdowns: countdownsSections, home: homeSections, about: aboutSections } as const;
+export const sectionSchemas = {
+  countdowns: countdownsSections,
+  home: homeSections,
+  about: aboutSections,
+  cv: cvSections,
+} as const;
