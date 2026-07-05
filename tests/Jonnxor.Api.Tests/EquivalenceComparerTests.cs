@@ -597,6 +597,57 @@ public class EquivalenceComparerTests
     }
 
     [Fact]
+    public void ReverseWalk_CountdownsGoldFalseMissingInSnapshot_NoFinding()
+    {
+        // countdowns.gold is the other documented flag field (entry-yaml.mjs omitEmpty
+        // convention) — same mechanism as games.favorite, scoped per-collection.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("countdowns", "gaming", "en", new Dictionary<string, object?> { ["slug"] = "gaming", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                { "id": 1, "slug": "gaming", "gold": false, "translations": [ { "id": 1, "languages_code": "en" } ] }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("countdowns", snapshot, directus);
+
+        Assert.Empty(findings);
+    }
+
+    [Fact]
+    public void ReverseWalk_BlogDraftFalseMissingInSnapshot_ProducesFinding()
+    {
+        // The false-flag exclusion is scoped to a specific per-collection field set
+        // (games.favorite, countdowns.gold) — NOT a blanket "any false is fine" rule. blog's
+        // `draft` is a plain boolean the descriptor table always writes, so a hand-deleted
+        // `draft: false` frontmatter line is genuine drift and must still surface here. This
+        // is the T5-review fix: before scoping, a bare `directusValue is false` check would
+        // have silently swallowed exactly this case.
+        var snapshot = new List<SnapshotEntry>
+        {
+            Entry("blog", "some-post", "en", new Dictionary<string, object?> { ["slug"] = "some-post", ["locale"] = "en" }),
+        };
+        var directus = new List<DirectusItem>
+        {
+            DirectusItemFromJson("""
+                {
+                  "id": 1, "slug": "some-post",
+                  "translations": [ { "id": 1, "languages_code": "en", "draft": false } ]
+                }
+                """),
+        };
+
+        var findings = EquivalenceComparer.Compare("blog", snapshot, directus);
+
+        var finding = Assert.Single(findings);
+        Assert.Contains("draft", finding.Detail);
+        Assert.Contains("missing in snapshot", finding.Detail);
+    }
+
+    [Fact]
     public void ReverseWalk_BlogBodyMissingInSnapshotFields_NoFinding()
     {
         // blog's `body` lives after the frontmatter fences (serializePost), never as a

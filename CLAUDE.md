@@ -64,6 +64,40 @@ Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Direc
 
 Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API render tests (`tests/render/` — components and non-collection pages only: the Container can't load `astro:content` under Vitest, and `vitest.config.ts` passes `devToolbar: {enabled: false}` as `getViteConfig`'s second arg so rendered HTML carries no debug attributes), then containerized Playwright E2E (`tests/e2e/`) and self-baseline visual regression (`tests/visual/`, `/countdowns` excluded — live-data layout). Tests live at the repo root (`tests/`), outside `client/` — imports and configs cross that boundary with `../`. No feature merges without a test. CI (`.forgejo/workflows/ci.yml`): both jobs run with `working-directory: client`; Vitest on every push; e2e + visual on PRs and the `preview` branch.
 
+### API worker (.NET, seam validator)
+
+Top-level solution `jonnxor.sln`, sibling to `client/`, wires two projects: `api/Jonnxor.Api`
+(the console app) and `tests/Jonnxor.Api.Tests` (xUnit) alongside the JS suites under
+`tests/`. It is a **build-time worker only — never on the Astro build path**: CI/Vercel
+build the site from the committed snapshot alone, with the .NET toolchain absent from that
+path entirely. Its job is to catch seam drift the Node pull/restore pipeline itself can't
+see itself violating (missing locale files, comment-node truncation, snapshot↔Directus
+field drift) — it never writes to Directus or the snapshot; there is no create/update/delete
+path anywhere in the client.
+
+Commands (run from the repo root, not `client/`):
+
+```sh
+# offline: snapshot invariants only, no Directus — this is what CI runs on every push
+dotnet run --project api/Jonnxor.Api -- verify --offline --content client/src/content
+
+# live: offline rules first (fails fast before touching Directus), then a generic
+# field-by-field equivalence check against a running Directus instance. direnv does not
+# reach into worktrees, so --env must be passed explicitly there (main checkout can rely
+# on the exported vars instead).
+dotnet run --project api/Jonnxor.Api -- verify --live --content client/src/content --env directus/.env
+
+# per-locale translation coverage table, offline; --json also writes a machine-readable artifact
+dotnet run --project api/Jonnxor.Api -- report
+dotnet run --project api/Jonnxor.Api -- report --json coverage.json
+```
+
+CI (`.forgejo/workflows/ci.yml`) runs a dedicated `dotnet` job on every push (container
+`mcr.microsoft.com/dotnet/sdk:10.0`, no `working-directory` default — it runs at repo root):
+`dotnet build jonnxor.sln --configuration Release` → `dotnet test jonnxor.sln --configuration
+Release --no-build` → `verify --offline` against the real committed snapshot. `verify --live`
+is a manual/local-only gate — it needs a reachable Directus and is not part of CI.
+
 ### Deploy & secrets
 
 `git push` → Forgejo → push-mirror to GitHub → Vercel. `preview` branch → preview.jonnxor.is; `main` → production — **never push main casually**.

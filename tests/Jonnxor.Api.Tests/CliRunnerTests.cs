@@ -83,6 +83,10 @@ public class CliRunnerTests
         var stderr = new StringWriter();
         var root = FixturePath.For("valid");
 
+        // Save/restore the true prior value (rather than hard-resetting to null) so this
+        // test can't clobber a genuinely-exported DIRECTUS_URL in whatever environment
+        // it runs in.
+        var previousValue = Environment.GetEnvironmentVariable("DIRECTUS_URL");
         Environment.SetEnvironmentVariable("DIRECTUS_URL", "not-a-valid-url");
         try
         {
@@ -94,7 +98,7 @@ public class CliRunnerTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("DIRECTUS_URL", null);
+            Environment.SetEnvironmentVariable("DIRECTUS_URL", previousValue);
         }
     }
 

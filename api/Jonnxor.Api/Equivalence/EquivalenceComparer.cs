@@ -38,9 +38,10 @@ namespace Jonnxor.Api.Equivalence;
 /// which the forward walk can never see since it only iterates the snapshot's own keys. Two
 /// exclusions keep that pass from false-positiving on documented, deliberate shape gaps
 /// (both live-verified against the real Directus stack on 2026-07-05): a Directus `false` on
-/// an `omitEmpty`/"flag"-convention field (`entry-yaml.mjs`) the snapshot never writes when
-/// false, and blog's `body` (<see cref="ReverseWalkStructuralExclusions"/>), which lives after
-/// the frontmatter fences rather than as a frontmatter key <c>SnapshotReader</c> can see.
+/// a specific, per-collection `omitEmpty`/"flag"-convention field (`entry-yaml.mjs`;
+/// <see cref="FlagFields"/>) the snapshot never writes when false, and blog's `body`
+/// (<see cref="ReverseWalkStructuralExclusions"/>), which lives after the frontmatter fences
+/// rather than as a frontmatter key <c>SnapshotReader</c> can see.
 /// </summary>
 public static class EquivalenceComparer
 {
@@ -58,6 +59,22 @@ public static class EquivalenceComparer
         };
 
     private static readonly HashSet<string> BookkeepingFields = ["slug", "locale"];
+
+    /// <summary>
+    /// Per-collection `omitEmpty`/"flag" fields (`entry-yaml.mjs`'s `out: (v) => v ||
+    /// undefined` convention): the snapshot serializer drops these specific boolean fields
+    /// from the file entirely when false, so a Directus `false` with no matching snapshot
+    /// key is that convention working as designed, not drift. Scoped per-field (not a blanket
+    /// "any false is fine" rule) so a hand-deleted `blog.draft: false` line — a plain,
+    /// non-flag boolean the descriptor table always writes — still surfaces as genuine drift
+    /// in the reverse walk.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> FlagFields =
+        new Dictionary<string, HashSet<string>>
+        {
+            ["games"] = ["favorite"],
+            ["countdowns"] = ["gold"],
+        };
 
     /// <summary>
     /// Fields the reverse walk must not flag as "missing in snapshot" even though they are
@@ -169,25 +186,30 @@ public static class EquivalenceComparer
         var reverseRenames = renames.ToDictionary(kv => kv.Value, kv => kv.Key);
 
         var structuralExclusions = ReverseWalkStructuralExclusions.GetValueOrDefault(collection, EmptyExclusions);
+        var flagFields = FlagFields.GetValueOrDefault(collection, EmptyExclusions);
 
         void CheckSide(IReadOnlyDictionary<string, object?> directusFields)
         {
             foreach (var (directusFieldName, directusValue) in directusFields)
             {
-                // null/empty-per-kind ≈ absent (same rule the forward walk applies), PLUS
-                // `false` specifically: `entry-yaml.mjs`'s documented `omitEmpty` convention
-                // drops boolean "flag" fields from the snapshot file entirely when false
-                // (`out: (v) => v || undefined` in `collections.mjs`) — so a Directus `false`
-                // with no snapshot key is that convention working as designed, not drift.
-                // Scoped to the reverse walk only: the forward walk still flags a snapshot
-                // `draft: false` missing from Directus, since non-flag booleans ARE written.
-                if (IsAbsent(directusValue) || directusValue is false)
+                // null/empty-per-kind ≈ absent (same rule the forward walk applies).
+                if (IsAbsent(directusValue))
                 {
                     continue;
                 }
 
                 var snapshotFieldName = reverseRenames.GetValueOrDefault(directusFieldName, directusFieldName);
                 if (BookkeepingFields.Contains(snapshotFieldName) || structuralExclusions.Contains(snapshotFieldName))
+                {
+                    continue;
+                }
+
+                // `false` on a specific, per-collection flag field (`FlagFields`) is the
+                // documented `omitEmpty` convention working as designed, not drift — but only
+                // for fields the descriptor table actually treats that way. A plain boolean
+                // like blog's `draft` IS always written, so `draft: false` missing from the
+                // snapshot (e.g. a hand-deleted frontmatter line) must still surface here.
+                if (directusValue is false && flagFields.Contains(snapshotFieldName))
                 {
                     continue;
                 }
