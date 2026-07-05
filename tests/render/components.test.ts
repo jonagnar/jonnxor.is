@@ -5,6 +5,7 @@ import GameCard from '../../src/components/GameCard.astro';
 import CountdownCard from '../../src/components/CountdownCard.astro';
 import CountUpCard from '../../src/components/CountUpCard.astro';
 import WallpaperTile from '../../src/components/WallpaperTile.astro';
+import ProjectCard from '../../src/components/ProjectCard.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {
@@ -95,5 +96,50 @@ describe('WallpaperTile', () => {
     expect(html).toContain('data-g0="#120724"');
     expect(html).toContain('aspect-ratio: 3/4');
     expect(html).toContain('ᛞ');
+  });
+});
+
+describe('ProjectCard', () => {
+  const base = {
+    sigil: 'ST',
+    gradient: ['#1a1233', '#2b2a72', '#00f5d4'],
+    stops: [50, 150],
+    tech: ['Go', 'PWA'],
+    status: { label: 'In progress', kind: 'gold' as const },
+    links: [
+      { label: 'GitHub', href: '#' },
+      { label: 'Devlog', href: '#' },
+    ],
+    title: 'Saga Tracker',
+    description: 'A quest log for real life.',
+    plate: 'side quest',
+  };
+  it('renders title, description, sigil, plate, tech chips and a gold status chip', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(ProjectCard, { props: base });
+    expect(html).toContain('<h3>Saga Tracker</h3>');
+    expect(html).toContain('A quest log for real life.');
+    expect(html).toContain('<span class="sigil">ST</span>');
+    expect(html).toContain('<span class="plate">side quest</span>');
+    expect(html).toContain('<span class="chip tq">Go</span>');
+    expect(html).toContain('<span class="chip tq">PWA</span>');
+    expect(html).toContain('<span class="chip gold">In progress</span>');
+    expect(html).toContain('background: linear-gradient(135deg, #1a1233, #2b2a72 50%, #00f5d4 150%)');
+    expect(html).toContain('<a href="#">GitHub</a>');
+    expect(html).toContain('<a href="#">Devlog</a>');
+  });
+  it('renders a plain (non-gold) status chip', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(ProjectCard, {
+      props: { ...base, status: { label: 'Production', kind: 'plain' as const } },
+    });
+    expect(html).toContain('<span class="chip">Production</span>');
+    expect(html).not.toContain('<span class="chip gold">Production</span>');
+  });
+  it('omits the status chip entirely when the card has none', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(ProjectCard, { props: { ...base, status: undefined } });
+    expect(html).not.toContain('gold');
+    expect((html.match(/class="chip tq"/g) ?? []).length).toBe(2);
   });
 });
