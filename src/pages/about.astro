@@ -23,6 +23,9 @@ const sections = head.sections as AboutSections;
 
       <section class="about-grid" data-screen-label="About body">
         <div class="about-body">
+          {/* Paragraphs may carry inline HTML (drop-cap span, em) authored solely by the
+              site owner; the snapshot is committed and PR-reviewed — same trusted-single-
+              author posture as grimoire bodies. Do not extend this to multi-author content. */}
           {sections.body.map((p) => <p set:html={p} />)}
         </div>
 
@@ -44,6 +47,7 @@ const sections = head.sections as AboutSections;
             <span class="who">{sections.letter.who}</span>
             <span class="when">{sections.letter.when}</span>
           </div>
+          {/* set:html — same trusted-single-author posture as the bio paragraphs above. */}
           {sections.letter.body.map((p) => <p set:html={p} />)}
           <p class="sign">{sections.letter.sign_name}<small>{sections.letter.sign_small}</small></p>
         </article>
