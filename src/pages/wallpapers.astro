@@ -43,7 +43,7 @@ const head = requirePageHead(pagesAll, 'wallpapers', locale).data;
     </div>
   </main>
 
-  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Wallpaper preview">
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label={t('wall.preview')}>
     <div class="lb-frame">
       <div class="lb-art" id="lb-art"></div>
       <div class="lb-bar">
@@ -104,7 +104,20 @@ const head = requirePageHead(pagesAll, 'wallpapers', locale).data;
   }
   lbClose.addEventListener('click', closeLb);
   lb.addEventListener('click', function (e) { if (e.target === lb) closeLb(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeLb(); return; }
+    if (e.key !== 'Tab' || !lb.classList.contains('open')) return;
+    // Focus trap: cycle between the lightbox's two focusable controls
+    // (Download, then Close in DOM order) while open.
+    var focusables = lb.querySelectorAll('#lb-download, #lb-close');
+    var first = focusables[0];
+    var last = focusables[focusables.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
 
   // Real download: paint the gradient to a canvas and save it. This re-derives
   // the raw stops (unlike the lightbox background above) because canvas

@@ -71,6 +71,7 @@ export const ui = {
     'wall.download': 'Download',
     'wall.close': 'Close',
     'wall.filterLabel': 'Filter wallpapers by tag',
+    'wall.preview': 'Wallpaper preview',
     'cv.print': 'Print / Save as PDF',
   },
   is: {

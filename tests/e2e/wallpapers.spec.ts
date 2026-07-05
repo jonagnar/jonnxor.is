@@ -17,7 +17,36 @@ test('lightbox opens, traps focus start, and closes with focus restoration', asy
   await firstTile.click();
   await expect(page.locator('#lightbox')).toHaveClass(/open/);
   await expect(page.locator('#lb-close')).toBeFocused();
+  await expect(page.locator('#lightbox')).toHaveAttribute('aria-label', 'Wallpaper preview');
   await page.keyboard.press('Escape');
   await expect(page.locator('#lightbox')).not.toHaveClass(/open/);
   await expect(firstTile).toBeFocused();
+});
+
+test('lightbox traps Tab focus while open and never leaks to the page', async ({ page }) => {
+  await page.goto('/wallpapers');
+  await page.locator('#masonry .wall-tile').first().click();
+  await expect(page.locator('#lightbox')).toHaveClass(/open/);
+
+  // Focus starts on Close. Tab wraps forward to Download.
+  await expect(page.locator('#lb-close')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#lb-download')).toBeFocused();
+
+  // Tab again wraps forward back to Close.
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#lb-close')).toBeFocused();
+
+  // Shift+Tab reverses: from Close back to Download.
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('#lb-download')).toBeFocused();
+
+  // After a few more Tabs, focus is still inside the lightbox — never escapes to the page.
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  const stillInside = await page.evaluate(() =>
+    document.getElementById('lightbox')?.contains(document.activeElement) ?? false
+  );
+  expect(stillInside).toBe(true);
 });
