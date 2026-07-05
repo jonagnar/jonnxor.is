@@ -1,0 +1,14 @@
+slug: bloodborne
+locale: en
+order: 16
+tab: favorites
+platforms:
+  - PS4
+gradient:
+  - "#0d0d14"
+  - "#3c2f4d"
+  - "#9e2f3c"
+initials: BB
+favorite: true
+title: Bloodborne
+sub: Fear the old blood · 60 fps someday

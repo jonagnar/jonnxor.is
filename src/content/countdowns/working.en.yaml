@@ -1,0 +1,9 @@
+slug: working
+locale: en
+order: 7
+kind: countup
+icon: ⚒
+start: "2014-06-01T09:00:00"
+rate: 7.4
+what: Working
+note: Code, meetings, and meetings about code.

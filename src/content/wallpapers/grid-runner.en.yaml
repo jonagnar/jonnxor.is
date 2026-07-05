@@ -1,0 +1,11 @@
+slug: grid-runner
+locale: en
+order: 3
+tag: Synthwave
+aspect_ratio: 3/4
+gradient:
+  - "#120724"
+  - "#5d1d8f"
+  - "#00f5d4"
+angle: 35
+title: Grid Runner

@@ -1,0 +1,9 @@
+slug: studying
+locale: en
+order: 9
+kind: countup
+icon: 📖
+start: "2002-05-05T08:00:00"
+rate: 1.7
+what: Studying
+note: School, docs, and 日本語 flashcards.

@@ -1,0 +1,9 @@
+slug: gaming
+locale: en
+order: 8
+kind: countup
+icon: 🎮
+start: "2002-05-05T08:00:00"
+rate: 2.6
+what: Gaming
+note: Souls games are at least a third of this.

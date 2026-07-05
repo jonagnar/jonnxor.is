@@ -1,0 +1,14 @@
+slug: hollow-knight-silksong
+locale: en
+order: 4
+tab: upcoming
+platforms:
+  - PC
+  - Switch
+gradient:
+  - "#1a0f24"
+  - "#5d2a66"
+  - "#e85f6a"
+initials: SS
+title: "Hollow Knight: Silksong"
+sub: Team Cherry · any day now, surely

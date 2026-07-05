@@ -1,0 +1,15 @@
+slug: elden-ring
+locale: en
+order: 14
+tab: favorites
+platforms:
+  - PS5
+  - PC
+gradient:
+  - "#101708"
+  - "#46551f"
+  - "#f2c94c"
+initials: ER
+favorite: true
+title: Elden Ring
+sub: GOTY of a generation · maidenless no more

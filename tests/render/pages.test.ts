@@ -4,9 +4,6 @@ import Index from '../../src/pages/index.astro';
 import About from '../../src/pages/about.astro';
 import Cv from '../../src/pages/cv.astro';
 import Portfolio from '../../src/pages/portfolio.astro';
-import Games from '../../src/pages/games.astro';
-import Countdowns from '../../src/pages/countdowns.astro';
-import Wallpapers from '../../src/pages/wallpapers.astro';
 import NotFound from '../../src/pages/404.astro';
 
 const PAGES = [
@@ -14,9 +11,9 @@ const PAGES = [
   ['about', About],
   ['cv', Cv],
   ['portfolio', Portfolio],
-  ['games', Games],
-  ['countdowns', Countdowns],
-  ['wallpapers', Wallpapers],
+  // games, countdowns and wallpapers are collection-backed since the content
+  // port — the Container can't load astro:content under Vitest (same reason
+  // blog/docs aren't here). Covered by tests/render/components.test.ts + e2e.
   ['404', NotFound],
 ] as const;
 
@@ -35,8 +32,6 @@ describe('static page smoke render', () => {
     const container = await AstroContainer.create();
     const req = new Request('https://jonnxor.is/');
     expect(await container.renderToString(Cv, { request: req })).toContain('The Record of Deeds');
-    expect(await container.renderToString(Countdowns, { request: req })).toContain('The Reckoning');
-    expect(await container.renderToString(Games, { request: req })).toContain('The Game Hall');
     expect(await container.renderToString(NotFound, { request: req })).toContain('ÞÚ DÓST');
   });
 });

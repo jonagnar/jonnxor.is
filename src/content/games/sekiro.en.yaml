@@ -1,0 +1,14 @@
+slug: sekiro
+locale: en
+order: 15
+tab: favorites
+platforms:
+  - PC
+gradient:
+  - "#1b0d0d"
+  - "#7e2a20"
+  - "#ecdcb8"
+initials: SK
+favorite: true
+title: Sekiro
+sub: Hesitation is defeat

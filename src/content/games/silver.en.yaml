@@ -1,0 +1,15 @@
+slug: silver
+locale: en
+order: 17
+tab: favorites
+platforms:
+  - PC
+  - Dreamcast
+gradient:
+  - "#0e1620"
+  - "#3a5a78"
+  - "#cfd8e0"
+initials: SV
+favorite: true
+title: Silver
+sub: 1999 · the one that started it all

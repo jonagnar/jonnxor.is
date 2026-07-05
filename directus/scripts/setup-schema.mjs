@@ -144,7 +144,201 @@ if (need('grimoire_translations')) {
   }));
 }
 
-// 6. seed the three languages
+// 6. games (base, non-translatable)
+if (need('games')) {
+  await client.request(createCollection({
+    collection: 'games',
+    meta: { icon: 'sports_esports', note: 'The Game Hall — tracker & favorites' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'tab', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'upcoming', value: 'upcoming' }, { text: 'playing', value: 'playing' }, { text: 'played', value: 'played' }, { text: 'favorites', value: 'favorites' }] } } },
+      { field: 'date', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'YYYY-MM-DD or empty = TBA' } },
+      { field: 'platforms', type: 'json', meta: { interface: 'tags' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
+      { field: 'initials', type: 'string', meta: { interface: 'input' } },
+      { field: 'favorite', type: 'boolean', schema: { default_value: false }, meta: { interface: 'boolean' } },
+    ],
+  }));
+}
+
+// 7. games_translations (junction)
+if (need('games_translations')) {
+  await client.request(createCollection({
+    collection: 'games_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'games', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'sub', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('games', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'games_translations', field: 'games', related_collection: 'games',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'games_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'games' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// Converge games.gradient's editor to JSON highlighting — the option was added
+// after the collection first shipped, and createCollection above only runs on
+// fresh installs.
+{
+  const gradientField = (await client.request(readFieldsByCollection('games'))).find((f) => f.field === 'gradient');
+  if (gradientField && gradientField.meta?.options?.language !== 'json') {
+    await client.request(updateField('games', 'gradient', { meta: { options: { language: 'json' } } }));
+  }
+}
+
+// 8. pages (base) — prose surfaces; one row per routed page
+if (need('pages')) {
+  await client.request(createCollection({
+    collection: 'pages',
+    meta: { icon: 'description', note: 'Page prose — heads + structured sections' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+    ],
+  }));
+}
+
+// 9. pages_translations (junction)
+if (need('pages_translations')) {
+  await client.request(createCollection({
+    collection: 'pages_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'pages', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'kicker', type: 'string', meta: { interface: 'input' } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'lede', type: 'text', meta: { interface: 'input-multiline' } },
+      { field: 'sections', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: 'Per-page structured prose; shape validated by the Astro build' } },
+    ],
+  }));
+  await client.request(createField('pages', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'pages_translations', field: 'pages', related_collection: 'pages',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'pages_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'pages' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 10. countdowns (base, non-translatable)
+if (need('countdowns')) {
+  await client.request(createCollection({
+    collection: 'countdowns',
+    meta: { icon: 'hourglass_top', note: 'The Reckoning — countdowns & count-ups' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'kind', type: 'string', meta: { interface: 'select-dropdown', options: { choices: [{ text: 'countdown', value: 'countdown' }, { text: 'countup', value: 'countup' }] } } },
+      { field: 'when', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'YYYY-MM-DD or empty = indefinite' } },
+      { field: 'gold', type: 'boolean', schema: { default_value: false }, meta: { interface: 'boolean' } },
+      { field: 'icon', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input' } },
+      { field: 'start', type: 'string', schema: { is_nullable: true }, meta: { interface: 'input', note: 'ISO datetime literal, countups only' } },
+      { field: 'rate', type: 'float', schema: { is_nullable: true }, meta: { interface: 'input', note: 'hours/day, countups only' } },
+    ],
+  }));
+}
+
+// 11. countdowns_translations (junction)
+if (need('countdowns_translations')) {
+  await client.request(createCollection({
+    collection: 'countdowns_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'countdowns', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'what', type: 'string', meta: { interface: 'input' } },
+      { field: 'note', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('countdowns', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'countdowns_translations', field: 'countdowns', related_collection: 'countdowns',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'countdowns_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'countdowns' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 12. wallpapers (base, non-translatable)
+if (need('wallpapers')) {
+  await client.request(createCollection({
+    collection: 'wallpapers',
+    meta: { icon: 'wallpaper', note: 'The Hoard — generated gradient wallpapers' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'tag', type: 'string', meta: { interface: 'input' } },
+      { field: 'aspect_ratio', type: 'string', meta: { interface: 'input', note: 'CSS aspect-ratio, e.g. 16/10' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
+      { field: 'angle', type: 'integer', meta: { interface: 'input', note: 'gradient angle 0-360' } },
+    ],
+  }));
+}
+
+// 13. wallpapers_translations (junction)
+if (need('wallpapers_translations')) {
+  await client.request(createCollection({
+    collection: 'wallpapers_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'wallpapers', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('wallpapers', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'wallpapers_translations', field: 'wallpapers', related_collection: 'wallpapers',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'wallpapers_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'wallpapers' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 14. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));

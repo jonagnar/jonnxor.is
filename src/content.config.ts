@@ -4,6 +4,7 @@ import { glob } from 'astro/loaders';
 // MUST keep `generateId: localeEntryId` or a slug's locale files collide on one id
 // (guarded by tests/content/config-wiring.test.ts).
 import { localeEntryId } from './content/loaders';
+import { countdownsSections } from './content/page-sections';
 
 // The Codex — long-form posts. Drop a Markdown file in src/content/blog/ and it
 // appears on /blog and at /blog/<filename>. The frontmatter below is validated
@@ -57,4 +58,108 @@ const grimoire = defineCollection({
   }),
 });
 
-export const collections = { blog, grimoire };
+// The Game Hall — tracker entries, one file per locale: `<slug>.<locale>.yaml`.
+const games = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/games',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    tab: z.enum(['upcoming', 'playing', 'played', 'favorites']),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // "YYYY-MM-DD"; absent = TBA
+    platforms: z.array(z.string()),
+    gradient: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).length(3),
+    initials: z.string(),
+    favorite: z.boolean().default(false),
+    title: z.string(),
+    sub: z.string(),
+  }),
+});
+
+// Page prose — heads (kicker/title/lede) + per-page structured `sections`.
+// Section shapes are validated per page slug as pages are ported (superRefine
+// arrives with the first sections consumer in the countdowns slice).
+const pages = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/pages',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    kicker: z.string(),
+    title: z.string(),
+    lede: z.string(),
+    sections: z.record(z.string(), z.unknown()).optional(),
+  }).superRefine((p, ctx) => {
+    // Per-page section shapes, validated as pages are ported (design §3).
+    if (p.slug === 'countdowns') {
+      const r = countdownsSections.safeParse(p.sections);
+      if (!r.success) {
+        ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${z.prettifyError(r.error)}` });
+      }
+    }
+  }),
+});
+
+// The Reckoning — countdowns and count-ups, discriminated by `kind`.
+const countdowns = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/countdowns',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    kind: z.enum(['countdown', 'countup']),
+    when: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    gold: z.boolean().default(false),
+    icon: z.string().optional(),
+    start: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).optional(),
+    rate: z.number().positive().max(24).optional(),
+    what: z.string(),
+    note: z.string(),
+  }).superRefine((c, ctx) => {
+    // Kind coherence: the data layer can't enforce which nullable fields belong
+    // to which kind — the build is the only gate under the snapshot seam.
+    if (c.kind === 'countup') {
+      for (const k of ['icon', 'start', 'rate'] as const) {
+        if (c[k] === undefined) ctx.addIssue({ code: 'custom', path: [k], message: `countup '${c.slug}' requires ${k}` });
+      }
+      if (c.when !== undefined) ctx.addIssue({ code: 'custom', path: ['when'], message: `countup '${c.slug}' must not carry when` });
+      if (c.gold) ctx.addIssue({ code: 'custom', path: ['gold'], message: `countup '${c.slug}' must not carry gold` });
+    } else {
+      for (const k of ['icon', 'start', 'rate'] as const) {
+        if (c[k] !== undefined) ctx.addIssue({ code: 'custom', path: [k], message: `countdown '${c.slug}' must not carry ${k}` });
+      }
+    }
+  }),
+});
+
+// The Hoard — generated gradient wallpapers.
+const wallpapers = defineCollection({
+  loader: glob({
+    pattern: '**/*.yaml',
+    base: './src/content/wallpapers',
+    generateId: localeEntryId,
+  }),
+  schema: z.object({
+    slug: z.string(),
+    locale: z.enum(['is', 'en', 'ja']),
+    order: z.number(),
+    tag: z.string(),
+    aspect_ratio: z.string().regex(/^\d+\s*\/\s*\d+$/), // raw CSS aspect-ratio fragment
+    gradient: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/)).length(3),
+    angle: z.number().int().min(0).max(360),
+    title: z.string(),
+  }),
+});
+
+export const collections = { blog, grimoire, games, pages, countdowns, wallpapers };

@@ -1,0 +1,18 @@
+---
+// src/components/CountdownCard.astro — clock shell; the page's ticker fills the
+// cell numbers from data-when. Markup mirrors the pre-port client-rendered DOM.
+interface Props { what: string; when?: string; note: string; gold: boolean }
+const { what, when, note, gold } = Astro.props;
+const UNITS = [['d', 'days'], ['h', 'hrs'], ['m', 'min'], ['s', 'sec']] as const;
+---
+<article class:list={["card cd-card", { gold }]} data-when={when}>
+  <div class="cd-what">{what}</div>
+  <div class="cd-when">{when ? `${when} · ${note}` : note}</div>
+  <div class="cd-clock">
+    {when ? UNITS.map(([u, lbl]) => (
+      <div class="cd-cell"><div class="cd-num" data-u={u}>–</div><div class="cd-lbl">{lbl}</div></div>
+    )) : (
+      <div class="cd-cell" style="flex: 4;"><div class="cd-num">∞</div><div class="cd-lbl">soon™</div></div>
+    )}
+  </div>
+</article>

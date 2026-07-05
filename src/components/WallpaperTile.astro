@@ -1,0 +1,17 @@
+---
+// src/components/WallpaperTile.astro — one gallery tile. The lightbox and the
+// canvas PNG download read everything they need from the data-* attributes.
+interface Props { slug: string; title: string; tag: string; aspectRatio: string; gradient: string[]; angle: number }
+const { slug, title, tag, aspectRatio, gradient, angle } = Astro.props;
+const grad = `linear-gradient(${angle}deg, ${gradient[0]}, ${gradient[1]} 55%, ${gradient[2]} 145%)`;
+---
+<button
+  class="wall-tile" type="button"
+  data-slug={slug} data-title={title} data-tag={tag}
+  data-g0={gradient[0]} data-g1={gradient[1]} data-g2={gradient[2]} data-angle={angle}
+>
+  <div class="w-art" style={`aspect-ratio: ${aspectRatio}; background: ${grad};`}>
+    <span class="w-mark">ᛞ</span>
+  </div>
+  <div class="w-bar"><span>{title}</span><span class="chip">{tag}</span></div>
+</button>

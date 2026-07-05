@@ -1,22 +1,45 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import WallpaperTile from "../components/WallpaperTile.astro";
+import { localizedByOrder, requirePageHead } from "../i18n/localized";
+import { useTranslations } from "../i18n/utils";
+import type { Locale } from "../i18n/ui";
+
+const locale = (Astro.currentLocale ?? 'is') as Locale;
+const t = useTranslations(locale);
+
+const all = await getCollection('wallpapers');
+const walls = localizedByOrder(all, locale);
+// First-appearance tag order reproduces the old hardcoded TAGS array.
+const tags = [...new Set(walls.map((w) => w.data.tag))];
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'wallpapers', locale).data;
 ---
 
 <Base title="Wallpaper Stash — JonnXor" page="wallpapers">
   <main>
-    <section class="page-head" data-screen-label="Wallpapers head">
-      <div class="container">
-        <p class="kicker">Wallpaper stash</p>
-        <h1>The Hoard</h1>
-        <p class="lede">Placeholder art for now — these tiles generate real downloadable wallpapers. Drop in your own collection later.</p>
-      </div>
-    </section>
+    <PageHead kicker={head.kicker} title={head.title} lede={head.lede} label="Wallpapers head" />
 
     <div class="container">
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
-      <div class="wall-filters" id="wall-filters" data-screen-label="Tag filters"></div>
-      <section class="masonry" id="masonry" data-screen-label="Masonry grid"></section>
+      <div class="wall-filters" id="wall-filters" role="group" aria-label={t('wall.filterLabel')} data-screen-label="Tag filters">
+        <button class="chip on" type="button" aria-pressed="true" data-tag="All">{t('wall.all')}</button>
+        {tags.map((tag) => (
+          <button class="chip" type="button" aria-pressed="false" data-tag={tag}>{tag}</button>
+        ))}
+      </div>
+      <section class="masonry" id="masonry" data-screen-label="Masonry grid">
+        {walls.map((w) => (
+          <WallpaperTile
+            slug={w.data.slug} title={w.data.title} tag={w.data.tag}
+            aspectRatio={w.data.aspect_ratio} gradient={w.data.gradient} angle={w.data.angle}
+          />
+        ))}
+      </section>
     </div>
   </main>
 
@@ -26,8 +49,8 @@ import Base from "../layouts/Base.astro";
       <div class="lb-bar">
         <span class="lb-title" id="lb-title"></span>
         <span class="chip" id="lb-res">1920 × 1080</span>
-        <button class="btn btn-gold" type="button" id="lb-download">Download</button>
-        <button class="btn btn-ghost" type="button" id="lb-close">Close</button>
+        <button class="btn btn-gold" type="button" id="lb-download">{t('wall.download')}</button>
+        <button class="btn btn-ghost" type="button" id="lb-close">{t('wall.close')}</button>
       </div>
     </div>
   </div>
@@ -35,90 +58,68 @@ import Base from "../layouts/Base.astro";
   <script is:inline slot="end">
 (function () {
   'use strict';
-
-  var TAGS = ['All', 'Dragons', 'Aurora', 'Synthwave', 'Landscapes', 'Cats & Owls'];
-
-  var WALLS = [
-    { t: 'Drekinn Rising', tag: 'Dragons', ar: '16/10', g: ['#0b0e14', '#15433d', '#f2c94c'], a: 160 },
-    { t: 'Aurora over Esja', tag: 'Aurora', ar: '16/9', g: ['#070d18', '#0e4a52', '#3fe0cb'], a: 120 },
-    { t: 'Grid Runner', tag: 'Synthwave', ar: '3/4', g: ['#120724', '#5d1d8f', '#00f5d4'], a: 35 },
-    { t: 'Black Sand Coast', tag: 'Landscapes', ar: '4/3', g: ['#0d0f10', '#33414a', '#cfd8d2'], a: 200 },
-    { t: 'Owl at Vespers', tag: 'Cats & Owls', ar: '3/4', g: ['#15120c', '#5a4a26', '#ecbd3e'], a: 75 },
-    { t: 'Wyrm of the Fjord', tag: 'Dragons', ar: '16/9', g: ['#0a1410', '#1e5e46', '#9fe8c4'], a: 145 },
-    { t: 'Neon Reykjavík', tag: 'Synthwave', ar: '16/10', g: ['#0a0616', '#36206e', '#f5e642'], a: 60 },
-    { t: 'Kettle & Cat', tag: 'Cats & Owls', ar: '1/1', g: ['#1a100c', '#6e3a22', '#f0c08a'], a: 100 },
-    { t: 'Green Lady', tag: 'Aurora', ar: '3/4', g: ['#060a12', '#0d3b4f', '#7ef0cf'], a: 25 },
-    { t: 'Highlands in Fog', tag: 'Landscapes', ar: '16/10', g: ['#101312', '#3c4a40', '#aebcb0'], a: 175 },
-    { t: 'Dragon Gate', tag: 'Dragons', ar: '3/4', g: ['#160a0a', '#6e2230', '#f2c94c'], a: 10 },
-    { t: 'Arcade Dusk', tag: 'Synthwave', ar: '4/3', g: ['#0c0618', '#8f1d5d', '#2cffe5'], a: 80 }
-  ];
-
-  var state = { tag: 'All' };
-  var filtersEl = document.getElementById('wall-filters');
-  var masonryEl = document.getElementById('masonry');
+  var tiles = document.querySelectorAll('#masonry .wall-tile');
+  var chips = document.querySelectorAll('#wall-filters .chip');
   var lb = document.getElementById('lightbox');
   var lbArt = document.getElementById('lb-art');
   var lbTitle = document.getElementById('lb-title');
+  var lbClose = document.getElementById('lb-close');
   var current = null;
+  var lastFocused = null;
 
-  function grad(w) {
-    return 'linear-gradient(' + w.a + 'deg, ' + w.g[0] + ', ' + w.g[1] + ' 55%, ' + w.g[2] + ' 145%)';
-  }
-
-  function renderFilters() {
-    filtersEl.innerHTML = TAGS.map(function (t) {
-      return '<button class="chip' + (state.tag === t ? ' on' : '') + '" type="button" data-tag="' + t + '">' + t + '</button>';
-    }).join('');
-  }
-
-  function renderTiles() {
-    var items = WALLS.filter(function (w) { return state.tag === 'All' || w.tag === state.tag; });
-    masonryEl.innerHTML = items.map(function (w, i) {
-      return (
-        '<button class="wall-tile" type="button" data-i="' + WALLS.indexOf(w) + '">' +
-          '<div class="w-art" style="aspect-ratio: ' + w.ar + '; background: ' + grad(w) + ';">' +
-            '<span class="w-mark">ᛞ</span>' +
-          '</div>' +
-          '<div class="w-bar"><span>' + w.t + '</span><span class="chip">' + w.tag + '</span></div>' +
-        '</button>'
-      );
-    }).join('');
-  }
-
-  filtersEl.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-tag]');
-    if (!b) return;
-    state.tag = b.getAttribute('data-tag');
-    renderFilters();
-    renderTiles();
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var tag = chip.getAttribute('data-tag');
+      chips.forEach(function (c) {
+        var on = c === chip;
+        c.classList.toggle('on', on);
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      tiles.forEach(function (tile) {
+        tile.hidden = tag !== 'All' && tile.getAttribute('data-tag') !== tag;
+      });
+    });
   });
 
-  masonryEl.addEventListener('click', function (e) {
+  document.getElementById('masonry').addEventListener('click', function (e) {
     var tile = e.target.closest('.wall-tile');
     if (!tile) return;
-    current = WALLS[+tile.getAttribute('data-i')];
-    lbArt.style.background = grad(current);
-    lbTitle.textContent = current.t;
+    current = tile.dataset;
+    // Read the gradient the tile already painted — keeps the formula in ONE place (the component).
+    lbArt.style.background = tile.querySelector('.w-art').style.background;
+    lbTitle.textContent = current.title;
+    lastFocused = document.activeElement;
     lb.classList.add('open');
+    lbClose.focus();
   });
 
-  function closeLb() { lb.classList.remove('open'); }
-  document.getElementById('lb-close').addEventListener('click', closeLb);
+  function closeLb() {
+    if (!lb.classList.contains('open')) return;
+    lb.classList.remove('open');
+    // Restore focus to the opening tile; if it was filtered out meanwhile,
+    // fall back to the active filter chip.
+    var target = (lastFocused && !lastFocused.hidden) ? lastFocused : document.querySelector('#wall-filters .chip.on');
+    if (target) target.focus();
+    lastFocused = null;
+  }
+  lbClose.addEventListener('click', closeLb);
   lb.addEventListener('click', function (e) { if (e.target === lb) closeLb(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
 
-  // Real download: paint the gradient to a canvas and save it
+  // Real download: paint the gradient to a canvas and save it. This re-derives
+  // the raw stops (unlike the lightbox background above) because canvas
+  // addColorStop needs the raw hex values, not a CSS background shorthand.
   document.getElementById('lb-download').addEventListener('click', function () {
     if (!current) return;
     var c = document.createElement('canvas');
     c.width = 1920; c.height = 1080;
     var ctx = c.getContext('2d');
-    var rad = (current.a - 90) * Math.PI / 180;
+    var rad = (parseInt(current.angle, 10) - 90) * Math.PI / 180;
     var x = Math.cos(rad) * 960, y = Math.sin(rad) * 540;
     var g = ctx.createLinearGradient(960 - x, 540 - y, 960 + x, 540 + y);
-    g.addColorStop(0, current.g[0]);
-    g.addColorStop(.55, current.g[1]);
-    g.addColorStop(1, current.g[2]);
+    g.addColorStop(0, current.g0);
+    g.addColorStop(.55, current.g1);
+    g.addColorStop(1, current.g2);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 1920, 1080);
     ctx.fillStyle = 'rgba(255,255,255,.5)';
@@ -126,18 +127,19 @@ import Base from "../layouts/Base.astro";
     ctx.textAlign = 'center';
     ctx.fillText('ᛞ', 960, 556);
     var a = document.createElement('a');
-    a.download = current.t.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-1920x1080.png';
+    // Filename derives from the title with the original regex — NOT the slug —
+    // so download names stay byte-identical to the pre-port page (e.g. the old
+    // name for 'Kettle & Cat' is kettle-cat-…, but its slug is kettle-and-cat).
+    a.download = current.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-1920x1080.png';
     a.href = c.toDataURL('image/png');
     a.click();
   });
-
-  renderFilters();
-  renderTiles();
 })();
   </script>
 </Base>
 
 <style is:global>
+  .wall-tile[hidden] { display: none; }
   .wall-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 30px; }
   .wall-filters .chip { cursor: pointer; user-select: none; }
   .wall-filters .chip.on { color: var(--tq-ink); background: var(--tq-soft); border-color: var(--tq-deep); }

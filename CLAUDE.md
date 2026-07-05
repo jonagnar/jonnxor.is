@@ -46,7 +46,9 @@ Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Direc
 
 - `locales: ['is', 'en', 'ja']`, `defaultLocale: 'is'` served at `/`, with `/en/` and `/ja/` prefixes; `fallbackType: 'rewrite'` (en/ja rewrite to is) so no locale ever 404s.
 - **English is the authoring base** and load-bearing fallback for content and UI strings.
-- Content files are one file per locale: `<slug>.<locale>.md` (blog) / `<slug>.<locale>.yaml` (grimoire). Both collections in `src/content.config.ts` MUST keep `generateId: localeEntryId` (from `src/content/loaders.ts`) or a slug's locale files collide on one id and silently overwrite each other — guarded by `tests/content/config-wiring.test.ts`.
+- Content files are one file per locale: `<slug>.<locale>.md` (blog) / `<slug>.<locale>.yaml` (grimoire, games, pages, countdowns, wallpapers). EVERY collection in `src/content.config.ts` MUST keep `generateId: localeEntryId` (from `src/content/loaders.ts`) or a slug's locale files collide on one id and silently overwrite each other — guarded by `tests/content/config-wiring.test.ts` (count updated per collection).
+- The sync pipeline is descriptor-driven: one entry per collection in `scripts/lib/collections.mjs` (read its `CollectionDescriptor` contract JSDoc before adding one); serialization determinism via `scripts/lib/entry-yaml.mjs`. Snapshot YAML must never contain comment nodes (an unquoted mid-scalar ` #` silently truncates values through restore) — guarded by `tests/content/snapshot-comments.test.ts`.
+- Per-page `pages.sections` shapes live in `src/content/page-sections.ts` (schema + inferred type share one source, imported by both `content.config.ts` and the page).
 - Chrome/UI strings live in `src/i18n/ui.ts`; `useTranslations` in `src/i18n/utils.ts` falls back lang → en → key.
 
 ### Frontend
@@ -58,7 +60,7 @@ Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Direc
 
 ### Testing & CI
 
-Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API render tests (`tests/render/`), then containerized Playwright E2E (`tests/e2e/`) and self-baseline visual regression (`tests/visual/`, `/countdowns` excluded — live-data layout). No feature merges without a test. CI (`.forgejo/workflows/ci.yml`): Vitest on every push; e2e + visual on PRs and the `preview` branch.
+Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API render tests (`tests/render/` — components and non-collection pages only: the Container can't load `astro:content` under Vitest, and `vitest.config.ts` passes `devToolbar: {enabled: false}` as `getViteConfig`'s second arg so rendered HTML carries no debug attributes), then containerized Playwright E2E (`tests/e2e/`) and self-baseline visual regression (`tests/visual/`, `/countdowns` excluded — live-data layout). No feature merges without a test. CI (`.forgejo/workflows/ci.yml`): Vitest on every push; e2e + visual on PRs and the `preview` branch.
 
 ### Deploy & secrets
 
