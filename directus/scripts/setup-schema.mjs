@@ -338,7 +338,54 @@ if (need('wallpapers_translations')) {
   }));
 }
 
-// 14. seed the three languages
+// 14. projects (base, non-translatable)
+if (need('projects')) {
+  await client.request(createCollection({
+    collection: 'projects',
+    meta: { icon: 'workspaces', note: 'The Forge — portfolio project cards' },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'slug', type: 'string', schema: { is_unique: true }, meta: { interface: 'input', required: true } },
+      { field: 'order', type: 'integer', meta: { interface: 'input' } },
+      { field: 'sigil', type: 'string', meta: { interface: 'input' } },
+      { field: 'gradient', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '3 hex colors' } },
+      { field: 'tech', type: 'json', meta: { interface: 'tags' } },
+      { field: 'links', type: 'json', meta: { interface: 'input-code', options: { language: 'json' }, note: '[{label, href}] — labels treated as data' } },
+    ],
+  }));
+}
+
+// 15. projects_translations (junction)
+if (need('projects_translations')) {
+  await client.request(createCollection({
+    collection: 'projects_translations',
+    meta: { hidden: true },
+    schema: {},
+    fields: [
+      { field: 'id', type: 'integer', schema: { is_primary_key: true, has_auto_increment: true }, meta: { hidden: true } },
+      { field: 'projects', type: 'integer', meta: { hidden: true } },
+      { field: 'languages_code', type: 'string', meta: { hidden: true } },
+      { field: 'title', type: 'string', meta: { interface: 'input' } },
+      { field: 'description', type: 'text', meta: { interface: 'input-multiline' } },
+      { field: 'plate', type: 'string', meta: { interface: 'input' } },
+    ],
+  }));
+  await client.request(createField('projects', {
+    field: 'translations', type: 'alias',
+    meta: { interface: 'translations', special: ['translations'], options: { languageField: 'code' } },
+  }));
+  await client.request(createRelation({
+    collection: 'projects_translations', field: 'projects', related_collection: 'projects',
+    meta: { one_field: 'translations', junction_field: 'languages_code' }, schema: { on_delete: 'SET NULL' },
+  }));
+  await client.request(createRelation({
+    collection: 'projects_translations', field: 'languages_code', related_collection: 'languages',
+    meta: { junction_field: 'projects' }, schema: { on_delete: 'SET NULL' },
+  }));
+}
+
+// 16. seed the three languages
 import { createItems, readItems } from '@directus/sdk';
 const langs = await client.request(readItems('languages'));
 const have = new Set(langs.map((l) => l.code));
