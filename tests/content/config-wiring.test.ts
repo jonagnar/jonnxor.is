@@ -25,3 +25,17 @@ describe('content.config.ts wires the locale-aware id', () => {
     expect(matches.length).toBe(6);
   });
 });
+
+// The pages collection's per-slug `sections` validation must go through the
+// sectionSchemas lookup (src/content/page-sections.ts), not a hand-rolled
+// per-slug branch — deleting the lookup (e.g. reverting to a superRefine that
+// only special-cases 'countdowns' inline) must not pass silently.
+describe('content.config.ts wires the sections schema map', () => {
+  it('imports sectionSchemas from ./content/page-sections', () => {
+    expect(configSrc).toMatch(/import\s*\{\s*sectionSchemas\s*\}\s*from\s*['"]\.\/content\/page-sections['"]/);
+  });
+
+  it('validates pages sections through a sectionSchemas lookup', () => {
+    expect(configSrc).toMatch(/sectionSchemas\[[^\]]*\]/);
+  });
+});

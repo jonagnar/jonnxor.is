@@ -20,27 +20,56 @@ import { makeEntryCodec } from './entry-yaml.mjs';
  * @property {(raw: string) => object} parse - Parses on-disk file contents back into a flat record shaped like `toRecord`'s output. Guarantee (2): `parse(serialize(toRecord(item, t)))` must round-trip losslessly enough that `toItem`/`toTranslation` can rebuild an equivalent Directus create payload from the parsed record — lossy serialization (e.g. dropping precision, reordering array items, coercing types) silently corrupts content:restore.
  */
 
-// omitEmpty only needs keys whose "empty" value is `false` — entry-yaml.mjs
-// already drops undefined/null unconditionally, so listing date-like/optional
-// string keys here would be inert (they can never equal `false`).
-const gamesCodec = makeEntryCodec({
-  keyOrder: ['slug', 'locale', 'order', 'tab', 'date', 'platforms', 'gradient', 'initials', 'favorite', 'title', 'sub'],
-  quoteKeys: ['date'],
-  omitEmpty: ['favorite'],
-});
-const pagesCodec = makeEntryCodec({
-  keyOrder: ['slug', 'locale', 'kicker', 'title', 'lede', 'sections'],
-  omitEmpty: [],
-});
-const countdownsCodec = makeEntryCodec({
-  keyOrder: ['slug', 'locale', 'order', 'kind', 'when', 'gold', 'icon', 'start', 'rate', 'what', 'note'],
-  quoteKeys: ['when', 'start'],
-  omitEmpty: ['gold'],
-});
-const wallpapersCodec = makeEntryCodec({
-  keyOrder: ['slug', 'locale', 'order', 'tag', 'aspect_ratio', 'gradient', 'angle', 'title'],
-  omitEmpty: [],
-});
+// Field kinds for simpleDescriptor — how a value crosses the seam in each direction.
+const KIND = {
+  req: { out: (v) => v, back: (v) => v },
+  opt: { out: (v) => v ?? undefined, back: (v) => v ?? null },
+  'opt-quoted': { out: (v) => v ?? undefined, back: (v) => v ?? null }, // date-like strings
+  array: { out: (v) => v ?? [], back: (v) => v },
+  flag: { out: (v) => v || undefined, back: (v) => v ?? false }, // false omitted from files
+};
+const LOCALE_YAML_RE = /\.(is|en|ja)\.yaml$/;
+
+/**
+ * Build a full CollectionDescriptor for the standard shape (base item +
+ * translations junction, YAML snapshot). `item`/`translation` are ordered maps
+ * of field name -> kind (KIND above); slug/locale are implicit. Blog and
+ * grimoire stay hand-rolled (custom serializers, date normalization, renames).
+ */
+export function simpleDescriptor({ name, item, translation }) {
+  const itemKeys = Object.keys(item);
+  const trKeys = Object.keys(translation);
+  const codec = makeEntryCodec({
+    keyOrder: ['slug', 'locale', ...itemKeys, ...trKeys],
+    quoteKeys: itemKeys.filter((k) => item[k] === 'opt-quoted'),
+    omitEmpty: itemKeys.filter((k) => item[k] === 'flag'),
+  });
+  return {
+    name,
+    dir: `src/content/${name}`,
+    ext: '.yaml',
+    fileRe: LOCALE_YAML_RE,
+    fields: ['slug', ...itemKeys, { translations: ['languages_code', ...trKeys] }],
+    toRecord: (it, t) => {
+      const r = { slug: it.slug, locale: t.languages_code };
+      for (const k of itemKeys) r[k] = KIND[item[k]].out(it[k]);
+      for (const k of trKeys) r[k] = KIND[translation[k]].out(t[k]);
+      return r;
+    },
+    toItem: (r) => {
+      const it = { slug: r.slug };
+      for (const k of itemKeys) it[k] = KIND[item[k]].back(r[k]);
+      return it;
+    },
+    toTranslation: (r) => {
+      const t = { languages_code: r.locale };
+      for (const k of trKeys) t[k] = KIND[translation[k]].back(r[k]);
+      return t;
+    },
+    serialize: codec.serialize,
+    parse: codec.parse,
+  };
+}
 
 export const COLLECTIONS = [
   {
@@ -78,74 +107,24 @@ export const COLLECTIONS = [
     serialize: serializeDoc,
     parse: parseDoc,
   },
-  {
+  simpleDescriptor({
     name: 'games',
-    dir: 'src/content/games',
-    ext: '.yaml',
-    fileRe: /\.(is|en|ja)\.yaml$/,
-    fields: ['slug', 'order', 'tab', 'date', 'platforms', 'gradient', 'initials', 'favorite', { translations: ['languages_code', 'title', 'sub'] }],
-    toRecord: (g, t) => ({
-      slug: g.slug, locale: t.languages_code, order: g.order, tab: g.tab,
-      date: g.date ?? undefined, platforms: g.platforms ?? [], gradient: g.gradient ?? [],
-      initials: g.initials, favorite: g.favorite || undefined,
-      title: t.title, sub: t.sub,
-    }),
-    toItem: (r) => ({
-      slug: r.slug, order: r.order, tab: r.tab, date: r.date ?? null,
-      platforms: r.platforms, gradient: r.gradient, initials: r.initials, favorite: r.favorite ?? false,
-    }),
-    toTranslation: (r) => ({ languages_code: r.locale, title: r.title, sub: r.sub }),
-    serialize: gamesCodec.serialize,
-    parse: gamesCodec.parse,
-  },
-  {
+    item: { order: 'req', tab: 'req', date: 'opt-quoted', platforms: 'array', gradient: 'array', initials: 'req', favorite: 'flag' },
+    translation: { title: 'req', sub: 'req' },
+  }),
+  simpleDescriptor({
     name: 'pages',
-    dir: 'src/content/pages',
-    ext: '.yaml',
-    fileRe: /\.(is|en|ja)\.yaml$/,
-    fields: ['slug', { translations: ['languages_code', 'kicker', 'title', 'lede', 'sections'] }],
-    toRecord: (p, t) => ({
-      slug: p.slug, locale: t.languages_code,
-      kicker: t.kicker, title: t.title, lede: t.lede, sections: t.sections ?? undefined,
-    }),
-    toItem: (r) => ({ slug: r.slug }),
-    toTranslation: (r) => ({ languages_code: r.locale, kicker: r.kicker, title: r.title, lede: r.lede, sections: r.sections ?? null }),
-    serialize: pagesCodec.serialize,
-    parse: pagesCodec.parse,
-  },
-  {
+    item: {},
+    translation: { kicker: 'req', title: 'req', lede: 'req', sections: 'opt' },
+  }),
+  simpleDescriptor({
     name: 'countdowns',
-    dir: 'src/content/countdowns',
-    ext: '.yaml',
-    fileRe: /\.(is|en|ja)\.yaml$/,
-    fields: ['slug', 'order', 'kind', 'when', 'gold', 'icon', 'start', 'rate', { translations: ['languages_code', 'what', 'note'] }],
-    toRecord: (c, t) => ({
-      slug: c.slug, locale: t.languages_code, order: c.order, kind: c.kind,
-      when: c.when ?? undefined, gold: c.gold || undefined, icon: c.icon ?? undefined,
-      start: c.start ?? undefined, rate: c.rate ?? undefined,
-      what: t.what, note: t.note,
-    }),
-    toItem: (r) => ({
-      slug: r.slug, order: r.order, kind: r.kind, when: r.when ?? null,
-      gold: r.gold ?? false, icon: r.icon ?? null, start: r.start ?? null, rate: r.rate ?? null,
-    }),
-    toTranslation: (r) => ({ languages_code: r.locale, what: r.what, note: r.note }),
-    serialize: countdownsCodec.serialize,
-    parse: countdownsCodec.parse,
-  },
-  {
+    item: { order: 'req', kind: 'req', when: 'opt-quoted', gold: 'flag', icon: 'opt', start: 'opt-quoted', rate: 'opt' },
+    translation: { what: 'req', note: 'req' },
+  }),
+  simpleDescriptor({
     name: 'wallpapers',
-    dir: 'src/content/wallpapers',
-    ext: '.yaml',
-    fileRe: /\.(is|en|ja)\.yaml$/,
-    fields: ['slug', 'order', 'tag', 'aspect_ratio', 'gradient', 'angle', { translations: ['languages_code', 'title'] }],
-    toRecord: (w, t) => ({
-      slug: w.slug, locale: t.languages_code, order: w.order, tag: w.tag,
-      aspect_ratio: w.aspect_ratio, gradient: w.gradient ?? [], angle: w.angle, title: t.title,
-    }),
-    toItem: (r) => ({ slug: r.slug, order: r.order, tag: r.tag, aspect_ratio: r.aspect_ratio, gradient: r.gradient, angle: r.angle }),
-    toTranslation: (r) => ({ languages_code: r.locale, title: r.title }),
-    serialize: wallpapersCodec.serialize,
-    parse: wallpapersCodec.parse,
-  },
+    item: { order: 'req', tag: 'req', aspect_ratio: 'req', gradient: 'array', angle: 'req' },
+    translation: { title: 'req' },
+  }),
 ];

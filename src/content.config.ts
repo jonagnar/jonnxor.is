@@ -4,7 +4,7 @@ import { glob } from 'astro/loaders';
 // MUST keep `generateId: localeEntryId` or a slug's locale files collide on one id
 // (guarded by tests/content/config-wiring.test.ts).
 import { localeEntryId } from './content/loaders';
-import { countdownsSections } from './content/page-sections';
+import { sectionSchemas } from './content/page-sections';
 
 // The Codex — long-form posts. Drop a Markdown file in src/content/blog/ and it
 // appears on /blog and at /blog/<filename>. The frontmatter below is validated
@@ -81,8 +81,8 @@ const games = defineCollection({
 });
 
 // Page prose — heads (kicker/title/lede) + per-page structured `sections`.
-// Section shapes are validated per page slug as pages are ported (superRefine
-// arrives with the first sections consumer in the countdowns slice).
+// Section shapes are validated per page slug via the sectionSchemas lookup
+// (src/content/page-sections.ts) as pages are ported (design §3).
 const pages = defineCollection({
   loader: glob({
     pattern: '**/*.yaml',
@@ -97,11 +97,11 @@ const pages = defineCollection({
     lede: z.string(),
     sections: z.record(z.string(), z.unknown()).optional(),
   }).superRefine((p, ctx) => {
-    // Per-page section shapes, validated as pages are ported (design §3).
-    if (p.slug === 'countdowns') {
-      const r = countdownsSections.safeParse(p.sections);
+    const shape = sectionSchemas[p.slug as keyof typeof sectionSchemas];
+    if (shape) {
+      const r = shape.safeParse(p.sections);
       if (!r.success) {
-        ctx.addIssue({ code: 'custom', message: `pages/countdowns sections invalid: ${z.prettifyError(r.error)}` });
+        ctx.addIssue({ code: 'custom', message: `pages/${p.slug} sections invalid: ${z.prettifyError(r.error)}` });
       }
     }
   }),

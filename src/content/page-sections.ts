@@ -9,3 +9,6 @@ export const countdownsSections = z.object({
   methodology: z.string(),
 }).strict();
 export type CountdownsSections = z.infer<typeof countdownsSections>;
+
+/** slug -> sections schema; content.config.ts validates any pages entry whose slug appears here. */
+export const sectionSchemas = { countdowns: countdownsSections } as const;
