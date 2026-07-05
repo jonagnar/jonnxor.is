@@ -19,18 +19,31 @@
   sub-project 3 (no hollow scaffold now). `directus/` stays top-level — it is the
   content layer, not part of the client.
 
-## 2. Target layout
+## 2. Target layout (amended 2026-07-05 after design review)
 
 ```
 jonnxor.is/
-├── jonnxor.is.sln            # top-level solution
+├── jonnxor.sln               # top-level solution (renamed from jonnxor.is.sln per review)
 ├── global.json               # pins .NET SDK 10.0.1xx (system dotnet in WSL; no mise plugin)
 ├── client/                   # the entire current Astro workspace (git mv, history kept)
 ├── api/Jonnxor.Api/          # console app, verb-based (verify, report)
-├── tests/Jonnxor.Api.Tests/  # xUnit (client/tests/ keeps the JS pyramid)
-├── directus/                 # unchanged, top-level
+├── tests/                    # ALL tests consolidated (review amendment):
+│   ├── content/ i18n/ render/ e2e/ visual/    # the JS pyramid (moved from client/tests)
+│   └── Jonnxor.Api.Tests/                     # xUnit
+├── directus/                 # CONTRACT only: schema/snapshot.yaml + scripts/setup-schema.mjs + client .env
 ├── .planning/ .forgejo/ CLAUDE.md README.md   # repo-level, stay put
 ```
+
+**Directus runtime moves to the infra repo** (review decision, overriding the FRD's
+project-local note): `~/dev/src/infra` gains the compose stack, stack env (sops'd
+there), the physical `data/`/`uploads/` dirs, and formal backup responsibility.
+This repo keeps the version-coupled contract (schema snapshot + setup script) and a
+client-side env (`DIRECTUS_URL` + service credentials, sops'd here). Seam rules:
+no cross-repo filesystem paths — `directus:snapshot` execs by CONTAINER NAME
+(already true); `directus:up/down` leave this repo for infra's runbook. Bonus: with
+no compose file here, the worktree stack-hijack accident class (KB'd 2026-07-05)
+becomes structurally impossible. Data-dir relocation happens stack-down from
+canonical checkouts; infra's backup story gains a follow-up item for the Postgres dir.
 
 ## 3. Phase A — the move
 

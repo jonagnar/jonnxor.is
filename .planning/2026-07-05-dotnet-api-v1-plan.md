@@ -32,10 +32,10 @@ Two commits on the branch.
 
 One commit (`feat(api): .NET solution scaffold — Jonnxor.Api + xUnit, CI wired`):
 - Root `global.json`: `{ "sdk": { "version": "10.0.109", "rollForward": "latestFeature" } }`.
-- `dotnet new sln -n jonnxor.is`; `api/Jonnxor.Api` (`dotnet new console -n Jonnxor.Api -o api/Jonnxor.Api`, `<Nullable>enable</Nullable> <ImplicitUsings>enable</ImplicitUsings> <TreatWarningsAsErrors>true</TreatWarningsAsErrors>`); `tests/Jonnxor.Api.Tests` (`dotnet new xunit`), project reference to the Api; both added to the sln.
+- `dotnet new sln -n jonnxor`; `api/Jonnxor.Api` (`dotnet new console -n Jonnxor.Api -o api/Jonnxor.Api`, `<Nullable>enable</Nullable> <ImplicitUsings>enable</ImplicitUsings> <TreatWarningsAsErrors>true</TreatWarningsAsErrors>`); `tests/Jonnxor.Api.Tests` (`dotnet new xunit`), project reference to the Api; both added to the sln.
 - Program: minimal verb dispatch (plain args switch is FINE — do not fight System.CommandLine if it adds friction; report the choice): `verify [--offline|--live] [--content <dir>]`, `report [--json <path>]` — stubs returning exit 2 "not implemented" for now, plus `--help`. One smoke unit test (dispatcher routes verbs).
 - Root `.gitignore`: add `bin/ obj/` patterns (scoped `api/**/bin/` etc. or global).
-- `.forgejo/workflows/ci.yml`: new job `dotnet` (parallel to build-test): container `mcr.microsoft.com/dotnet/sdk:10.0`, steps checkout → `dotnet build jonnxor.is.sln --configuration Release` → `dotnet test jonnxor.is.sln --configuration Release --no-build`. (verify --offline joins in Task 3.) NO working-directory default (runs at root).
+- `.forgejo/workflows/ci.yml`: new job `dotnet` (parallel to build-test): container `mcr.microsoft.com/dotnet/sdk:10.0`, steps checkout → `dotnet build jonnxor.sln --configuration Release` → `dotnet test jonnxor.sln --configuration Release --no-build`. (verify --offline joins in Task 3.) NO working-directory default (runs at root).
 - Gates: `dotnet build` + `dotnet test` green locally; `pnpm test` from client untouched (172).
 
 ## Task 3: SnapshotReader + offline invariants (TDD)
