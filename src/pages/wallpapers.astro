@@ -94,8 +94,13 @@ const head = requirePageHead(pagesAll, 'wallpapers', locale).data;
   });
 
   function closeLb() {
+    if (!lb.classList.contains('open')) return;
     lb.classList.remove('open');
-    if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    // Restore focus to the opening tile; if it was filtered out meanwhile,
+    // fall back to the active filter chip.
+    var target = (lastFocused && !lastFocused.hidden) ? lastFocused : document.querySelector('#wall-filters .chip.on');
+    if (target) target.focus();
+    lastFocused = null;
   }
   lbClose.addEventListener('click', closeLb);
   lb.addEventListener('click', function (e) { if (e.target === lb) closeLb(); });
