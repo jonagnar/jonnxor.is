@@ -6,6 +6,7 @@ import CountdownCard from '../../src/components/CountdownCard.astro';
 import CountUpCard from '../../src/components/CountUpCard.astro';
 import WallpaperTile from '../../src/components/WallpaperTile.astro';
 import ProjectCard from '../../src/components/ProjectCard.astro';
+import PostRow from '../../src/components/PostRow.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {
@@ -141,5 +142,30 @@ describe('ProjectCard', () => {
     const html = await c.renderToString(ProjectCard, { props: { ...base, status: undefined } });
     expect(html).not.toContain('gold');
     expect((html.match(/class="chip tq"/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('PostRow', () => {
+  const base = {
+    href: '/blog/error-handling-is-a-narrative-problem',
+    date: new Date('2026-05-28T00:00:00Z'),
+    dateLocale: 'en-GB',
+    title: 'Error handling is a narrative problem',
+    category: 'Engineering',
+    accent: 'tq',
+  };
+  it('renders date, title and a category chip with the given accent', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(PostRow, { props: base });
+    expect(html).toContain('class="post-row"');
+    expect(html).toContain('href="/blog/error-handling-is-a-narrative-problem"');
+    expect(html).toContain('<span class="post-date">28 May 2026</span>');
+    expect(html).toContain('<span class="post-title">Error handling is a narrative problem</span>');
+    expect(html).toContain('<span class="chip tq post-tag">Engineering</span>');
+  });
+  it('omits the accent class when the category has none', async () => {
+    const c = await AstroContainer.create();
+    const html = await c.renderToString(PostRow, { props: { ...base, category: 'Myth', accent: undefined } });
+    expect(html).toContain('<span class="chip post-tag">Myth</span>');
   });
 });

@@ -1,5 +1,27 @@
 ---
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
+import PostRow from "../components/PostRow.astro";
+import { localizedEntry, requirePageHead, uniqueSlugs } from "../i18n/localized";
+import { defaultLocale, type Locale } from "../i18n/ui";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import type { HomeSections } from "../content/page-sections";
+
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'home', locale).data;
+const sections = head.sections as HomeSections;
+
+const allPosts = (await getCollection("blog")).filter((p) => !p.data.draft);
+const posts = uniqueSlugs(allPosts)
+  .map((slug) => localizedEntry(allPosts, slug, locale))
+  .filter((p): p is NonNullable<typeof p> => p != null)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const ACCENT: Record<string, string> = { "Engineering": "tq", "Games × Code": "gold" };
+const dateLocale = { is: "is-IS", en: "en-GB", ja: "ja-JP" }[locale] ?? "en-GB";
 ---
 
 <Base title="JonnXor — Jón Agnar Stefánsson" page="home" dragonfly="on">
@@ -7,13 +29,13 @@ import Base from "../layouts/Base.astro";
     <section class="hero" data-screen-label="Home hero">
       <div class="container hero-grid">
         <div>
-          <p class="kicker">Full-stack developer · Reykjavík, Iceland</p>
+          <p class="kicker">{head.kicker}</p>
           <h1>JONN<span class="xor">XOR</span></h1>
           <p class="real-name">Jón Agnar Stefánsson</p>
-          <p class="tagline">I build sturdy, long-lived software with a storyteller's heart — fueled by masala chai, Norse sagas, and roughly a thousand hours of Souls games.</p>
+          <p class="tagline">{sections.hero.tagline}</p>
           <div class="hero-ctas">
-            <a class="btn btn-gold" href="/portfolio">View the work</a>
-            <a class="btn btn-ghost" href="/about">Read the saga</a>
+            <a class="btn btn-gold" href="/portfolio">{sections.hero.cta_primary}</a>
+            <a class="btn btn-ghost" href="/about">{sections.hero.cta_secondary}</a>
           </div>
         </div>
         <div class="hero-dragon" aria-hidden="true">
@@ -50,69 +72,46 @@ import Base from "../layouts/Base.astro";
 
       <section data-screen-label="Three paths">
         <div class="paths">
-          <a class="card lift path-card reveal" href="/portfolio">
-            <span class="path-rune">I</span>
-            <h3>The Work</h3>
-            <p>Production systems, side quests, and open-source offerings. TypeScript, Go, and whatever the quest requires.</p>
-            <span class="go">Enter the forge →</span>
-          </a>
-          <a class="card lift path-card reveal" href="/blog">
-            <span class="path-rune">II</span>
-            <h3>The Saga</h3>
-            <p>Long-form writing on code, myth, and the spaces between — with the occasional strong opinion about boss design.</p>
-            <span class="go">Open the codex →</span>
-          </a>
-          <a class="card lift path-card reveal" href="/games">
-            <span class="path-rune">III</span>
-            <h3>The Game Hall</h3>
-            <p>What I'm playing, what I'm waiting for, and the favorites I'd defend in single combat.</p>
-            <span class="go">Take a seat →</span>
-          </a>
+          {sections.paths.map((p, i) => (
+            <a class="card lift path-card reveal" href={["/portfolio", "/blog", "/games"][i]}>
+              <span class="path-rune">{p.rune}</span>
+              <h3>{p.title}</h3>
+              <p>{p.copy}</p>
+              <span class="go">{p.link_label}</span>
+            </a>
+          ))}
         </div>
       </section>
 
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
       <section data-screen-label="Now strip">
-        <p class="kicker gold">Currently</p>
+        <p class="kicker gold">{sections.now_kicker}</p>
         <div class="now-strip">
-          <div class="card now-card reveal">
-            <div class="now-label">Now playing</div>
-            <div class="now-value">Elden Ring: Nightreign</div>
-            <div class="now-sub">Co-op runs, NG+2 · mostly dying with style</div>
-          </div>
-          <div class="card now-card reveal">
-            <div class="now-label">Now building</div>
-            <div class="now-value">Saga Tracker API</div>
-            <div class="now-sub">Go + Postgres · a quest log for real life</div>
-          </div>
-          <div class="card now-card reveal">
-            <div class="now-label">Now brewing</div>
-            <div class="now-value">Masala chai, batch #214</div>
-            <div class="now-sub">Extra cardamom. Non-negotiable.</div>
-          </div>
+          {sections.now.map((n) => (
+            <div class="card now-card reveal">
+              <div class="now-label">{n.label}</div>
+              <div class="now-value">{n.value}</div>
+              <div class="now-sub">{n.sub}</div>
+            </div>
+          ))}
         </div>
       </section>
 
       <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
 
       <section class="home-posts" data-screen-label="Latest writing">
-        <p class="kicker">Latest from the codex</p>
-        <a class="post-row" href="/blog/error-handling-is-a-narrative-problem">
-          <span class="post-date">2026-05-28</span>
-          <span class="post-title">Error handling is a narrative problem</span>
-          <span class="chip tq post-tag">Engineering</span>
-        </a>
-        <a class="post-row" href="/blog/what-sekiro-taught-me-about-code-review">
-          <span class="post-date">2026-05-09</span>
-          <span class="post-title">What Sekiro taught me about code review</span>
-          <span class="chip gold post-tag">Games × Code</span>
-        </a>
-        <a class="post-row" href="/blog/loki-was-the-first-refactorer">
-          <span class="post-date">2026-04-17</span>
-          <span class="post-title">Loki was the first refactorer</span>
-          <span class="chip post-tag">Myth</span>
-        </a>
+        <p class="kicker">{sections.latest_heading}</p>
+        {posts.map((post) => (
+          <PostRow
+            href={getRelativeLocaleUrl(locale, `/blog/${post.data.slug}`)}
+            date={post.data.date}
+            dateLocale={dateLocale}
+            title={post.data.title}
+            category={post.data.category}
+            accent={ACCENT[post.data.category]}
+          />
+        ))}
       </section>
     </div>
   </main>

@@ -1,17 +1,15 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import Index from '../../src/pages/index.astro';
 import About from '../../src/pages/about.astro';
 import Cv from '../../src/pages/cv.astro';
 import NotFound from '../../src/pages/404.astro';
 
 const PAGES = [
-  ['index', Index],
   ['about', About],
   ['cv', Cv],
-  // games, countdowns, wallpapers and portfolio are collection-backed since the
-  // content port — the Container can't load astro:content under Vitest (same
-  // reason blog/docs aren't here). Covered by tests/render/components.test.ts + e2e.
+  // games, countdowns, wallpapers, portfolio and index (home) are collection-backed
+  // since the content port — the Container can't load astro:content under Vitest
+  // (same reason blog/docs aren't here). Covered by tests/render/components.test.ts + e2e.
   ['404', NotFound],
 ] as const;
 
