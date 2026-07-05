@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/((?!construction|assets/|favicon|apple-touch-icon|icon-|site\\.webmanifest).*)",
+      "destination": "/construction/",
+      "statusCode": 307
+    }
+  ],
+  "headers": [
+    {
+      "source": "/construction(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    }
+  ]
+}
