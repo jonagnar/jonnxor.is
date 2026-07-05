@@ -2,7 +2,7 @@ import {
   createCollection, createField, createRelation, readCollections,
   readFieldsByCollection, updateField,
 } from '@directus/sdk';
-import { connect, done } from '../../scripts/lib/directus-client.mjs';
+import { connect, done } from '../../client/scripts/lib/directus-client.mjs';
 
 const client = await connect();
 

@@ -30,12 +30,12 @@ sh scripts/pw.sh test ../tests/e2e/blog.spec.ts            # single spec
 
 Playwright's `webServer` builds and previews on port 4321 itself. Vitest owns `*.test.ts`, Playwright owns `*.spec.ts` — both live under top-level `tests/`.
 
-Content/CMS (needs Docker + `directus/.env`, decrypted via sops/direnv; run from `client/` — scripts resolve `directus/` as `../directus/`):
+Content/CMS: the Directus **runtime** (compose stack, stack env, `data/`, `uploads/`) lives in the **infra repo** — runbook: `~/dev/src/infra/directus/README.md` (up/down from there: `cd ~/dev/src/infra/directus && docker compose up -d`). This repo's `directus/` holds only the **schema contract** (`schema/snapshot.yaml` + `scripts/setup-schema.mjs`) and the client-side env (`directus/.env`: `DIRECTUS_URL` + admin creds, decrypted via sops/direnv). With no compose file here, the worktree stack-hijack accident class (a worktree `directus:up` silently creating a fresh empty data dir) is structurally gone. Content scripts run from `client/` and resolve `directus/` as `../directus/`:
 
 ```sh
-pnpm directus:up         # local Directus stack
 pnpm content:pull        # refresh committed snapshot from Directus → src/content/**
-pnpm directus:snapshot   # export schema-as-code → directus/schema/snapshot.yaml
+pnpm directus:schema     # idempotent schema setup against the running stack
+pnpm directus:snapshot   # export schema-as-code → directus/schema/snapshot.yaml (execs container jonnxor-directus-directus-1 by name)
 ```
 
 ## Architecture
