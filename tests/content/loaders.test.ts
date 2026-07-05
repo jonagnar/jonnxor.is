@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localeEntryId } from '../../src/content/loaders';
+import { localeEntryId } from '../../client/src/content/loaders';
 
 describe('localeEntryId', () => {
   it('keeps a slug\'s locale files distinct (md)', () => {

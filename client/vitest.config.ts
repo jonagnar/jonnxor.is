@@ -4,7 +4,7 @@ import { getViteConfig } from 'astro/config';
 export default getViteConfig(
   {
     test: {
-      include: ['tests/**/*.test.ts'],
+      include: ['../tests/**/*.test.ts'],
     },
   },
   // devToolbar off for test runs only: with it on, the compiler injects

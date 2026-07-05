@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 // vitest (no astro:content virtual module), so guard the wiring at the source level:
 // both collections' glob loaders must pass generateId: localeEntryId.
 const configSrc = readFileSync(
-  fileURLToPath(new URL('../../src/content.config.ts', import.meta.url)),
+  fileURLToPath(new URL('../../client/src/content.config.ts', import.meta.url)),
   'utf8',
 );
 

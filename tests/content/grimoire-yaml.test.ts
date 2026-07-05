@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import jsYaml from 'js-yaml';
-import { parseDoc, serializeDoc } from '../../scripts/lib/grimoire-yaml.mjs';
+import { parseDoc, serializeDoc } from '../../client/scripts/lib/grimoire-yaml.mjs';
 
 const record = {
   slug: 'go-errors', locale: 'en',

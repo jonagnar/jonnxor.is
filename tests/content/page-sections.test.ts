@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countdownsSections, homeSections, aboutSections, cvSections, sectionSchemas } from '../../src/content/page-sections';
+import { countdownsSections, homeSections, aboutSections, cvSections, sectionSchemas } from '../../client/src/content/page-sections';
 
 const VALID_HOME = {
   hero: { tagline: 'A tagline.', cta_primary: 'View the work', cta_secondary: 'Read the saga' },

@@ -14,21 +14,21 @@ The JS/Astro workspace lives in `client/` — run all `pnpm` commands from there
 pnpm install             # pnpm pinned via packageManager (corepack) / mise
 pnpm dev                 # dev server → http://localhost:4321
 pnpm build               # static build to ./dist/
-pnpm test                # Vitest: tests/{content,i18n,render}
-pnpm exec vitest run tests/i18n/utils.test.ts   # single test file
+pnpm test                # Vitest: ../tests/{content,i18n,render}
+pnpm exec vitest run ../tests/i18n/utils.test.ts   # single test file
 pnpm exec astro check    # type-check
 ```
 
 **Playwright never runs on the host** — browsers aren't installed in WSL. All E2E and visual runs go through the pinned container (`mcr.microsoft.com/playwright:v1.61.1-noble`) via `scripts/pw.sh` (from `client/`), so local runs match CI byte-for-byte:
 
 ```sh
-pnpm test:e2e            # = sh scripts/pw.sh test tests/e2e
-pnpm test:visual         # = sh scripts/pw.sh test tests/visual
-sh scripts/pw.sh test tests/visual --update-snapshots   # re-record baselines (review diff in PR)
-sh scripts/pw.sh test tests/e2e/blog.spec.ts            # single spec
+pnpm test:e2e            # = sh scripts/pw.sh test ../tests/e2e
+pnpm test:visual         # = sh scripts/pw.sh test ../tests/visual
+sh scripts/pw.sh test ../tests/visual --update-snapshots   # re-record baselines (review diff in PR)
+sh scripts/pw.sh test ../tests/e2e/blog.spec.ts            # single spec
 ```
 
-Playwright's `webServer` builds and previews on port 4321 itself. Vitest owns `*.test.ts`, Playwright owns `*.spec.ts` — both live under `client/tests/`.
+Playwright's `webServer` builds and previews on port 4321 itself. Vitest owns `*.test.ts`, Playwright owns `*.spec.ts` — both live under top-level `tests/`.
 
 Content/CMS (needs Docker + `directus/.env`, decrypted via sops/direnv; run from `client/` — scripts resolve `directus/` as `../directus/`):
 
@@ -48,8 +48,8 @@ Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Direc
 
 - `locales: ['is', 'en', 'ja']`, `defaultLocale: 'is'` served at `/`, with `/en/` and `/ja/` prefixes; `fallbackType: 'rewrite'` (en/ja rewrite to is) so no locale ever 404s.
 - **English is the authoring base** and load-bearing fallback for content and UI strings.
-- Content files are one file per locale: `<slug>.<locale>.md` (blog) / `<slug>.<locale>.yaml` (grimoire, games, pages, countdowns, wallpapers, projects). EVERY collection in `client/src/content.config.ts` MUST keep `generateId: localeEntryId` (from `client/src/content/loaders.ts`) or a slug's locale files collide on one id and silently overwrite each other — guarded by `client/tests/content/config-wiring.test.ts` (count updated per collection).
-- The sync pipeline is descriptor-driven: one entry per collection in `client/scripts/lib/collections.mjs` (read its `CollectionDescriptor` contract JSDoc before adding one); serialization determinism via `client/scripts/lib/entry-yaml.mjs`. Snapshot YAML must never contain comment nodes (an unquoted mid-scalar ` #` silently truncates values through restore) — guarded by `client/tests/content/snapshot-comments.test.ts`.
+- Content files are one file per locale: `<slug>.<locale>.md` (blog) / `<slug>.<locale>.yaml` (grimoire, games, pages, countdowns, wallpapers, projects). EVERY collection in `client/src/content.config.ts` MUST keep `generateId: localeEntryId` (from `client/src/content/loaders.ts`) or a slug's locale files collide on one id and silently overwrite each other — guarded by `tests/content/config-wiring.test.ts` (count updated per collection).
+- The sync pipeline is descriptor-driven: one entry per collection in `client/scripts/lib/collections.mjs` (read its `CollectionDescriptor` contract JSDoc before adding one); serialization determinism via `client/scripts/lib/entry-yaml.mjs`. Snapshot YAML must never contain comment nodes (an unquoted mid-scalar ` #` silently truncates values through restore) — guarded by `tests/content/snapshot-comments.test.ts`.
 - Per-page `pages.sections` shapes live in `client/src/content/page-sections.ts` (schema + inferred type share one source, imported by both `content.config.ts` and the page).
 - Chrome/UI strings live in `client/src/i18n/ui.ts`; `useTranslations` in `client/src/i18n/utils.ts` falls back lang → en → key.
 
@@ -62,7 +62,7 @@ Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Direc
 
 ### Testing & CI
 
-Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API render tests (`client/tests/render/` — components and non-collection pages only: the Container can't load `astro:content` under Vitest, and `vitest.config.ts` passes `devToolbar: {enabled: false}` as `getViteConfig`'s second arg so rendered HTML carries no debug attributes), then containerized Playwright E2E (`client/tests/e2e/`) and self-baseline visual regression (`client/tests/visual/`, `/countdowns` excluded — live-data layout). No feature merges without a test. CI (`.forgejo/workflows/ci.yml`): both jobs run with `working-directory: client`; Vitest on every push; e2e + visual on PRs and the `preview` branch.
+Test pyramid: Vitest unit tests for content/i18n logic plus Astro Container-API render tests (`tests/render/` — components and non-collection pages only: the Container can't load `astro:content` under Vitest, and `vitest.config.ts` passes `devToolbar: {enabled: false}` as `getViteConfig`'s second arg so rendered HTML carries no debug attributes), then containerized Playwright E2E (`tests/e2e/`) and self-baseline visual regression (`tests/visual/`, `/countdowns` excluded — live-data layout). Tests live at the repo root (`tests/`), outside `client/` — imports and configs cross that boundary with `../`. No feature merges without a test. CI (`.forgejo/workflows/ci.yml`): both jobs run with `working-directory: client`; Vitest on every push; e2e + visual on PRs and the `preview` branch.
 
 ### Deploy & secrets
 

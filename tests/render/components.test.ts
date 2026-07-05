@@ -1,15 +1,15 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import PageHead from '../../src/components/PageHead.astro';
-import GameCard from '../../src/components/GameCard.astro';
-import CountdownCard from '../../src/components/CountdownCard.astro';
-import CountUpCard from '../../src/components/CountUpCard.astro';
-import WallpaperTile from '../../src/components/WallpaperTile.astro';
-import ProjectCard from '../../src/components/ProjectCard.astro';
-import PostRow from '../../src/components/PostRow.astro';
-import FactList from '../../src/components/FactList.astro';
-import CVRole from '../../src/components/CVRole.astro';
-import CVSkillsRow from '../../src/components/CVSkillsRow.astro';
+import PageHead from '../../client/src/components/PageHead.astro';
+import GameCard from '../../client/src/components/GameCard.astro';
+import CountdownCard from '../../client/src/components/CountdownCard.astro';
+import CountUpCard from '../../client/src/components/CountUpCard.astro';
+import WallpaperTile from '../../client/src/components/WallpaperTile.astro';
+import ProjectCard from '../../client/src/components/ProjectCard.astro';
+import PostRow from '../../client/src/components/PostRow.astro';
+import FactList from '../../client/src/components/FactList.astro';
+import CVRole from '../../client/src/components/CVRole.astro';
+import CVSkillsRow from '../../client/src/components/CVSkillsRow.astro';
 
 describe('PageHead', () => {
   it('renders kicker, h1 and lede', async () => {

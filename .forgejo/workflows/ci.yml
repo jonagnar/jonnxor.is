@@ -38,9 +38,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: E2E
-        run: pnpm exec playwright test tests/e2e
+        run: pnpm exec playwright test ../tests/e2e
       - name: Visual regression
-        run: pnpm exec playwright test tests/visual
+        run: pnpm exec playwright test ../tests/visual
       - name: Upload report on failure
         if: failure()
         uses: actions/upload-artifact@v4

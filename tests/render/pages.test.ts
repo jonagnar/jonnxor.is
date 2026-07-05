@@ -1,6 +1,6 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import NotFound from '../../src/pages/404.astro';
+import NotFound from '../../client/src/pages/404.astro';
 
 const PAGES = [
   // games, countdowns, wallpapers, portfolio, index (home), about and cv are collection-backed

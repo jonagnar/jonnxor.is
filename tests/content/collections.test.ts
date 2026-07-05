@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { COLLECTIONS, simpleDescriptor } from '../../scripts/lib/collections.mjs';
+import { COLLECTIONS, simpleDescriptor } from '../../client/scripts/lib/collections.mjs';
 
 const REQUIRED = ['name', 'dir', 'ext', 'fileRe', 'fields', 'toRecord', 'toItem', 'toTranslation', 'serialize', 'parse'];
 

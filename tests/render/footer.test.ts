@@ -1,6 +1,6 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import Footer from '../../src/components/Footer.astro';
+import Footer from '../../client/src/components/Footer.astro';
 
 describe('Footer.astro', () => {
   it('renders the footer chrome and contact rows', async () => {

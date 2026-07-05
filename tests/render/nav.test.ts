@@ -1,6 +1,6 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import Nav from '../../src/components/Nav.astro';
+import Nav from '../../client/src/components/Nav.astro';
 
 async function renderNav(page: string) {
   const container = await AstroContainer.create();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localizedByOrder, localizedEntry, requirePageHead, uniqueSlugs } from '../../src/i18n/localized';
+import { localizedByOrder, localizedEntry, requirePageHead, uniqueSlugs } from '../../client/src/i18n/localized';
 
 const entries = [
   { id: 'a.en', data: { slug: 'a', locale: 'en' as const, title: 'A' } },
