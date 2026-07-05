@@ -7,6 +7,9 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - name: Enable pnpm (via corepack, pinned by packageManager)
@@ -25,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+    defaults:
+      run:
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - name: Enable pnpm (via corepack, pinned by packageManager)
@@ -40,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: client/playwright-report/

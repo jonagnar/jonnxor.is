@@ -28,14 +28,14 @@ directus/.env
 directus/data/
 directus/uploads/
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/.pnpm/
-# Container artefacts (HOME=/work in pw.sh)
-/.cache/
-/.local/
-/.config/
-/.fontconfig/
+# Playwright (client/ is the Astro workspace root where these are produced)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.pnpm/
+# Container artefacts (HOME=/work in pw.sh, /work == client/)
+.cache/
+.local/
+.config/
+.fontconfig/
