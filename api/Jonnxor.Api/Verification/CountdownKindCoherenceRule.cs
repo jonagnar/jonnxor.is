@@ -15,10 +15,13 @@ public sealed class CountdownKindCoherenceRule : IVerificationRule
 
     public IEnumerable<Finding> Check(IReadOnlyList<SnapshotEntry> entries)
     {
-        foreach (var entry in entries.Where(e => e.Collection == "countdowns"))
+        foreach (var entry in entries.Where(e => e.Collection == "countdowns" && e.ParseError is null))
         {
-            if (!entry.Fields.TryGetValue("kind", out var kindValue) || kindValue is not string kind)
+            if (!entry.Fields.TryGetValue("kind", out var kindValue)
+                || kindValue is not string kind
+                || kind is not ("countdown" or "countup"))
             {
+                yield return Violation(entry, "missing or unknown 'kind' (expected 'countdown' or 'countup')");
                 continue;
             }
 
@@ -37,6 +40,9 @@ public sealed class CountdownKindCoherenceRule : IVerificationRule
                     yield return Violation(entry, "kind 'countup' must not carry 'when'");
                 }
 
+                // Relies on SnapshotReader's typed scalar resolution: `gold: true` arrives
+                // as a bool, so `is true` matches. (With string-typed scalars this check
+                // silently never fired — the review-caught false negative.)
                 if (entry.Fields.TryGetValue("gold", out var goldValue) && goldValue is true)
                 {
                     yield return Violation(entry, "kind 'countup' must not carry 'gold'");

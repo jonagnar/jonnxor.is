@@ -85,4 +85,68 @@ public class SnapshotReaderTests
         Assert.Equal("is", entries[0].Locale);
         Assert.Equal("summer-solstice", entries[0].Slug);
     }
+
+    [Fact]
+    public void ReadAll_ResolvesPlainScalarsToCoreSchemaTypes()
+    {
+        // gaming.en.yaml: `order: 8` (plain int), `rate: 2.6` (plain float),
+        // `start: "2002-05-05T08:00:00"` (double-quoted — stays a string).
+        var root = FixturePath.For("valid");
+
+        var entries = SnapshotReader.ReadAll(root).ToList();
+        var gaming = entries.Single(e => e.Collection == "countdowns" && e.Slug == "gaming");
+
+        Assert.Equal(8L, gaming.Fields["order"]);
+        Assert.Equal(2.6, gaming.Fields["rate"]);
+        Assert.Equal("2002-05-05T08:00:00", gaming.Fields["start"]);
+    }
+
+    [Fact]
+    public void ReadAll_TypedScalars_ResolveBoolAndNullAndKeepQuotedStrings()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("countdowns", "typed.en.yaml",
+            "slug: typed\nlocale: en\ngold: true\ndraft: false\nnothing: null\ntilde: ~\nquoted_bool: \"true\"\nquoted_num: '42'\nplain_num: 42\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var fields = entries.Single().Fields;
+
+        Assert.Equal(true, fields["gold"]);
+        Assert.Equal(false, fields["draft"]);
+        Assert.Null(fields["nothing"]);
+        Assert.Null(fields["tilde"]);
+        Assert.Equal("true", fields["quoted_bool"]); // quoting is intent — stays a string
+        Assert.Equal("42", fields["quoted_num"]);
+        Assert.Equal(42L, fields["plain_num"]);
+    }
+
+    [Fact]
+    public void ReadAll_TypedScalars_ApplyRecursivelyInsideNestedStructures()
+    {
+        // drekis-vault.en.yaml: `stops: [55, 160]` (plain ints in a sequence) and
+        // `status.kind: gold` (plain string) under a nested mapping.
+        var root = FixturePath.For("valid");
+
+        var entries = SnapshotReader.ReadAll(root).ToList();
+        var project = entries.Single(e => e.Collection == "projects" && e.Slug == "drekis-vault");
+
+        var stops = Assert.IsType<List<object?>>(project.Fields["stops"]);
+        Assert.Equal([55L, 160L], stops);
+
+        var status = Assert.IsType<Dictionary<string, object?>>(project.Fields["status"]);
+        Assert.Equal("gold", status["kind"]);
+    }
+
+    [Fact]
+    public void ReadAll_MalformedYaml_YieldsEntryWithParseError_NotAnException()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("countdowns", "broken.en.yaml", "slug: [unclosed\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+
+        var entry = Assert.Single(entries);
+        Assert.NotNull(entry.ParseError);
+        Assert.Empty(entry.Fields);
+    }
 }

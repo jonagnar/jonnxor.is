@@ -13,7 +13,9 @@ public sealed class NoCommentNodesRule : IVerificationRule
 {
     public IEnumerable<Finding> Check(IReadOnlyList<SnapshotEntry> entries)
     {
-        foreach (var entry in entries)
+        // Entries with a parse error are reported by ParseErrorRule; their raw text may not
+        // even be YAML-shaped (e.g. fence-less markdown), so scanning it would be noise.
+        foreach (var entry in entries.Where(e => e.ParseError is null))
         {
             if (YamlCommentScanner.ContainsComment(entry.RawFrontmatter))
             {

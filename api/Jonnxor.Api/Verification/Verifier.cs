@@ -7,6 +7,7 @@ public static class Verifier
 {
     public static readonly IReadOnlyList<IVerificationRule> Rules =
     [
+        new ParseErrorRule(),
         new EnBasePresentRule(),
         new NoCommentNodesRule(),
         new CountdownKindCoherenceRule(),

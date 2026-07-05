@@ -17,6 +17,18 @@ public sealed class SnapshotEntry
     /// </summary>
     public required string RawFrontmatter { get; init; }
 
-    /// <summary>Parsed top-level YAML/frontmatter fields.</summary>
+    /// <summary>
+    /// Parsed top-level YAML/frontmatter fields. Plain scalars are resolved to YAML core
+    /// schema types (bool/long/double/null); quoted scalars stay strings. Empty when
+    /// <see cref="ParseError"/> is set.
+    /// </summary>
     public required IReadOnlyDictionary<string, object?> Fields { get; init; }
+
+    /// <summary>
+    /// Non-null when the file could not be parsed (malformed YAML, or a blog `.md` without
+    /// well-formed leading `---` frontmatter fences). Parse failures surface as verifier
+    /// findings via <c>ParseErrorRule</c> rather than crashing the run; rules that inspect
+    /// <see cref="Fields"/> or <see cref="RawFrontmatter"/> skip entries with a parse error.
+    /// </summary>
+    public string? ParseError { get; init; }
 }

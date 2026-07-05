@@ -12,7 +12,8 @@ public sealed class PagesSectionsPresentRule : IVerificationRule
 
     public IEnumerable<Finding> Check(IReadOnlyList<SnapshotEntry> entries)
     {
-        foreach (var entry in entries.Where(e => e.Collection == "pages" && GatedSlugs.Contains(e.Slug)))
+        foreach (var entry in entries.Where(e =>
+                     e.Collection == "pages" && GatedSlugs.Contains(e.Slug) && e.ParseError is null))
         {
             if (!IsNonEmptySections(entry))
             {
@@ -31,11 +32,8 @@ public sealed class PagesSectionsPresentRule : IVerificationRule
             return false;
         }
 
-        return sections switch
-        {
-            Dictionary<object, object?> map => map.Count > 0,
-            System.Collections.ICollection collection => collection.Count > 0,
-            _ => true,
-        };
+        // SnapshotReader materializes nested mappings as Dictionary<string, object?> and
+        // sequences as List<object?> — both are ICollection, so one arm covers them.
+        return sections is not System.Collections.ICollection collection || collection.Count > 0;
     }
 }

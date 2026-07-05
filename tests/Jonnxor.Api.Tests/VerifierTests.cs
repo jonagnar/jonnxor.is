@@ -60,11 +60,99 @@ public class VerifierTests
     }
 
     [Fact]
+    public void GoldOnCountup_ProducesCountdownKindCoherenceFinding()
+    {
+        // Proves the typed-scalar fix: `gold: true` must arrive as a bool, not the string
+        // "true", or this check silently never fires (the review-caught false negative).
+        using var temp = new TempDir();
+        temp.WriteFile("countdowns", "studying.en.yaml", """
+            slug: studying
+            locale: en
+            order: 9
+            kind: countup
+            gold: true
+            icon: X
+            start: "2010-09-01T09:00:00"
+            rate: 1.2
+            what: Studying
+            note: Never stops.
+            """);
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(CountdownKindCoherenceRule), finding.Rule);
+        Assert.Contains("studying.en.yaml", finding.File);
+        Assert.Contains("gold", finding.Detail);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("kind: sideways\n")]
+    public void MissingOrUnknownKind_ProducesCountdownKindCoherenceFinding(string kindLine)
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("countdowns", "mystery.en.yaml",
+            $"slug: mystery\nlocale: en\norder: 1\n{kindLine}what: Mystery\nnote: No kind to speak of.\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(CountdownKindCoherenceRule), finding.Rule);
+        Assert.Contains("mystery.en.yaml", finding.File);
+        Assert.Contains("kind", finding.Detail);
+    }
+
+    [Fact]
+    public void MalformedYaml_ProducesParseErrorFinding_InsteadOfCrashing()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("countdowns", "broken.en.yaml", "slug: [unclosed\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(ParseErrorRule), finding.Rule);
+        Assert.Contains("broken.en.yaml", finding.File);
+    }
+
+    [Fact]
+    public void MarkdownWithoutFrontmatterFences_ProducesParseErrorFinding()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("blog", "fenceless.en.md", "Just prose, no frontmatter fences at all.\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(ParseErrorRule), finding.Rule);
+        Assert.Contains("fenceless.en.md", finding.File);
+        Assert.Contains("fence", finding.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MarkdownWithUnterminatedFence_ProducesParseErrorFinding()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("blog", "unterminated.en.md", "---\ntitle: Oops\nlocale: en\nslug: unterminated\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(ParseErrorRule), finding.Rule);
+        Assert.Contains("unterminated.en.md", finding.File);
+    }
+
+    [Fact]
     public void PagesSectionsMissing_ProducesPagesSectionsPresentFinding()
     {
         using var temp = new TempDir();
-        var pagesDir = Directory.CreateDirectory(Path.Combine(temp.Path, "pages"));
-        File.WriteAllText(Path.Combine(pagesDir.FullName, "about.en.yaml"), """
+        temp.WriteFile("pages", "about.en.yaml", """
             slug: about
             locale: en
             kicker: About
@@ -85,8 +173,7 @@ public class VerifierTests
     public void PagesSectionsPresent_ForNonGatedSlug_DoesNotRequireSections()
     {
         using var temp = new TempDir();
-        var pagesDir = Directory.CreateDirectory(Path.Combine(temp.Path, "pages"));
-        File.WriteAllText(Path.Combine(pagesDir.FullName, "portfolio.en.yaml"), """
+        temp.WriteFile("pages", "portfolio.en.yaml", """
             slug: portfolio
             locale: en
             kicker: Portfolio
@@ -98,22 +185,5 @@ public class VerifierTests
         var findings = Verifier.Run(entries);
 
         Assert.Empty(findings);
-    }
-
-    private sealed class TempDir : IDisposable
-    {
-        public string Path { get; } = Directory.CreateTempSubdirectory("jonnxor-api-tests-").FullName;
-
-        public void Dispose()
-        {
-            try
-            {
-                Directory.Delete(Path, recursive: true);
-            }
-            catch (IOException)
-            {
-                // best-effort cleanup
-            }
-        }
     }
 }

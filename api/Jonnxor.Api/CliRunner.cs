@@ -20,7 +20,7 @@ public static class CliRunner
         Verbs:
           verify   Validate the content snapshot (--offline) or the snapshot against
                    a live Directus instance (--live). --content overrides the default
-                   content directory.
+                   content directory (client/src/content, relative to the repo root).
           report   Emit a translation coverage report. --json writes a JSON artifact
                    to the given path in addition to the console table.
         """;
