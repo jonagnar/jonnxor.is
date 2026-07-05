@@ -67,6 +67,10 @@ export const ui = {
     'games.tab.played': 'Played',
     'games.tab.favorites': 'Favorites',
     'games.empty': 'The hall is quiet… for now.',
+    'wall.all': 'All',
+    'wall.download': 'Download',
+    'wall.close': 'Close',
+    'wall.filterLabel': 'Filter wallpapers by tag',
   },
   is: {
     'nav.home': 'Heim',
