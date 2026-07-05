@@ -31,6 +31,8 @@ jobs:
         run: dotnet build jonnxor.sln --configuration Release
       - name: Test
         run: dotnet test jonnxor.sln --configuration Release --no-build
+      - name: Verify content snapshot (offline)
+        run: dotnet run --project api/Jonnxor.Api --configuration Release -- verify --offline --content client/src/content
 
   e2e-visual:
     # heavier browser suite — only where it gates a deploy; don't bother if units fail
