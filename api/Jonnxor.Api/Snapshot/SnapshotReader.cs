@@ -141,7 +141,8 @@ public static class SnapshotReader
 
     /// <summary>
     /// Blog frontmatter is the text between the leading `---` fences. Returns false when the
-    /// opening fence is absent or the closing fence never arrives — the caller surfaces that
+    /// opening fence is absent, the closing fence never arrives, or the fences are adjacent
+    /// with nothing between them (`---\n---`, empty frontmatter) — the caller surfaces that
     /// as a parse-error finding instead of guessing at document shape.
     /// </summary>
     private static bool TryExtractMarkdownFrontmatter(string rawText, out string frontmatter)
@@ -162,7 +163,7 @@ public static class SnapshotReader
         }
 
         var closeIndex = normalized.IndexOf("\n" + fence, afterOpen, StringComparison.Ordinal);
-        if (closeIndex < 0)
+        if (closeIndex <= afterOpen)
         {
             return false;
         }

@@ -149,6 +149,24 @@ public class VerifierTests
     }
 
     [Fact]
+    public void MarkdownWithEmptyFrontmatter_ProducesParseErrorFinding()
+    {
+        // `---\n---` — fences adjacent with nothing between them. Before the fix, closeIndex
+        // == afterOpen made the slice `[afterOpen+1)..closeIndex)` a negative-length range,
+        // which either threw or silently produced an empty-but-"valid" frontmatter. Either
+        // way it must surface as a named parse-error finding, not crash the run.
+        using var temp = new TempDir();
+        temp.WriteFile("blog", "empty-frontmatter.en.md", "---\n---\nJust prose below.\n");
+
+        var entries = SnapshotReader.ReadAll(temp.Path).ToList();
+        var findings = Verifier.Run(entries);
+
+        var finding = Assert.Single(findings);
+        Assert.Equal(nameof(ParseErrorRule), finding.Rule);
+        Assert.Contains("empty-frontmatter.en.md", finding.File);
+    }
+
+    [Fact]
     public void PagesSectionsMissing_ProducesPagesSectionsPresentFinding()
     {
         using var temp = new TempDir();

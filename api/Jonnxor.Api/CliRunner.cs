@@ -1,3 +1,5 @@
+using Jonnxor.Api.Directus;
+using Jonnxor.Api.Equivalence;
 using Jonnxor.Api.Snapshot;
 using Jonnxor.Api.Verification;
 
@@ -13,14 +15,20 @@ public static class CliRunner
         jonnxor-api — content seam validator
 
         Usage:
-          jonnxor-api verify [--offline | --live] [--content <dir>]
+          jonnxor-api verify --offline [--content <dir>]
+          jonnxor-api verify --live [--content <dir>] [--env <path>]
           jonnxor-api report [--json <path>]
           jonnxor-api --help
 
         Verbs:
           verify   Validate the content snapshot (--offline) or the snapshot against
-                   a live Directus instance (--live). --content overrides the default
-                   content directory (client/src/content, relative to the repo root).
+                   a live Directus instance (--live, read-only). --content overrides
+                   the default content directory (client/src/content, relative to the
+                   current working directory). --live always runs the offline rules
+                   first and fails fast on any offline finding before touching
+                   Directus. --live credentials come from DIRECTUS_URL/ADMIN_EMAIL/
+                   ADMIN_PASSWORD — either already exported, or loaded from a
+                   KEY=VALUE file via --env (explicit env vars win over the file).
           report   Emit a translation coverage report. --json writes a JSON artifact
                    to the given path in addition to the console table.
         """;
@@ -49,24 +57,24 @@ public static class CliRunner
 
     private const string DefaultContentDir = "client/src/content";
 
+    // The collections the equivalence comparator knows about — mirrors the `name` entries in
+    // `client/scripts/lib/collections.mjs`'s COLLECTIONS table (the descriptor table remains
+    // the single owner of per-field kind knowledge; this list only says WHICH collections
+    // exist, which the generic comparator needs to know what to fetch from Directus).
+    private static readonly string[] LiveCollections =
+        ["blog", "grimoire", "games", "pages", "countdowns", "wallpapers", "projects"];
+
     private static int RunVerify(string[] args, TextWriter stdout, TextWriter stderr)
     {
         var mode = args.FirstOrDefault(a => a is "--offline" or "--live");
         var contentDir = ReadOption(args, "--content") ?? DefaultContentDir;
 
-        if (mode is null or "--live")
+        if (mode is null)
         {
-            stderr.WriteLine(mode == "--live"
-                ? "verify --live: not implemented"
-                : "verify: specify --offline or --live");
+            stderr.WriteLine("verify: specify --offline or --live");
             return 2;
         }
 
-        return RunVerifyOffline(contentDir, stdout, stderr);
-    }
-
-    private static int RunVerifyOffline(string contentDir, TextWriter stdout, TextWriter stderr)
-    {
         IReadOnlyList<SnapshotEntry> entries;
         try
         {
@@ -74,23 +82,29 @@ public static class CliRunner
         }
         catch (DirectoryNotFoundException ex)
         {
-            stderr.WriteLine($"verify --offline: {ex.Message}");
+            stderr.WriteLine($"verify {mode}: {ex.Message}");
             return 2;
         }
 
-        var findings = Verifier.Run(entries);
-
-        if (findings.Count > 0)
+        var offlineFindings = Verifier.Run(entries);
+        if (offlineFindings.Count > 0)
         {
-            foreach (var finding in findings)
+            foreach (var finding in offlineFindings)
             {
                 stderr.WriteLine(finding.ToString());
             }
 
-            stderr.WriteLine($"verify --offline: {findings.Count} finding(s) across {entries.Count} file(s)");
+            stderr.WriteLine($"verify {mode}: {offlineFindings.Count} offline finding(s) across {entries.Count} file(s)");
             return 1;
         }
 
+        return mode == "--live"
+            ? RunVerifyLive(args, contentDir, entries, stdout, stderr)
+            : PrintOfflineSummary(contentDir, entries, stdout);
+    }
+
+    private static int PrintOfflineSummary(string contentDir, IReadOnlyList<SnapshotEntry> entries, TextWriter stdout)
+    {
         var slugCount = entries.Select(e => (e.Collection, e.Slug)).Distinct().Count();
         var collectionCount = entries.Select(e => e.Collection).Distinct().Count();
 
@@ -100,6 +114,106 @@ public static class CliRunner
         stdout.WriteLine($"  slugs       : {slugCount}");
         stdout.WriteLine($"  files       : {entries.Count}");
         stdout.WriteLine($"  rules passed: {Verifier.Rules.Count} ({string.Join(", ", Verifier.Rules.Select(r => r.GetType().Name))})");
+        return 0;
+    }
+
+    private static int RunVerifyLive(
+        string[] args, string contentDir, IReadOnlyList<SnapshotEntry> entries, TextWriter stdout, TextWriter stderr)
+    {
+        var envPath = ReadOption(args, "--env");
+        IReadOnlyDictionary<string, string> fileValues = new Dictionary<string, string>();
+        if (envPath is not null)
+        {
+            try
+            {
+                fileValues = EnvFile.Load(envPath);
+            }
+            catch (IOException ex)
+            {
+                stderr.WriteLine($"verify --live: could not read --env file '{envPath}': {ex.Message}");
+                return 2;
+            }
+        }
+
+        string? Resolve(string key) =>
+            Environment.GetEnvironmentVariable(key) is { Length: > 0 } fromEnv
+                ? fromEnv
+                : fileValues.GetValueOrDefault(key);
+
+        var directusUrl = Resolve("DIRECTUS_URL");
+        var adminEmail = Resolve("ADMIN_EMAIL");
+        var adminPassword = Resolve("ADMIN_PASSWORD");
+
+        var missing = new[] { ("DIRECTUS_URL", directusUrl), ("ADMIN_EMAIL", adminEmail), ("ADMIN_PASSWORD", adminPassword) }
+            .Where(kv => string.IsNullOrEmpty(kv.Item2))
+            .Select(kv => kv.Item1)
+            .ToList();
+        if (missing.Count > 0)
+        {
+            stderr.WriteLine(
+                $"verify --live: missing {string.Join(", ", missing)} — set as environment variable(s) or pass --env <path> to a KEY=VALUE file that defines them");
+            return 2;
+        }
+
+        return RunVerifyLiveAsync(directusUrl!, adminEmail!, adminPassword!, contentDir, entries, stdout, stderr)
+            .GetAwaiter().GetResult();
+    }
+
+    private static async Task<int> RunVerifyLiveAsync(
+        string directusUrl, string adminEmail, string adminPassword,
+        string contentDir, IReadOnlyList<SnapshotEntry> entries, TextWriter stdout, TextWriter stderr)
+    {
+        using var client = new DirectusClient(directusUrl);
+
+        try
+        {
+            await client.LoginAsync(adminEmail, adminPassword);
+        }
+        catch (DirectusUnreachableException ex)
+        {
+            stderr.WriteLine($"verify --live: {ex.Message}");
+            return 2;
+        }
+
+        var findings = new List<Finding>();
+        var collectionsChecked = 0;
+
+        foreach (var collection in LiveCollections)
+        {
+            IReadOnlyList<System.Text.Json.JsonElement> rawItems;
+            try
+            {
+                rawItems = await client.GetItemsAsync(collection);
+            }
+            catch (DirectusUnreachableException ex)
+            {
+                stderr.WriteLine($"verify --live: {ex.Message}");
+                return 2;
+            }
+
+            var directusItems = rawItems.Select(Equivalence.DirectusItem.FromJson).ToList();
+            var snapshotEntries = entries.Where(e => e.Collection == collection).ToList();
+
+            findings.AddRange(EquivalenceComparer.Compare(collection, snapshotEntries, directusItems));
+            collectionsChecked++;
+        }
+
+        if (findings.Count > 0)
+        {
+            foreach (var finding in findings)
+            {
+                stderr.WriteLine(finding.ToString());
+            }
+
+            stderr.WriteLine($"verify --live: {findings.Count} finding(s) across {collectionsChecked} collection(s)");
+            return 1;
+        }
+
+        stdout.WriteLine("verify --live: OK");
+        stdout.WriteLine($"  content dir : {contentDir}");
+        stdout.WriteLine($"  directus    : {directusUrl}");
+        stdout.WriteLine($"  collections : {collectionsChecked} ({string.Join(", ", LiveCollections)})");
+        stdout.WriteLine("  offline rules passed, snapshot equivalent to Directus for every collection above");
         return 0;
     }
 

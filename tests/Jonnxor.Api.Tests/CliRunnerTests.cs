@@ -31,16 +31,36 @@ public class CliRunnerTests
     }
 
     [Fact]
-    public void Verify_Live_RoutesToVerify_NotImplementedYet()
+    public void Verify_Live_WithoutCredentials_ExitsTwo_ErrorsToStderr()
     {
+        // No --env given and (in a sane test environment) no DIRECTUS_URL/ADMIN_EMAIL/
+        // ADMIN_PASSWORD exported — the live verb must fail fast with a clear message
+        // rather than attempting a request with empty credentials.
         var stdout = new StringWriter();
         var stderr = new StringWriter();
+        var root = FixturePath.For("valid");
 
-        var exitCode = CliRunner.Run(["verify", "--live", "--content", "some/dir"], stdout, stderr);
+        var exitCode = CliRunner.Run(["verify", "--live", "--content", root], stdout, stderr);
 
         Assert.Equal(2, exitCode);
-        Assert.Empty(stdout.ToString());
-        Assert.Contains("not implemented", stderr.ToString());
+        Assert.Contains("DIRECTUS_URL", stderr.ToString());
+    }
+
+    [Fact]
+    public void Verify_Live_OfflineFailureFailsFast_NeverAttemptsDirectus()
+    {
+        // Broken snapshot content must fail on the offline pass before verify --live ever
+        // tries to reach Directus — proven here by pointing at a fixture with an offline
+        // rule violation and no Directus credentials at all: if it tried to connect first,
+        // the failure message would be about DIRECTUS_URL, not the offline finding.
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var root = FixturePath.For("missing-en");
+
+        var exitCode = CliRunner.Run(["verify", "--live", "--content", root], stdout, stderr);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains(nameof(Jonnxor.Api.Verification.EnBasePresentRule), stderr.ToString());
     }
 
     [Fact]
