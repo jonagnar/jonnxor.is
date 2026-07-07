@@ -13,15 +13,12 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Loopback-only posture: refuse to boot on any non-loopback bind. Kestrel resolves
-// its addresses from explicit app.Urls entries if present, otherwise from the "urls"
-// configuration key (appsettings "Urls", ASPNETCORE_URLS, or a --urls override — all
-// of which flow into configuration). Guard whichever set is effective, before Run().
-IEnumerable<string> effectiveUrls = app.Urls.Count > 0
-    ? app.Urls
-    : app.Configuration[WebHostDefaults.ServerUrlsKey]
-        ?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        ?? [];
-LoopbackGuard.EnsureLoopback(effectiveUrls);
+// Loopback-only posture: refuse to boot on any non-loopback bind, before Run().
+// Guard the union of every source Kestrel can bind from: explicit app.Urls entries,
+// the "urls" configuration key (appsettings "Urls", ASPNETCORE_URLS, a --urls
+// override — all flow into it), and Kestrel:Endpoints:*:Url values, which Kestrel
+// binds directly without touching the "urls" key at all.
+LoopbackGuard.EnsureLoopback(
+    app.Urls.Concat(LoopbackGuard.CollectConfiguredUrls(app.Configuration)));
 
 app.Run();

@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace Jonnxor.Admin.Services;
 
@@ -26,6 +27,35 @@ public static class LoopbackGuard
                     + "Bind to 127.0.0.1, [::1], or localhost instead.");
             }
         }
+    }
+
+    /// <summary>
+    /// Collects every bind URL Kestrel can pick up from configuration: the
+    /// <c>urls</c> key (appsettings <c>Urls</c>, <c>ASPNETCORE_URLS</c>, a
+    /// <c>--urls</c> override — all flow into it) plus every
+    /// <c>Kestrel:Endpoints:*:Url</c> value, which Kestrel binds directly and
+    /// would otherwise bypass the guard entirely.
+    /// </summary>
+    public static IReadOnlyList<string> CollectConfiguredUrls(IConfiguration configuration)
+    {
+        var urls = new List<string>();
+
+        var serverUrls = configuration["urls"];
+        if (serverUrls is not null)
+        {
+            urls.AddRange(serverUrls.Split(
+                ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        foreach (var endpoint in configuration.GetSection("Kestrel:Endpoints").GetChildren())
+        {
+            if (endpoint["Url"] is { } endpointUrl)
+            {
+                urls.Add(endpointUrl);
+            }
+        }
+
+        return urls;
     }
 
     private static bool IsLoopback(string url)
