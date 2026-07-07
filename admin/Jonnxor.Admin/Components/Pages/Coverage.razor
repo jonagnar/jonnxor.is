@@ -1,0 +1,173 @@
+@page "/coverage"
+@using System.Globalization
+@using Jonnxor.Admin.Services
+@using Jonnxor.Api.Report
+@using Jonnxor.Api.Snapshot
+@implements IDisposable
+@inject CoverageService Service
+
+@* Interactivity note: inherits InteractiveServer from the root <Routes> in App.razor
+   (see Dashboard.razor for why the directive is not repeated per page).
+
+   Same numbers as `dotnet run --project api/Jonnxor.Api -- report`: identical reader
+   and reporter run in-process, and the percentage rounding below deliberately mirrors
+   ReportTable.FormatCell (Math.Round AwayFromZero, invariant culture). *@
+
+<PageTitle>Coverage — Jonnxor Admin</PageTitle>
+
+<h1>Translation coverage</h1>
+
+@if (_result is not { } result)
+{
+    <p class="pull-muted">reading snapshot…</p>
+}
+else
+{
+    @if (result.Detail is { } detail)
+    {
+        <p class="pull-error">@detail</p>
+    }
+
+    <p class="pull-muted">
+        offline, from the committed snapshot — generated
+        @result.Report.GeneratedAt.ToString("O", CultureInfo.InvariantCulture).
+        Click a cell to list the slugs missing that locale.
+    </p>
+
+    <table class="coverage-table">
+        <thead>
+            <tr>
+                <th>collection</th>
+                <th>slugs</th>
+                @foreach (var locale in Locales)
+                {
+                    <th>@locale</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var collection in result.Report.Collections)
+            {
+                <tr>
+                    <td>@collection.Name</td>
+                    <td class="coverage-num">@collection.Slugs</td>
+                    @foreach (var locale in Locales)
+                    {
+                        var cell = collection.Locales[locale];
+                        var isSelected = _selected is { } s
+                            && s.Collection == collection.Name && s.Locale == locale;
+                        <td class="coverage-num">
+                            <button type="button"
+                                    class="coverage-cell @(isSelected ? "coverage-cell--selected" : null)"
+                                    aria-label="@($"{collection.Name} {locale}: {FormatCell(cell, collection.Slugs)} — show missing slugs")"
+                                    @onclick="() => Select(collection.Name, locale)">
+                                @FormatCell(cell, collection.Slugs)
+                            </button>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>TOTAL</td>
+                <td class="coverage-num">@TotalSlugs(result.Report)</td>
+                @foreach (var locale in Locales)
+                {
+                    <td class="coverage-num">@TotalCell(result.Report, locale)</td>
+                }
+            </tr>
+        </tfoot>
+    </table>
+
+    @if (_selected is { } selected)
+    {
+        <section class="coverage-drill">
+            <h2>@selected.Collection — slugs missing @selected.Locale</h2>
+            @if (selected.Missing.Count == 0)
+            {
+                <p class="pull-muted">none — every slug has a @selected.Locale file</p>
+            }
+            else
+            {
+                <ul class="coverage-missing">
+                    @foreach (var slug in selected.Missing)
+                    {
+                        <li>@slug</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+}
+
+@code {
+    private static IReadOnlyList<string> Locales => SnapshotReader.Locales;
+
+    private readonly CancellationTokenSource _cts = new();
+    private CoverageResult? _result;
+    private (string Collection, string Locale, IReadOnlyList<string> Missing)? _selected;
+
+    /// <summary>Initial drill-down selection (deep-link / render-test seam).</summary>
+    [Parameter] public string? SelectedCollection { get; set; }
+
+    /// <summary>Initial drill-down selection (deep-link / render-test seam).</summary>
+    [Parameter] public string? SelectedLocale { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _result = await Service.BuildAsync(_cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            // BuildAsync degrades a missing content dir itself; anything else
+            // (permissions, IO) is data on this page, never a circuit crash.
+            _result = new CoverageResult(
+                new CoverageReport(DateTimeOffset.UtcNow, []), ex.Message);
+        }
+
+        if (SelectedCollection is { Length: > 0 } collection
+            && SelectedLocale is { Length: > 0 } locale)
+        {
+            Select(collection, locale);
+        }
+    }
+
+    private void Select(string collection, string locale)
+        // MissingBySlug answers from CoverageService's cache of the LAST build, so
+        // the drill-down always agrees with the table currently on screen.
+        => _selected = (collection, locale, Service.MissingBySlug(collection, locale));
+
+    // Mirrors ReportTable.FormatCell's rounding so the page can never disagree with
+    // the CLI verb; adds the /total the fixed-width console column leaves implicit.
+    private static string FormatCell(LocaleCoverage cell, int slugs)
+        => $"{cell.Present}/{slugs} ({FormatPercent(cell.Coverage)}%)";
+
+    private static string FormatPercent(double coverage)
+        => Math.Round(coverage * 100, MidpointRounding.AwayFromZero)
+            .ToString(CultureInfo.InvariantCulture);
+
+    private static int TotalSlugs(CoverageReport report)
+        => report.Collections.Sum(c => c.Slugs);
+
+    private static string TotalCell(CoverageReport report, string locale)
+    {
+        var slugs = TotalSlugs(report);
+        var present = report.Collections.Sum(c => c.Locales[locale].Present);
+        var coverage = slugs == 0 ? 0.0 : (double)present / slugs;
+        return FormatCell(new LocaleCoverage(present, coverage), slugs);
+    }
+
+    public void Dispose()
+    {
+        // In-flight snapshot read dies with the component (Task-4/5 review carry-over).
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

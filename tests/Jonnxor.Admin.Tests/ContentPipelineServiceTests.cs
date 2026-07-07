@@ -1,4 +1,5 @@
 using Jonnxor.Admin.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Jonnxor.Admin.Tests;
 
@@ -135,6 +136,26 @@ public class ContentPipelineServiceTests
         // Run start + two lines + completion all reached the later subscriber.
         Assert.True(laterNotifications >= 4);
         runner.VerifyAllConsumed();
+    }
+
+    [Fact]
+    public async Task RunPullAsync_ThrowingSubscriber_SwallowedButLogged()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        var runner = new FakeProcessRunner().Expect("pnpm", ["content:pull"], ["one line"], 0);
+        var logger = new CapturingLogger();
+        var service = new ContentPipelineService(
+            paths, runner, new SnapshotHealthService(paths, runner), liveVerify: null, logger);
+        service.OutputChanged += () => throw new ObjectDisposedException("circuit of a closed tab");
+
+        var run = await service.RunPullAsync();
+
+        // Swallow semantics identical: the run completed despite the subscriber.
+        Assert.Equal(0, run.ExitCode);
+        // …but the disposed-circuit exception is no longer invisible.
+        Assert.Contains(logger.Entries, e =>
+            e.Level == LogLevel.Warning && e.Exception is ObjectDisposedException);
     }
 
     [Fact]
@@ -308,6 +329,21 @@ public class ContentPipelineServiceTests
         {
             Assert.DoesNotContain(forbidden, verb => name.Contains(verb, StringComparison.Ordinal));
         }
+    }
+
+    /// <summary>Captures log entries so tests can assert the swallowed-subscriber trace.</summary>
+    private sealed class CapturingLogger : ILogger<ContentPipelineService>
+    {
+        public List<(LogLevel Level, string Message, Exception? Exception)> Entries { get; } = [];
+
+        IDisposable? ILogger.BeginScope<TState>(TState state) => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+            => Entries.Add((logLevel, formatter(state, exception), exception));
     }
 
     /// <summary>

@@ -29,7 +29,13 @@ builder.Services.AddSingleton(static sp =>
     new ContentPipelineService(
         sp.GetRequiredService<RepoPaths>(),
         sp.GetRequiredService<IProcessRunner>(),
-        sp.GetRequiredService<SnapshotHealthService>()));
+        sp.GetRequiredService<SnapshotHealthService>(),
+        liveVerify: null,
+        sp.GetRequiredService<ILogger<ContentPipelineService>>()));
+
+// Coverage report (stateless apart from the drill-down cache of the last build).
+builder.Services.AddSingleton(static sp =>
+    new CoverageService(sp.GetRequiredService<RepoPaths>()));
 
 var app = builder.Build();
 

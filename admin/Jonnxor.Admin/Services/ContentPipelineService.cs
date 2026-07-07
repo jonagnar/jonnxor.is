@@ -58,6 +58,7 @@ public sealed class ContentPipelineService
     private readonly IProcessRunner _runner;
     private readonly SnapshotHealthService _snapshotHealth;
     private readonly Func<string[], TextWriter, TextWriter, int> _liveVerify;
+    private readonly ILogger<ContentPipelineService>? _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentQueue<string> _output = new();
     private volatile PipelineRun? _current;
@@ -68,16 +69,22 @@ public sealed class ContentPipelineService
     /// <see cref="CliRunner.Run(string[], TextWriter, TextWriter)"/> — exact CLI
     /// parity, zero duplication of the live-equivalence logic.
     /// </param>
+    /// <param name="logger">
+    /// Trace sink for swallowed subscriber exceptions (see <see cref="OutputChanged"/>).
+    /// Optional so service tests without logging concerns need no logger plumbing.
+    /// </param>
     public ContentPipelineService(
         RepoPaths paths,
         IProcessRunner runner,
         SnapshotHealthService snapshotHealth,
-        Func<string[], TextWriter, TextWriter, int>? liveVerify = null)
+        Func<string[], TextWriter, TextWriter, int>? liveVerify = null,
+        ILogger<ContentPipelineService>? logger = null)
     {
         _paths = paths;
         _runner = runner;
         _snapshotHealth = snapshotHealth;
         _liveVerify = liveVerify ?? CliRunner.Run;
+        _logger = logger;
     }
 
     /// <summary>
@@ -247,10 +254,14 @@ public sealed class ContentPipelineService
             {
                 ((Action)handler)();
             }
-            catch
+            catch (Exception ex)
             {
                 // A throwing subscriber must not abort the run: this fires from
                 // inside IProcessRunner's onLine callback, which forbids throwing.
+                // Swallowed — but traced, so a disposed-circuit handler (closed
+                // browser tab) is visible in the logs instead of silently eaten.
+                _logger?.LogWarning(
+                    ex, "Pipeline OutputChanged subscriber threw; swallowed to protect the run.");
             }
         }
     }

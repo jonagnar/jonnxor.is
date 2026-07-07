@@ -1,0 +1,251 @@
+@page "/content"
+@using Jonnxor.Admin.Services
+@implements IDisposable
+@inject ContentPipelineService Pipeline
+
+@* Interactivity note: inherits InteractiveServer from the root <Routes> in App.razor —
+   the directive is deliberately not repeated here (a per-component render mode makes
+   the component unrenderable by the plain HtmlRenderer our render tests use).
+
+   Surfaces (kept deliberately distinct):
+   - Output pane: the service's bounded buffer, verbatim — a pull's pnpm stream or a
+     live verify's captured CLI output. Auto-scroll is the CSS column-reverse trick
+     (.output-scroll) — the scroll origin of a column-reverse scrollport is its bottom,
+     so the newest line stays in view with zero JS.
+   - Offline verify: TYPED findings table (Rule | File | Detail), never CLI text.
+   - Diff panel: read-only status + raw diff; there is no commit path here and none
+     may ever be added (design §2). *@
+
+<PageTitle>Content pull — Jonnxor Admin</PageTitle>
+
+<h1>Content pull</h1>
+
+<div class="pull-actions">
+    <button type="button" class="pull-button" disabled="@Busy" @onclick="PullAsync">
+        Pull
+    </button>
+    <button type="button" class="pull-button" disabled="@Busy" @onclick="VerifyOfflineAsync">
+        Verify offline
+    </button>
+    <button type="button" class="pull-button" disabled="@Busy" @onclick="VerifyLiveAsync">
+        Verify live
+    </button>
+    <span class="pull-state">@RunStateLine</span>
+</div>
+
+@if (_actionError is { } actionError)
+{
+    <p class="pull-error">error: @actionError</p>
+}
+
+<section class="pull-section">
+    <h2>Output</h2>
+    @if (Pipeline.OutputSnapshot is { Count: > 0 } lines)
+    {
+        <div class="output-scroll">
+            <pre class="output-pane">@string.Join('\n', lines)</pre>
+        </div>
+    }
+    else
+    {
+        <p class="pull-muted">no output yet — run a pull or a live verify</p>
+    }
+</section>
+
+@if (_offline is { } offline)
+{
+    <section class="pull-section">
+        <h2>Offline verify findings</h2>
+        @if (offline.Findings.Count == 0)
+        {
+            <p class="pull-muted">no findings — @offline.FileCount file(s) scanned</p>
+        }
+        else
+        {
+            <table class="findings-table">
+                <thead>
+                    <tr><th>Rule</th><th>File</th><th>Detail</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var finding in offline.Findings)
+                    {
+                        <tr>
+                            <td>@finding.Rule</td>
+                            <td>@finding.File</td>
+                            <td>@finding.Detail</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}
+
+<section class="pull-section">
+    <h2>Snapshot diff</h2>
+    <p class="pull-note">
+        Read-only view — review and commit from your own shell: this panel never commits.
+    </p>
+    @if (_diffError is { } diffError)
+    {
+        <p class="pull-error">diff unavailable: @diffError</p>
+    }
+    else if (_diff is not { } diff)
+    {
+        <p class="pull-muted">loading diff…</p>
+    }
+    else if (diff.StatusLines.Count == 0 && diff.DiffText.Length == 0)
+    {
+        <p class="pull-muted">working tree clean — snapshot matches the committed state</p>
+    }
+    else
+    {
+        <ul class="diff-status">
+            @foreach (var line in diff.StatusLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+        @if (diff.DiffText.Length > 0)
+        {
+            <pre class="diff-pane">@diff.DiffText</pre>
+        }
+    }
+</section>
+
+@code {
+    private readonly CancellationTokenSource _cts = new();
+    private SnapshotDiff? _diff;
+    private string? _diffError;
+    private OfflineVerifyResult? _offline;
+    private bool _offlineBusy;
+    private string? _actionError;
+    private bool _wasRunning;
+    private int _diffRefreshing;
+
+    // Buttons derive from the GLOBAL lock state (another tab's run disables them
+    // here too — OutputChanged re-renders cover the transitions), plus the local
+    // offline verify, which is lock-free but shouldn't be double-clicked either.
+    private bool Busy => Pipeline.CurrentRun is { Running: true } || _offlineBusy;
+
+    private string RunStateLine => Pipeline.CurrentRun switch
+    {
+        null => "idle",
+        { Running: true } run => $"{run.Kind} running…",
+        { ExitCode: { } code } run => $"{run.Kind} exited {code}",
+        var run => $"{run.Kind} aborted — no exit code",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Pipeline.OutputChanged += OnPipelineChanged;
+        _wasRunning = Pipeline.CurrentRun is { Running: true };
+        await RefreshDiffAsync();
+    }
+
+    // Fires once per buffered line on arbitrary background threads: stay cheap and
+    // marshal everything through InvokeAsync (Blazor coalesces the re-renders).
+    // A Running→idle flip also refreshes the diff, so a run triggered by ANOTHER
+    // tab still updates this tab's diff panel.
+    private void OnPipelineChanged()
+    {
+        var running = Pipeline.CurrentRun is { Running: true };
+        var flippedToIdle = _wasRunning && !running;
+        _wasRunning = running;
+
+        _ = InvokeAsync(async () =>
+        {
+            if (flippedToIdle)
+            {
+                await RefreshDiffAsync();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private Task PullAsync()
+        // Deliberately NOT _cts.Token: the pull is a global singleton operation other
+        // tabs observe — this tab navigating away must not kill the process tree.
+        => RunGuardedAsync(async () =>
+        {
+            await Pipeline.RunPullAsync();
+            await RefreshDiffAsync();
+        });
+
+    private Task VerifyLiveAsync()
+        // Same: the ct only gates the start anyway (CliRunner runs to completion).
+        => RunGuardedAsync(async () =>
+        {
+            await Pipeline.RunVerifyLiveAsync();
+            await RefreshDiffAsync();
+        });
+
+    private Task VerifyOfflineAsync()
+        => RunGuardedAsync(async () =>
+        {
+            _offlineBusy = true;
+            try
+            {
+                _offline = await Pipeline.RunVerifyOfflineAsync(_cts.Token);
+            }
+            finally
+            {
+                _offlineBusy = false;
+            }
+        });
+
+    private async Task RunGuardedAsync(Func<Task> action)
+    {
+        _actionError = null;
+        try
+        {
+            await action();
+        }
+        catch (OperationCanceledException)
+        {
+            // Component going away — nothing to render.
+        }
+        catch (Exception ex)
+        {
+            // Spawn failures (missing pnpm) and CLI escapes are data on this page,
+            // never an unhandled circuit crash.
+            _actionError = ex.Message;
+        }
+    }
+
+    private async Task RefreshDiffAsync()
+    {
+        if (Interlocked.Exchange(ref _diffRefreshing, 1) == 1)
+        {
+            return; // a refresh is already in flight; it will render the same state
+        }
+
+        try
+        {
+            _diff = await Pipeline.GetDiffAsync(_cts.Token);
+            _diffError = null;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _diffError = ex.Message;
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _diffRefreshing, 0);
+        }
+    }
+
+    public void Dispose()
+    {
+        // Long-running subscription + in-flight loads die with the component
+        // (carry-over from the Task-4/5 reviews, mandatory now that real
+        // navigation exists).
+        Pipeline.OutputChanged -= OnPipelineChanged;
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

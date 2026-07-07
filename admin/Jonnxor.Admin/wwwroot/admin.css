@@ -154,3 +154,186 @@
   opacity: .5;
   cursor: default;
 }
+
+/* ---------- content pull page ---------- */
+
+.pull-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.pull-button {
+  background: var(--tq-soft);
+  color: var(--tq-ink);
+  border: 1px solid var(--tq-deep);
+  border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.pull-button:hover:not(:disabled) {
+  background: var(--tq);
+  color: var(--on-tq);
+}
+
+.pull-button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.pull-state {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+}
+
+.pull-section {
+  margin-bottom: var(--space-6);
+}
+
+.pull-section h2 {
+  font-size: 1.05rem;
+  margin: 0 0 var(--space-2);
+}
+
+.pull-muted {
+  color: var(--ink-faint);
+  font-size: .9rem;
+}
+
+.pull-note {
+  color: var(--gold-ink);
+  font-size: .9rem;
+}
+
+.pull-error {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-left: 3px solid var(--gold);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+}
+
+/* Auto-scroll without JS: a column-reverse scrollport's scroll origin is its
+   BOTTOM, so while output streams the newest line stays in view; scrolling up
+   to read history still works and sticks. */
+.output-scroll {
+  display: flex;
+  flex-direction: column-reverse;
+  overflow-y: auto;
+  max-height: 24rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.output-pane,
+.diff-pane {
+  margin: 0;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diff-pane {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  max-height: 32rem;
+  overflow-y: auto;
+}
+
+.diff-status {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  color: var(--ink-soft);
+}
+
+.findings-table,
+.coverage-table {
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.findings-table th,
+.findings-table td,
+.coverage-table th,
+.coverage-table td {
+  border: 1px solid var(--line);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.findings-table th,
+.coverage-table th {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.findings-table td {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- coverage page ---------- */
+
+.coverage-num {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+}
+
+.coverage-table tfoot td {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
+.coverage-cell {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--tq-ink);
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.coverage-cell:hover {
+  color: var(--tq-deep);
+}
+
+.coverage-cell--selected {
+  color: var(--gold-ink);
+  text-decoration: underline solid;
+}
+
+.coverage-drill {
+  margin-top: var(--space-5);
+}
+
+.coverage-drill h2 {
+  font-size: 1.05rem;
+  margin: 0 0 var(--space-2);
+}
+
+.coverage-missing {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  color: var(--ink-soft);
+}

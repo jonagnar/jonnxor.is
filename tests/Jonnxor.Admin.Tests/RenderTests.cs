@@ -345,6 +345,123 @@ public class RenderTests
         }
     }
 
+    [Fact]
+    public async Task ContentPull_IdleCleanTree_ShowsThreeEnabledButtonsAndNoCommitCopy()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        // OnInitializedAsync loads the diff panel: clean tree here.
+        var runner = new FakeProcessRunner()
+            .Expect("git", ["status", "--porcelain", "--", paths.ContentDir], [], 0)
+            .Expect("git", ["diff", "--", paths.ContentDir], [], 0);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(new ContentPipelineService(
+            paths, runner, new SnapshotHealthService(paths, runner)));
+        await using var provider = services.BuildServiceProvider();
+
+        var html = await RenderAsync<ContentPull>(provider, ParameterView.Empty);
+
+        // Three action buttons, all enabled in the idle state.
+        Assert.Contains(">Pull<", StripWhitespace(html));
+        Assert.Contains(">Verifyoffline<", StripWhitespace(html));
+        Assert.Contains(">Verifylive<", StripWhitespace(html));
+        Assert.Equal(3, CountOccurrences(html, "class=\"pull-button\""));
+        Assert.DoesNotContain("disabled", html);
+
+        // The page says so explicitly: this panel never commits.
+        Assert.Contains("this panel never commits", html);
+        Assert.Contains("working tree clean", html);
+        Assert.Contains("idle", html);
+        runner.VerifyAllConsumed();
+    }
+
+    [Fact]
+    public async Task ContentPull_DirtyTree_RendersStatusLinesAndDiffText()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        var runner = new FakeProcessRunner()
+            .Expect("git", ["status", "--porcelain", "--", paths.ContentDir],
+                [" M client/src/content/blog/foo.en.md"], 0)
+            .Expect("git", ["diff", "--", paths.ContentDir],
+                ["diff --git a/client/src/content/blog/foo.en.md b/client/src/content/blog/foo.en.md",
+                 "+new line"], 0);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(new ContentPipelineService(
+            paths, runner, new SnapshotHealthService(paths, runner)));
+        await using var provider = services.BuildServiceProvider();
+
+        var html = await RenderAsync<ContentPull>(provider, ParameterView.Empty);
+
+        // The renderer entity-encodes text content ("+": &#x2B;) — decode to
+        // assert on what the browser will actually display.
+        var text = System.Net.WebUtility.HtmlDecode(html);
+        Assert.Contains("M client/src/content/blog/foo.en.md", text);
+        Assert.Contains("+new line", text);
+        Assert.DoesNotContain("working tree clean", text);
+        runner.VerifyAllConsumed();
+    }
+
+    [Fact]
+    public async Task Coverage_MixedLocaleFixture_RendersZeroPercentJaCellAndDrillDown()
+    {
+        var coverage = new CoverageService(new RepoPaths(new AdminOptions
+        {
+            RepoRoot = Path.GetTempPath(),
+            ContentDir = FixturePath.For("mixed-locale"),
+        }));
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(coverage);
+        await using var provider = services.BuildServiceProvider();
+
+        var html = await RenderAsync<Coverage>(provider, ParameterView.FromDictionary(
+            new Dictionary<string, object?>
+            {
+                [nameof(Coverage.SelectedCollection)] = "blog",
+                [nameof(Coverage.SelectedLocale)] = "ja",
+            }));
+
+        // The table shows the same numbers as the `report` verb: blog ja is 0/2 (0%).
+        Assert.Contains("0/2 (0%)", html);
+        Assert.Contains("1/2 (50%)", html);  // blog is
+        Assert.Contains("2/2 (100%)", html); // blog en
+        Assert.Contains("blog", html);
+        Assert.Contains("grimoire", html);
+        Assert.Contains("TOTAL", html);
+
+        // Drill-down for (blog, ja) lists the missing slugs by name — beta's ja file
+        // is a parse error, so it counts as missing alongside alpha.
+        Assert.Contains("slugs missing ja", html);
+        Assert.Contains("alpha", html);
+        Assert.Contains("beta", html);
+    }
+
+    [Fact]
+    public async Task Coverage_MissingContentDir_DegradesToDetailNotACrash()
+    {
+        using var temp = new TempDir();
+        var coverage = new CoverageService(new RepoPaths(new AdminOptions
+        {
+            RepoRoot = temp.Path,
+            ContentDir = "does-not-exist",
+        }));
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(coverage);
+        await using var provider = services.BuildServiceProvider();
+
+        var html = await RenderAsync<Coverage>(provider, ParameterView.Empty);
+
+        Assert.Contains("does-not-exist", html);
+        Assert.Contains("TOTAL", html); // the (empty) table still renders
+    }
+
+    private static string StripWhitespace(string html)
+        => string.Concat(html.Where(c => !char.IsWhiteSpace(c)));
+
     private static int CountOccurrences(string haystack, string needle)
     {
         var count = 0;
