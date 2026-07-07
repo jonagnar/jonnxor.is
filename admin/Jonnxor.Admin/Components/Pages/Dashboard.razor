@@ -98,14 +98,20 @@
         }
 
         // Reachable but unhealthy (e.g. a 503 with status "error") must render as a
-        // warning from Status+Detail — reachability alone is not health.
-        return string.Equals(health.Status, "ok", StringComparison.OrdinalIgnoreCase)
-            ? (TileStatus.Ok, WithUrl(["status: ok"], health.Url))
-            : (TileStatus.Warn, WithUrl(
-                health.Detail is { Length: > 0 } detail
-                    ? [$"status: {health.Status ?? "unknown"}", detail]
-                    : [$"status: {health.Status ?? "unknown"}"],
-                health.Url));
+        // warning from Status+Detail — reachability alone is not health. Ok requires
+        // BOTH a clean status and no detail: a non-success HTTP response whose body
+        // still says "ok" carries its problem in Detail and must never render Ok.
+        if (string.Equals(health.Status, "ok", StringComparison.OrdinalIgnoreCase)
+            && health.Detail is null)
+        {
+            return (TileStatus.Ok, WithUrl(["status: ok"], health.Url));
+        }
+
+        return (TileStatus.Warn, WithUrl(
+            health.Detail is { Length: > 0 } detail
+                ? [$"status: {health.Status ?? "unknown"}", detail]
+                : [$"status: {health.Status ?? "unknown"}"],
+            health.Url));
     }
 
     private static (TileStatus, IReadOnlyList<string>) MapFreshness(
@@ -140,9 +146,14 @@
             return (TileStatus.Unknown, ["no CI runs found"]);
         }
 
-        var overall = status.Runs.Any(r => IsFailure(r.Status)) ? TileStatus.Fail
+        // Fail is reserved for the deploy-gating branches (main/preview): a stale
+        // failed feature branch must not red the whole tile while they are green.
+        var overall =
+            status.Runs.Any(r => IsDeployBranch(r.HeadBranch) && IsFailure(r.Status)) ? TileStatus.Fail
             : status.Runs.All(r => IsSuccess(r.Status)) ? TileStatus.Ok
-            : TileStatus.Warn; // something still running/queued
+            // Warn is the catch-all: running/queued/skipped/blocked/unknown states,
+            // plus failures on non-deploy branches (still visible per-branch below).
+            : TileStatus.Warn;
 
         return (overall, status.Runs.Select(r => DescribeRun(r, now)).ToList());
     }
@@ -158,13 +169,8 @@
 
     private static bool IsSuccess(string status) => status is "success";
 
-    private static IReadOnlyList<string> WithUrl(List<string> lines, string url)
-    {
-        if (url.Length > 0)
-        {
-            lines.Add($"url: {url}");
-        }
+    private static bool IsDeployBranch(string branch) => branch is "main" or "preview";
 
-        return lines;
-    }
+    private static IReadOnlyList<string> WithUrl(IReadOnlyList<string> lines, string url)
+        => url.Length > 0 ? [.. lines, $"url: {url}"] : lines;
 }

@@ -31,6 +31,36 @@ public class RenderTests
         }
         """;
 
+    private const string FailedFeatureBranchCiBody = """
+        {
+          "workflow_runs": [
+            {
+              "name": "CI", "head_branch": "main", "display_title": "Merge pull request 'preview'",
+              "status": "success", "run_number": 51, "created_at": "2026-07-07T10:00:00Z"
+            },
+            {
+              "name": "CI", "head_branch": "preview", "display_title": "feat: something",
+              "status": "success", "run_number": 52, "created_at": "2026-07-07T11:00:00Z"
+            },
+            {
+              "name": "CI", "head_branch": "claude/stale-branch", "display_title": "wip",
+              "status": "failure", "run_number": 49, "created_at": "2026-07-05T09:00:00Z"
+            }
+          ]
+        }
+        """;
+
+    private const string FailedMainCiBody = """
+        {
+          "workflow_runs": [
+            {
+              "name": "CI", "head_branch": "main", "display_title": "Merge pull request 'preview'",
+              "status": "failure", "run_number": 51, "created_at": "2026-07-07T10:00:00Z"
+            }
+          ]
+        }
+        """;
+
     private static readonly AdminOptions CiOptions = new()
     {
         ForgejoBaseUrl = "http://forgejo.test:3000",
@@ -100,8 +130,74 @@ public class RenderTests
         Assert.Contains("main: success (#51", html);
         Assert.Contains("tile-status--ok", html);
 
-        // Refresh is a real, accessible button on every tile.
-        Assert.Equal(3, CountOccurrences(html, "<button type=\"button\" class=\"tile-refresh\""));
+        // Refresh is a real, accessible button on every tile, disambiguated per tile.
+        Assert.Equal(3, CountOccurrences(html, "class=\"tile-refresh\""));
+        Assert.Contains("aria-label=\"Refresh Directus\"", html);
+        Assert.Contains("aria-label=\"Refresh Snapshot freshness\"", html);
+        Assert.Contains("aria-label=\"Refresh Last CI\"", html);
+    }
+
+    [Fact]
+    public async Task Dashboard_FailedFeatureBranchGreenDeployBranches_RendersWarnNotFail()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        await using var provider = BuildProvider(
+            new DirectusHealthService(
+                paths, FakeHttpMessageHandler.Json(HttpStatusCode.OK, HealthyDirectusBody), DirectusEnv),
+            new SnapshotHealthService(paths, CleanGit(paths)),
+            new ForgejoCiService(
+                CiOptions, FakeHttpMessageHandler.Json(HttpStatusCode.OK, FailedFeatureBranchCiBody),
+                WithToken));
+
+        var html = await RenderAsync<Dashboard>(provider, ParameterView.Empty);
+
+        // A stale failed feature branch must not red the tile while main/preview
+        // are green — warn, with the branch's failure still visible per-branch.
+        Assert.Contains("tile-status--warn", html);
+        Assert.DoesNotContain("tile-status--fail", html);
+        Assert.Contains("claude/stale-branch: failure (#49", html);
+        Assert.Contains("main: success (#51", html);
+    }
+
+    [Fact]
+    public async Task Dashboard_FailedMainRun_RendersFail()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        await using var provider = BuildProvider(
+            new DirectusHealthService(
+                paths, FakeHttpMessageHandler.Json(HttpStatusCode.OK, HealthyDirectusBody), DirectusEnv),
+            new SnapshotHealthService(paths, CleanGit(paths)),
+            new ForgejoCiService(
+                CiOptions, FakeHttpMessageHandler.Json(HttpStatusCode.OK, FailedMainCiBody), WithToken));
+
+        var html = await RenderAsync<Dashboard>(provider, ParameterView.Empty);
+
+        Assert.Contains("tile-status--fail", html);
+        Assert.Contains("main: failure (#51", html);
+    }
+
+    [Fact]
+    public async Task Dashboard_DirectusOkBodyBehindHttpError_RendersWarnNotOk()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        await using var provider = BuildProvider(
+            // A 503 whose body still claims "ok": Detail names the HTTP problem and
+            // the tile must warn, never render a false all-clear from Status alone.
+            new DirectusHealthService(
+                paths,
+                FakeHttpMessageHandler.Json(HttpStatusCode.ServiceUnavailable, HealthyDirectusBody),
+                DirectusEnv),
+            new SnapshotHealthService(paths, CleanGit(paths)),
+            new ForgejoCiService(
+                CiOptions, FakeHttpMessageHandler.Json(HttpStatusCode.OK, SingleRunCiBody), WithToken));
+
+        var html = await RenderAsync<Dashboard>(provider, ParameterView.Empty);
+
+        Assert.Contains("tile-status--warn", html);
+        Assert.Contains("HTTP 503", html);
     }
 
     [Fact]
@@ -223,6 +319,30 @@ public class RenderTests
         Assert.Contains("Probe", html);
         Assert.Contains("detail line", html);
         Assert.Contains("refreshed", html);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task HealthTile_RefreshButtonDisabledTracksRefreshing(bool refreshing)
+    {
+        await using var provider = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var parameters = ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            [nameof(HealthTile.Title)] = "Probe",
+            [nameof(HealthTile.Refreshing)] = refreshing,
+        });
+
+        var html = await RenderAsync<HealthTile>(provider, parameters);
+
+        if (refreshing)
+        {
+            Assert.Contains("disabled", html);
+        }
+        else
+        {
+            Assert.DoesNotContain("disabled", html);
+        }
     }
 
     private static int CountOccurrences(string haystack, string needle)

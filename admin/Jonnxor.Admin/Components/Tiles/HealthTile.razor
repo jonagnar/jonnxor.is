@@ -26,7 +26,10 @@
                 ? $"refreshed {at.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture)}"
                 : "loading…")
         </span>
-        <button type="button" class="tile-refresh" disabled="@Refreshing" @onclick="OnRefresh">
+        @* aria-label disambiguates the otherwise-identical "Refresh" buttons across
+           tiles for assistive tech. *@
+        <button type="button" class="tile-refresh" aria-label="@($"Refresh {Title}")"
+                disabled="@Refreshing" @onclick="OnRefresh">
             Refresh
         </button>
     </footer>
