@@ -1,10 +1,16 @@
 using Jonnxor.Admin.Components;
 using Jonnxor.Admin.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.SectionName));
+builder.Services.AddSingleton(static sp => sp.GetRequiredService<IOptions<AdminOptions>>().Value);
+builder.Services.AddSingleton<RepoPaths>();
+builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
 
 var app = builder.Build();
 
