@@ -1,0 +1,35 @@
+slug: home
+locale: en
+kicker: Full-stack developer · Reykjavík, Iceland
+title: Jón Agnar Stefánsson
+lede: I build sturdy, long-lived software with a storyteller's heart — fueled by masala chai, Norse sagas, and roughly a thousand hours of Souls games.
+sections:
+  hero:
+    tagline: I build sturdy, long-lived software with a storyteller's heart — fueled by masala chai, Norse sagas, and roughly a thousand hours of Souls games.
+    cta_primary: View the work
+    cta_secondary: Read the saga
+  paths:
+    - rune: I
+      title: The Work
+      copy: Production systems, side quests, and open-source offerings. TypeScript, Go, and whatever the quest requires.
+      link_label: Enter the forge →
+    - rune: II
+      title: The Saga
+      copy: Long-form writing on code, myth, and the spaces between — with the occasional strong opinion about boss design.
+      link_label: Open the codex →
+    - rune: III
+      title: The Game Hall
+      copy: What I'm playing, what I'm waiting for, and the favorites I'd defend in single combat.
+      link_label: Take a seat →
+  now_kicker: Currently
+  now:
+    - label: Now playing
+      value: "Elden Ring: Nightreign"
+      sub: Co-op runs, NG+2 · mostly dying with style
+    - label: Now building
+      value: Saga Tracker API
+      sub: Go + Postgres · a quest log for real life
+    - label: Now brewing
+      value: "Masala chai, batch #214"
+      sub: Extra cardamom. Non-negotiable.
+  latest_heading: Latest from the codex

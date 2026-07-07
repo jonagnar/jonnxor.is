@@ -1,0 +1,10 @@
+---
+// src/components/CVSkillsRow.astro — one k/v row in the /cv skills grid.
+// Markup mirrors the pre-port cv.astro <div class="cv-skills"> row class-for-class.
+interface Props {
+  k: string;
+  v: string;
+}
+const { k, v } = Astro.props;
+---
+<div class="row"><span class="k">{k}</span> <span>{v}</span></div>

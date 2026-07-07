@@ -9,19 +9,35 @@ import { fileURLToPath } from 'node:url';
 // vitest (no astro:content virtual module), so guard the wiring at the source level:
 // both collections' glob loaders must pass generateId: localeEntryId.
 const configSrc = readFileSync(
-  fileURLToPath(new URL('../../src/content.config.ts', import.meta.url)),
+  fileURLToPath(new URL('../../client/src/content.config.ts', import.meta.url)),
   'utf8',
 );
+
+// Count only non-comment lines to exclude cross-reference comments (e.g. in the import block)
+// from matching source-level guard regexes below.
+const codeLines = configSrc.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
 
 describe('content.config.ts wires the locale-aware id', () => {
   it('imports localeEntryId', () => {
     expect(configSrc).toMatch(/import\s*\{\s*localeEntryId\s*\}\s*from\s*['"]\.\/content\/loaders['"]/);
   });
 
-  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns, wallpapers)', () => {
-    // Count only non-comment lines to exclude the cross-reference comment in the import block.
-    const codeLines = configSrc.split('\n').filter(l => !/^\s*\/\//.test(l));
-    const matches = codeLines.join('\n').match(/generateId:\s*localeEntryId/g) ?? [];
-    expect(matches.length).toBe(6);
+  it('passes generateId: localeEntryId to every collection loader (blog, grimoire, games, pages, countdowns, wallpapers, projects)', () => {
+    const matches = codeLines.match(/generateId:\s*localeEntryId/g) ?? [];
+    expect(matches.length).toBe(7);
+  });
+});
+
+// The pages collection's per-slug `sections` validation must go through the
+// sectionSchemas lookup (src/content/page-sections.ts), not a hand-rolled
+// per-slug branch — deleting the lookup (e.g. reverting to a superRefine that
+// only special-cases 'countdowns' inline) must not pass silently.
+describe('content.config.ts wires the sections schema map', () => {
+  it('imports sectionSchemas from ./content/page-sections', () => {
+    expect(configSrc).toMatch(/import\s*\{\s*sectionSchemas\s*\}\s*from\s*['"]\.\/content\/page-sections['"]/);
+  });
+
+  it('validates pages sections through a sectionSchemas lookup', () => {
+    expect(codeLines).toMatch(/sectionSchemas\[[^\]]*\]/);
   });
 });

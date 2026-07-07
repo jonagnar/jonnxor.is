@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePost, serializePost } from '../../scripts/lib/post-markdown.mjs';
+import { parsePost, serializePost } from '../../client/scripts/lib/post-markdown.mjs';
 
 const md = `---
 title: Hello

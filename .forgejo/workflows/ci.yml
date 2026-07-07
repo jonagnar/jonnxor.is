@@ -7,6 +7,9 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - name: Enable pnpm (via corepack, pinned by packageManager)
@@ -18,6 +21,19 @@ jobs:
       - name: Unit + render tests
         run: pnpm test
 
+  dotnet:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: dotnet build jonnxor.sln --configuration Release
+      - name: Test
+        run: dotnet test jonnxor.sln --configuration Release --no-build
+      - name: Verify content snapshot (offline)
+        run: dotnet run --project api/Jonnxor.Api --configuration Release -- verify --offline --content client/src/content
+
   e2e-visual:
     # heavier browser suite — only where it gates a deploy; don't bother if units fail
     needs: build-test
@@ -25,6 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+    defaults:
+      run:
+        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - name: Enable pnpm (via corepack, pinned by packageManager)
@@ -32,12 +51,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: E2E
-        run: pnpm exec playwright test tests/e2e
+        run: pnpm exec playwright test ../tests/e2e
       - name: Visual regression
-        run: pnpm exec playwright test tests/visual
+        run: pnpm exec playwright test ../tests/visual
       - name: Upload report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: client/playwright-report/

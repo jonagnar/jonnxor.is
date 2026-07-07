@@ -6,6 +6,10 @@ dist/
 # dependencies
 node_modules/
 
+# .NET build output
+bin/
+obj/
+
 # logs
 npm-debug.log*
 yarn-debug.log*
@@ -28,14 +32,15 @@ directus/.env
 directus/data/
 directus/uploads/
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/.pnpm/
-# Container artefacts (HOME=/work in pw.sh)
-/.cache/
-/.local/
-/.config/
-/.fontconfig/
+# Playwright (produced under client/, or at repo root via the pw.sh container mount)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.pnpm/
+# Container artefacts (HOME=/work in pw.sh, /work == repo root)
+.cache/
+.local/
+# .config/ is ignored for container HOME droppings — if a dotnet tool-manifest is ever added, whitelist it: !.config/dotnet-tools.json
+.config/
+.fontconfig/

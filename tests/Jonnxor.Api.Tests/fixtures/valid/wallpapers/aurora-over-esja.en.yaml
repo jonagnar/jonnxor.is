@@ -1,0 +1,11 @@
+slug: aurora-over-esja
+locale: en
+order: 2
+tag: Aurora
+aspect_ratio: 16/9
+gradient:
+  - "#070d18"
+  - "#0e4a52"
+  - "#3fe0cb"
+angle: 120
+title: Aurora over Esja

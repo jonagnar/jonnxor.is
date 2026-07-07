@@ -1,0 +1,19 @@
+---
+// src/components/PostRow.astro — one latest-writing row on the home page.
+// Markup mirrors the pre-port index.astro post-row structure class-for-class.
+interface Props {
+  href: string;
+  date: Date;
+  dateLocale: string;
+  title: string;
+  category: string;
+  accent?: string;
+}
+const { href, date, dateLocale, title, category, accent } = Astro.props;
+const fmtDate = (d: Date) => d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' });
+---
+<a class="post-row" href={href}>
+  <span class="post-date">{fmtDate(date)}</span>
+  <span class="post-title">{title}</span>
+  <span class:list={['chip', accent, 'post-tag']}>{category}</span>
+</a>

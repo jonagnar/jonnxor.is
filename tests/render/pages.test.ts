@@ -1,19 +1,11 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, it, expect } from 'vitest';
-import Index from '../../src/pages/index.astro';
-import About from '../../src/pages/about.astro';
-import Cv from '../../src/pages/cv.astro';
-import Portfolio from '../../src/pages/portfolio.astro';
-import NotFound from '../../src/pages/404.astro';
+import NotFound from '../../client/src/pages/404.astro';
 
 const PAGES = [
-  ['index', Index],
-  ['about', About],
-  ['cv', Cv],
-  ['portfolio', Portfolio],
-  // games, countdowns and wallpapers are collection-backed since the content
-  // port — the Container can't load astro:content under Vitest (same reason
-  // blog/docs aren't here). Covered by tests/render/components.test.ts + e2e.
+  // games, countdowns, wallpapers, portfolio, index (home), about and cv are collection-backed
+  // since the content port — the Container can't load astro:content under Vitest
+  // (same reason blog/docs aren't here). Covered by tests/render/components.test.ts + e2e.
   ['404', NotFound],
 ] as const;
 
@@ -31,7 +23,6 @@ describe('static page smoke render', () => {
   it('renders confirmed page landmarks', async () => {
     const container = await AstroContainer.create();
     const req = new Request('https://jonnxor.is/');
-    expect(await container.renderToString(Cv, { request: req })).toContain('The Record of Deeds');
     expect(await container.renderToString(NotFound, { request: req })).toContain('ÞÚ DÓST');
   });
 });

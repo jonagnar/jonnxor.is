@@ -1,0 +1,140 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import CVRole from "../components/CVRole.astro";
+import CVSkillsRow from "../components/CVSkillsRow.astro";
+import { requirePageHead } from "../i18n/localized";
+import { defaultLocale, type Locale } from "../i18n/ui";
+import { useTranslations } from "../i18n/utils";
+import type { CvSections } from "../content/page-sections";
+
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+const t = useTranslations(locale);
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'cv', locale).data;
+const sections = head.sections as CvSections;
+---
+
+<Base title="CV — Jón Agnar Stefánsson" page="cv">
+  <main>
+    <PageHead kicker={head.kicker} title={head.title} lede={head.lede} label="CV head" />
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <div class="cv-actions">
+        <button class="btn btn-gold" type="button" onclick="window.print()">{t('cv.print')}</button>
+      </div>
+
+      <article class="cv-sheet" data-screen-label="CV sheet">
+        <div class="cv-head">
+          <div>
+            <h1>Jón Agnar Stefánsson</h1>
+            <p class="role">{sections.role}</p>
+          </div>
+          <div class="cv-contact">
+            {sections.contact.location}<br />
+            {sections.contact.web}<br />
+            {sections.contact.github}
+          </div>
+        </div>
+
+        <section class="cv-section">
+          <h2>{sections.profile_heading}</h2>
+          <p style="font-size: 14.5px; color: var(--ink-soft); margin: 0;">{sections.profile}</p>
+        </section>
+
+        <section class="cv-section">
+          <h2>{sections.experience_heading}</h2>
+          {sections.experience.map((role) => (
+            <CVRole when={role.when} title={role.title} org={role.org} bullets={role.bullets} />
+          ))}
+        </section>
+
+        <section class="cv-section">
+          <h2>{sections.skills_heading}</h2>
+          <div class="cv-skills">
+            {sections.skills.map((s) => <CVSkillsRow k={s.k} v={s.v} />)}
+          </div>
+        </section>
+
+        <section class="cv-section">
+          <h2>{sections.education_heading}</h2>
+          {sections.education.map((ed) => (
+            <CVRole when={ed.when} title={ed.degree} org={ed.school} bullets={[]} />
+          ))}
+          <CVRole when="" title={sections.languages} bullets={[]} bold />
+        </section>
+      </article>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .cv-sheet {
+    max-width: 880px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 52px 56px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 700px) { .cv-sheet { padding: 28px 22px; } }
+
+  .cv-head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+  .cv-head h1 { font-size: 30px; font-weight: 800; margin: 0; }
+  .cv-head .role { font-family: var(--font-display); font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--tq-ink); margin-top: 6px; }
+  .cv-contact { text-align: right; font-size: 13.5px; color: var(--ink-soft); line-height: 1.8; }
+  @media (max-width: 600px) { .cv-contact { text-align: left; } }
+
+  .cv-section { margin-top: 34px; }
+  .cv-section > h2 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+
+  .cv-role { display: grid; grid-template-columns: 130px 1fr; gap: 18px; margin-bottom: 22px; }
+  @media (max-width: 600px) { .cv-role { grid-template-columns: 1fr; gap: 4px; } }
+  .cv-role .when { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); padding-top: 3px; }
+  .cv-role h3 { font-family: var(--font-body); font-size: 16px; font-weight: 700; margin: 0; }
+  .cv-role .org { color: var(--tq-ink); font-weight: 600; }
+  .cv-role ul { margin: 8px 0 0; padding-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+  .cv-role li { margin-bottom: 4px; }
+
+  .cv-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 32px; font-size: 14.5px; }
+  @media (max-width: 600px) { .cv-skills { grid-template-columns: 1fr; } }
+  .cv-skills .row { display: flex; gap: 10px; border-bottom: 1px dashed var(--line); padding: 6px 0; }
+  .cv-skills .k { min-width: 110px; color: var(--ink-faint); font-size: 13px; padding-top: 1px; }
+
+  .cv-actions { max-width: 880px; margin: 0 auto 22px; display: flex; justify-content: flex-end; gap: 12px; }
+
+  /* ---------- print: always clean daylight ---------- */
+  @media print {
+    html[data-theme] {
+      --bg: #ffffff; --bg-2: #ffffff; --surface: #ffffff; --surface-2: #f6f3ea;
+      --ink: #17150e; --ink-soft: #3c382c; --ink-faint: #6f6a59;
+      --line: #ddd5c0; --line-strong: #b9af92;
+      --tq: #0e9488; --tq-ink: #0b6e64; --tq-deep: #0b6e64; --tq-soft: rgba(14,148,136,.08); --on-tq: #fff;
+      --gold: #ecbd3e; --gold-ink: #876312; --gold-soft: rgba(236,189,62,.15); --on-gold: #211a04;
+      --glow-tq: transparent; --glow-gold: transparent; --glow-r: 0px;
+      --shadow: none; --scanline-a: 0; --aurora: none;
+    }
+    .site-nav, .site-footer, .cv-actions, .page-head .lede, #jx-tweaks-root { display: none !important; }
+    body::after { display: none; }
+    .page-head { padding: 0; background: none; }
+    .page-head h1, .page-head .kicker { display: none; }
+    .cv-sheet { border: none; box-shadow: none; padding: 0; max-width: none; border-radius: 0; }
+    main { min-height: 0; }
+    body { font-size: 12pt; }
+    a { color: inherit; }
+  }
+</style>

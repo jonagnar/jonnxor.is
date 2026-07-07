@@ -1,0 +1,26 @@
+slug: straumur-merchant-dashboard
+locale: en
+order: 1
+sigil: SP
+gradient:
+  - "#0e3b3a"
+  - "#15897b"
+  - "#f2c94c"
+stops:
+  - 55
+  - 140
+tech:
+  - React
+  - Go
+  - Postgres
+status:
+  label: Production
+  kind: plain
+links:
+  - label: Case study
+    href: "#"
+  - label: Live
+    href: "#"
+title: Straumur Merchant Dashboard
+description: Payments dashboard rebuild for 40,000 merchants — real-time settlement views, dispute flows, and a design system to hold it together.
+plate: 2022–now

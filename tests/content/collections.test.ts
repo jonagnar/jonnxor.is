@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { COLLECTIONS } from '../../scripts/lib/collections.mjs';
+import { COLLECTIONS, simpleDescriptor } from '../../client/scripts/lib/collections.mjs';
 
 const REQUIRED = ['name', 'dir', 'ext', 'fileRe', 'fields', 'toRecord', 'toItem', 'toTranslation', 'serialize', 'parse'];
 
 describe('collection descriptors', () => {
+  it('rejects an unknown field kind', () => {
+    expect(() => simpleDescriptor({ name: 'x', item: { a: 'requ' }, translation: {} })).toThrow(
+      /unknown kind "requ" for field "a"/,
+    );
+  });
   it('every descriptor is complete', () => {
     expect(COLLECTIONS.length).toBeGreaterThanOrEqual(2);
     for (const c of COLLECTIONS) {
@@ -84,5 +89,55 @@ describe('collection descriptors', () => {
     const parsed = w.parse(w.serialize(w.toRecord(item, t)));
     expect(w.toItem(parsed)).toEqual(item);
     expect(w.toTranslation(parsed)).toEqual(t);
+  });
+  it('projects round-trips, preserving links object key order (label before href)', () => {
+    const p = COLLECTIONS.find((c) => c.name === 'projects')!;
+    const item = {
+      slug: 'runakefli',
+      order: 6,
+      sigil: 'RK',
+      gradient: ['#101418', '#2e3a45', '#ecbd3e'],
+      stops: [55, 170],
+      tech: ['Go', 'CLI'],
+      status: null,
+      links: [
+        { label: 'GitHub', href: 'https://github.com/example/runakefli' },
+        { label: 'Docs', href: '#' },
+      ],
+    };
+    const t = { languages_code: 'en', title: 'Runakefli', description: 'A changelog CLI.', plate: 'open source' };
+    const out = p.serialize(p.toRecord(item, t));
+    // `label` must precede `href` within each links entry — this is what feeds
+    // byte-determinism through the Directus json round-trip (see collections.mjs).
+    const linkMatches = [...out.matchAll(/- label:.*\n\s*href:/g)];
+    expect(linkMatches).toHaveLength(2);
+    for (const m of linkMatches) {
+      expect(m[0].indexOf('label:')).toBeLessThan(m[0].indexOf('href:'));
+    }
+    // status omitted entirely when null (no status chip on this card).
+    expect(out).not.toContain('status:');
+    const parsed = p.parse(out);
+    expect(p.toItem(parsed)).toEqual(item);
+    expect(p.toTranslation(parsed)).toEqual(t);
+  });
+  it('projects round-trips stops + a gold status chip', () => {
+    const p = COLLECTIONS.find((c) => c.name === 'projects')!;
+    const item = {
+      slug: 'saga-tracker',
+      order: 2,
+      sigil: 'ST',
+      gradient: ['#1a1233', '#2b2a72', '#00f5d4'],
+      stops: [50, 150],
+      tech: ['Go', 'PWA'],
+      status: { label: 'In progress', kind: 'gold' },
+      links: [{ label: 'GitHub', href: '#' }],
+    };
+    const t = { languages_code: 'en', title: 'Saga Tracker', description: 'A quest log.', plate: 'side quest' };
+    const out = p.serialize(p.toRecord(item, t));
+    expect(out).toMatch(/stops:\n\s*- 50\n\s*- 150/);
+    expect(out).toMatch(/status:\n\s*label: In progress\n\s*kind: gold/);
+    const parsed = p.parse(out);
+    expect(p.toItem(parsed)).toEqual(item);
+    expect(p.toTranslation(parsed)).toEqual(t);
   });
 });

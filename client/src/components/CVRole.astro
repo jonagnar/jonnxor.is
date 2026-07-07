@@ -1,0 +1,31 @@
+---
+// src/components/CVRole.astro — one experience/education row on /cv.
+// Markup mirrors the pre-port cv.astro <div class="cv-role"> class-for-class.
+// The languages row (no org, bold h3) is the same shape with org omitted and
+// bullets empty — cv.astro passes bold for that one row.
+interface Props {
+  when: string;
+  title: string;
+  org?: string;
+  bullets: string[];
+  bold?: boolean;
+}
+const { when, title, org, bullets, bold } = Astro.props;
+---
+<div class="cv-role">
+  <span class="when">{when}</span>
+  <div>
+    {bold ? (
+      <h3 style="font-weight: 600;">{title}</h3>
+    ) : org ? (
+      <h3>{title} · <span class="org">{org}</span></h3>
+    ) : (
+      <h3>{title}</h3>
+    )}
+    {bullets.length > 0 && (
+      <ul>
+        {bullets.map((b) => <li>{b}</li>)}
+      </ul>
+    )}
+  </div>
+</div>

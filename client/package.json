@@ -1,0 +1,40 @@
+{
+  "name": "jonnxor.is",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run",
+    "test:e2e": "sh scripts/pw.sh test ../tests/e2e",
+    "test:visual": "sh scripts/pw.sh test ../tests/visual",
+    "directus:schema": "node --env-file=../directus/.env ../directus/scripts/setup-schema.mjs",
+    "directus:snapshot": "docker exec jonnxor-directus-directus-1 node /directus/cli.js schema snapshot --yes /directus/snapshot.yaml && docker exec jonnxor-directus-directus-1 cat /directus/snapshot.yaml > ../directus/schema/snapshot.yaml",
+    "content:import": "node --env-file=../directus/.env scripts/content-import.mjs",
+    "content:pull": "node --env-file=../directus/.env scripts/content-pull.mjs",
+    "content:restore": "node --env-file=../directus/.env scripts/content-restore.mjs"
+  },
+  "dependencies": {
+    "astro": "^6.4.7"
+  },
+  "packageManager": "pnpm@10.34.4",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@directus/sdk": "^22.0.0",
+    "@playwright/test": "^1.61.1",
+    "@types/js-yaml": "^4.0.9",
+    "fontkit": "^2.0.4",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.2.0",
+    "sharp": "^0.35.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
+    "wawoff2": "^2.0.1",
+    "yaml": "^2.9.0"
+  }
+}
