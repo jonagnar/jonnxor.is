@@ -14,7 +14,10 @@ public interface IProcessRunner
     /// both streams are fully drained before the task completes. Throws
     /// <see cref="InvalidOperationException"/> naming <paramref name="fileName"/>
     /// when the process cannot be spawned (missing binary); cancellation kills the
-    /// entire process tree.
+    /// entire process tree and surfaces as <see cref="OperationCanceledException"/>.
+    /// <paramref name="onLine"/> must not throw: a throwing callback abandons the
+    /// run — the process tree is killed and the callback's exception is rethrown
+    /// once the process is gone.
     /// </summary>
     Task<int> RunAsync(
         string fileName, string[] args, string workingDir, Action<string> onLine, CancellationToken ct);

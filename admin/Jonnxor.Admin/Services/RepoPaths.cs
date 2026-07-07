@@ -3,7 +3,8 @@ namespace Jonnxor.Admin.Services;
 /// <summary>
 /// Resolves the repo root once, at construction, and derives every absolute path
 /// the panel hands to git/pnpm/readers from it. An explicit
-/// <see cref="AdminOptions.RepoRoot"/> wins; otherwise the resolver walks up from
+/// <see cref="AdminOptions.RepoRoot"/> wins and must be absolute (a relative value
+/// would resolve against the process CWD and is refused); otherwise the resolver walks up from
 /// the app base directory to the first directory containing <c>jonnxor.sln</c>
 /// (at runtime that base is <c>admin/Jonnxor.Admin/bin/…</c> inside the repo).
 /// Failing to resolve is a hard constructor failure — no service downstream may
@@ -21,7 +22,7 @@ public sealed class RepoPaths
     public RepoPaths(AdminOptions options, string? startDirectory = null)
     {
         RepoRoot = options.RepoRoot is { Length: > 0 } explicitRoot
-            ? Path.GetFullPath(explicitRoot)
+            ? ValidateExplicitRoot(explicitRoot)
             : FindRepoRoot(startDirectory ?? AppContext.BaseDirectory);
 
         ContentDir = Path.GetFullPath(Path.Combine(RepoRoot, options.ContentDir));
@@ -40,6 +41,19 @@ public sealed class RepoPaths
 
     /// <summary>Absolute path to the Directus client env file.</summary>
     public string DirectusEnvPath { get; }
+
+    private static string ValidateExplicitRoot(string root)
+    {
+        if (!Path.IsPathRooted(root))
+        {
+            // A relative override would silently resolve against the process
+            // working directory — a wrong-but-plausible root, worse than failing.
+            throw new InvalidOperationException(
+                $"Admin:RepoRoot must be an absolute path; got '{root}'.");
+        }
+
+        return Path.GetFullPath(root);
+    }
 
     private static string FindRepoRoot(string startDirectory)
     {

@@ -102,6 +102,16 @@ public class RepoPathsTests
     }
 
     [Fact]
+    public void ExplicitRepoRoot_RelativePathIsRefused()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => new RepoPaths(new AdminOptions { RepoRoot = "relative/root" }));
+
+        Assert.Contains("absolute", ex.Message);
+        Assert.Contains("relative/root", ex.Message);
+    }
+
+    [Fact]
     public void DefaultStartDirectory_ResolvesTheRealRepoRoot()
     {
         // AppContext.BaseDirectory is the test bin dir inside the repo, so the
