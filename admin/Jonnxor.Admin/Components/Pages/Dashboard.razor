@@ -4,6 +4,7 @@
 @inject DirectusHealthService DirectusService
 @inject SnapshotHealthService SnapshotService
 @inject ForgejoCiService CiService
+@inject PanelPreferencesService Prefs
 
 @* Interactivity note: the whole app renders InteractiveServer via the root
    <Routes @rendermode="InteractiveServer" /> in App.razor, so this page inherits it.
@@ -15,12 +16,17 @@
 
 <h1>Dashboard</h1>
 
+@* TimestampLocale: the Config-page preference, applied to the tiles' ABSOLUTE
+   refreshed-at times; relative ages inside detail lines stay invariant by design.
+   Read per render from the singleton — a change saved on /config shows up here on
+   the next render/navigation, which is enough for an operator panel. *@
 <div class="tile-grid">
     <HealthTile Title="Directus"
                 Status="_directus.Status"
                 DetailLines="_directus.Lines"
                 RefreshedAt="_directus.RefreshedAt"
                 Refreshing="_directus.Loading"
+                TimestampLocale="@Prefs.Current.TimestampLocale"
                 OnRefresh="RefreshDirectusAsync" />
 
     <HealthTile Title="Snapshot freshness"
@@ -28,6 +34,7 @@
                 DetailLines="_snapshot.Lines"
                 RefreshedAt="_snapshot.RefreshedAt"
                 Refreshing="_snapshot.Loading"
+                TimestampLocale="@Prefs.Current.TimestampLocale"
                 OnRefresh="RefreshSnapshotAsync" />
 
     <HealthTile Title="Last CI"
@@ -35,6 +42,7 @@
                 DetailLines="_ci.Lines"
                 RefreshedAt="_ci.RefreshedAt"
                 Refreshing="_ci.Loading"
+                TimestampLocale="@Prefs.Current.TimestampLocale"
                 OnRefresh="RefreshCiAsync" />
 </div>
 

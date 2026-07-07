@@ -1,8 +1,14 @@
 <!DOCTYPE html>
-@* data-theme="rune" — the site's default theme; a theme switcher is a Config-page
-   preference (Task 7). Tokens come read-only from the client workspace via the
-   /site-assets static-file provider, so the panel can never drift from the site. *@
-<html lang="en" data-theme="rune">
+@inject Jonnxor.Admin.Services.PanelPreferencesService Prefs
+@* Theme applies through TWO paths (Config page is the other half):
+   1. Initial load: this shell is static SSR, rendered fresh per HTTP request, so it
+      reads the persisted preference server-side here — every page load starts on
+      the operator's chosen theme with zero flash.
+   2. Live switch: a circuit can never re-render this static shell, so the Config
+      page flips the attribute in the current tab via jxAdminSetTheme (below).
+   Tokens come read-only from the client workspace via the /site-assets
+   static-file provider, so the panel can never drift from the site. *@
+<html lang="en" data-theme="@Prefs.Current.Theme">
 
 <head>
     <meta charset="utf-8" />
@@ -17,6 +23,11 @@
 <body>
     <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        // Live half of the two-path theme apply (see the comment on <html> above):
+        // called from the Config page over JS interop when the operator switches theme.
+        window.jxAdminSetTheme = (theme) => { document.documentElement.dataset.theme = theme; };
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,248 @@
+@page "/config"
+@using Jonnxor.Admin.Services
+@using Microsoft.JSInterop
+@inject ConfigInspectionService Inspector
+@inject PanelPreferencesService Prefs
+@inject IJSRuntime JS
+
+@* Interactivity note: inherits InteractiveServer from the root <Routes> in App.razor
+   (see Dashboard.razor for why the directive is not repeated per page).
+
+   THE load-bearing rule of this page (design §2): secrets are names, not values.
+   The model this page binds to (EffectiveConfig/SecretBadge) carries no secret value
+   at all — there is nothing here a rendering bug could leak. The Directus URL is an
+   endpoint, not a secret, so its value renders alongside which source won. *@
+
+<PageTitle>Config — Jonnxor Admin</PageTitle>
+
+<h1>Config</h1>
+
+<p class="pull-muted">
+    Effective runtime configuration, read-only. Everything below is the panel's runtime
+    domain. The build-time domain — the committed snapshot and the Astro build CI/Vercel
+    run from it — is out of this panel's reach by design: the site builds with this
+    panel (and the whole stack) stopped.
+</p>
+
+@if (_error is { } error)
+{
+    <p class="pull-error">config unavailable: @error</p>
+}
+else if (_config is { } config)
+{
+    <section class="pull-section">
+        <h2>Paths</h2>
+        <table class="findings-table">
+            <tbody>
+                <tr>
+                    <th>RepoRoot</th>
+                    <td>@config.RepoRoot</td>
+                    <td class="config-source">
+                        @(config.RepoRootIsExplicit
+                            ? "explicit (Admin:RepoRoot)"
+                            : "walked up to jonnxor.sln from the app base directory")
+                    </td>
+                </tr>
+                <tr>
+                    <th>ContentDir</th>
+                    <td>@config.ContentDir</td>
+                    <td class="config-source"></td>
+                </tr>
+                <tr>
+                    <th>DirectusEnvPath</th>
+                    <td>@config.DirectusEnvPath</td>
+                    <td class="config-source">exists? @(config.DirectusEnvFileExists ? "yes" : "no")</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="pull-section">
+        <h2>Endpoints</h2>
+        <table class="findings-table">
+            <tbody>
+                <tr>
+                    <th>Directus URL</th>
+                    <td>@(config.DirectusUrl.Url ?? "unresolved")</td>
+                    <td class="config-source">@DescribeUrlSource(config.DirectusUrl.Source)</td>
+                </tr>
+                <tr>
+                    <th>ForgejoBaseUrl</th>
+                    <td>@config.ForgejoBaseUrl</td>
+                    <td class="config-source">
+                        @(config.ForgejoBaseUrlIsDefault ? "appsettings default" : "override")
+                    </td>
+                </tr>
+                <tr>
+                    <th>ForgejoRepo</th>
+                    <td>@config.ForgejoRepo</td>
+                    <td class="config-source">
+                        @(config.ForgejoRepoIsDefault ? "appsettings default" : "override")
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        @if (config.DirectusUrl.Problem is { } urlProblem)
+        {
+            <p class="pull-error">@urlProblem</p>
+        }
+    </section>
+
+    <section class="pull-section">
+        <h2>Secrets</h2>
+        <p class="pull-muted">key names and presence only — values never render here</p>
+        <table class="findings-table">
+            <tbody>
+                @foreach (var secret in config.Secrets)
+                {
+                    <tr>
+                        <th>@secret.Name</th>
+                        @* Badge reuses the tile-status token classes: set = ok, not set = unknown. *@
+                        <td><span class="tile-status @(secret.IsSet ? "tile-status--ok" : "tile-status--unknown")">@(secret.IsSet ? "set" : "not set")</span></td>
+                        <td class="config-source">@DescribeSecretSource(secret)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (config.EnvFileProblem is { } envProblem)
+        {
+            <p class="pull-error">@envProblem</p>
+        }
+    </section>
+}
+else
+{
+    <p class="pull-muted">inspecting configuration…</p>
+}
+
+<section class="pull-section">
+    <h2>Preferences</h2>
+    <p class="pull-muted">
+        the only editable state in v1 — stored locally under the OS app-data dir,
+        never in the repo
+    </p>
+
+    @if (Prefs.LoadWarning is { } warning)
+    {
+        <p class="pull-error">@warning</p>
+    }
+    @if (_prefsError is { } prefsError)
+    {
+        <p class="pull-error">could not save preferences: @prefsError</p>
+    }
+
+    <label class="prefs-field">
+        <span>theme</span>
+        @* Options carry explicit selected flags: value-binding on <select> is a DOM
+           property, invisible to static HTML (and to the render tests). *@
+        <select @onchange="OnThemeChangedAsync">
+            @foreach (var theme in PanelPreferences.Themes)
+            {
+                <option value="@theme" selected="@(theme == Prefs.Current.Theme)">@theme</option>
+            }
+        </select>
+    </label>
+
+    <label class="prefs-field">
+        <span>timestamp locale</span>
+        <select @onchange="OnTimestampLocaleChangedAsync">
+            @foreach (var locale in PanelPreferences.TimestampLocales)
+            {
+                <option value="@locale" selected="@(locale == Prefs.Current.TimestampLocale)">@locale</option>
+            }
+        </select>
+    </label>
+
+    <p class="pull-muted">
+        the timestamp locale formats absolute times (tiles' refreshed-at); relative ages
+        ("3 h ago") stay invariant
+    </p>
+</section>
+
+@code {
+    private EffectiveConfig? _config;
+    private string? _error;
+    private string? _prefsError;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            _config = Inspector.Inspect();
+        }
+        catch (Exception ex)
+        {
+            // IO surprises (permissions etc.) are data on this page, never a crash.
+            _error = ex.Message;
+        }
+    }
+
+    // Theme applies through TWO paths (both required — document per plan):
+    // 1. Persisted: Save() writes the pref; App.razor (static SSR shell) reads it
+    //    server-side on every subsequent page load and renders data-theme on <html>.
+    // 2. Live: the circuit cannot re-render App.razor's <html> tag, so the current
+    //    tab flips the attribute via the tiny jxAdminSetTheme JS function App.razor
+    //    defines (document.documentElement.dataset.theme = ...).
+    private async Task OnThemeChangedAsync(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() is not { Length: > 0 } theme)
+        {
+            return;
+        }
+
+        if (!TrySave(Prefs.Current with { Theme = theme }))
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("jxAdminSetTheme", theme);
+        }
+        catch (JSException)
+        {
+            // The pref is saved; worst case the new theme applies on the next load.
+        }
+    }
+
+    private Task OnTimestampLocaleChangedAsync(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() is { Length: > 0 } locale)
+        {
+            // Applies to absolute timestamps (tiles' refreshed-at) on their next render.
+            TrySave(Prefs.Current with { TimestampLocale = locale });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private bool TrySave(PanelPreferences preferences)
+    {
+        try
+        {
+            Prefs.Save(preferences);
+            _prefsError = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Disk-full/permission failures degrade to data, like the sibling pages.
+            _prefsError = ex.Message;
+            return false;
+        }
+    }
+
+    private static string DescribeUrlSource(DirectusUrlSource source) => source switch
+    {
+        DirectusUrlSource.EnvironmentVariable => "env var (DIRECTUS_URL exported)",
+        DirectusUrlSource.EnvFile => "env file (directus/.env)",
+        _ => "unresolved",
+    };
+
+    private static string DescribeSecretSource(SecretBadge secret) => secret.Source switch
+    {
+        SecretSource.EnvironmentVariable => "env var",
+        SecretSource.EnvFile => "env file (directus/.env)",
+        _ => secret.Name == "FORGEJO_TOKEN" ? "env var only — never read from a file" : "—",
+    };
+}

@@ -89,6 +89,10 @@ public class RenderTests
         services.AddSingleton(directus);
         services.AddSingleton(snapshot);
         services.AddSingleton(ci);
+        // Dashboard reads the timestamp-locale pref; a base dir with no stored file
+        // loads pure defaults and never writes (the file appears only on Save).
+        services.AddSingleton(new PanelPreferencesService(
+            Path.Combine(Path.GetTempPath(), "jonnxor-admin-tests-no-prefs")));
         return services.BuildServiceProvider();
     }
 
@@ -467,6 +471,135 @@ public class RenderTests
         Assert.Contains("TOTAL", html); // the (empty) table still renders
         Assert.DoesNotContain("coverage-drill", html); // no drill-down section at all
         Assert.DoesNotContain("none —", html);
+    }
+
+    [Fact]
+    public async Task HealthTile_TimestampLocalePref_FormatsAbsoluteRefreshedAtWithThatLocale()
+    {
+        await using var provider = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var at = new DateTimeOffset(2026, 7, 7, 14, 5, 3, TimeSpan.Zero);
+        var parameters = ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            [nameof(HealthTile.Title)] = "Probe",
+            [nameof(HealthTile.RefreshedAt)] = at,
+            [nameof(HealthTile.TimestampLocale)] = "ja-JP",
+        });
+
+        var html = await RenderAsync<HealthTile>(provider, parameters);
+
+        // Absolute timestamps honor the pref locale (relative strings stay invariant
+        // by design — RelativeTime is untouched). Expected computed through the same
+        // ToLocalTime conversion so the assertion is timezone-independent.
+        var expected = at.ToLocalTime().ToString(
+            "T", System.Globalization.CultureInfo.GetCultureInfo("ja-JP"));
+        Assert.Contains($"refreshed {expected}", html);
+    }
+
+    private static ServiceProvider BuildConfigProvider(
+        ConfigInspectionService inspector, PanelPreferencesService prefs)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(inspector);
+        services.AddSingleton(prefs);
+        services.AddSingleton<Microsoft.JSInterop.IJSRuntime>(new FakeJsRuntime());
+        return services.BuildServiceProvider();
+    }
+
+    [Fact]
+    public async Task Config_SeededSecretValues_RendersBadgesAndNamesNeverValues()
+    {
+        using var temp = new TempDir();
+        // Recognizable fake values — none of these strings may ever reach the HTML.
+        const string leakEmail = "leak-email-XYZZY@example.test";
+        const string leakPassword = "hunter2-SUPER-SECRET-XYZZY";
+        const string leakToken = "forgejo-token-value-NEVER-RENDER";
+        temp.WriteFile("directus/.env",
+            $"DIRECTUS_URL=http://localhost:8055\nADMIN_EMAIL={leakEmail}\nADMIN_PASSWORD={leakPassword}\n");
+        var options = new AdminOptions { RepoRoot = temp.Path };
+        var inspector = new ConfigInspectionService(
+            options, new RepoPaths(options), key => key == "FORGEJO_TOKEN" ? leakToken : null);
+        await using var provider = BuildConfigProvider(
+            inspector, new PanelPreferencesService(temp.CreateDir("prefs")));
+
+        var html = await RenderAsync<Config>(provider, ParameterView.Empty);
+
+        // Key names + set badges render...
+        Assert.Contains("FORGEJO_TOKEN", html);
+        Assert.Contains("ADMIN_EMAIL", html);
+        Assert.Contains("ADMIN_PASSWORD", html);
+        Assert.Equal(3, CountOccurrences(html, ">set<"));
+        Assert.DoesNotContain(">not set<", html);
+
+        // ...the secret VALUES never do — THE load-bearing rule of this page.
+        Assert.DoesNotContain(leakEmail, html);
+        Assert.DoesNotContain(leakPassword, html);
+        Assert.DoesNotContain(leakToken, html);
+        Assert.DoesNotContain("hunter2", html);
+        Assert.DoesNotContain("XYZZY", html);
+
+        // The Directus URL is an endpoint, not a secret: value + source both render.
+        Assert.Contains("http://localhost:8055", html);
+        Assert.Contains("env file", html);
+
+        // Paths section: this RepoRoot was configured explicitly.
+        Assert.Contains("explicit", html);
+    }
+
+    [Fact]
+    public async Task Config_MissingEnvFile_NotSetBadgesPlusWorktreeCaveat()
+    {
+        using var temp = new TempDir(); // no directus/.env
+        var options = new AdminOptions { RepoRoot = temp.Path };
+        var inspector = new ConfigInspectionService(options, new RepoPaths(options), NoEnv);
+        await using var provider = BuildConfigProvider(
+            inspector, new PanelPreferencesService(temp.CreateDir("prefs")));
+
+        var html = await RenderAsync<Config>(provider, ParameterView.Empty);
+
+        Assert.Equal(3, CountOccurrences(html, ">not set<"));
+        Assert.Contains("direnv does not reach worktrees", html);
+        Assert.Contains("no</td>", html); // DirectusEnvPath exists? no
+    }
+
+    [Fact]
+    public async Task Config_PersistedPreferences_RenderSelectedAcrossInstances()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("directus/.env", "DIRECTUS_URL=http://localhost:8055\n");
+        var prefsDir = temp.CreateDir("prefs");
+        // Round-trip: save with one service instance, render from a fresh one.
+        new PanelPreferencesService(prefsDir).Save(new PanelPreferences("neon", "ja-JP"));
+        var options = new AdminOptions { RepoRoot = temp.Path };
+        var inspector = new ConfigInspectionService(options, new RepoPaths(options), NoEnv);
+        await using var provider = BuildConfigProvider(
+            inspector, new PanelPreferencesService(prefsDir));
+
+        var html = await RenderAsync<Config>(provider, ParameterView.Empty);
+
+        Assert.Contains("<option value=\"neon\" selected>", html);
+        Assert.Contains("<option value=\"ja-JP\" selected>", html);
+        Assert.DoesNotContain("<option value=\"rune\" selected>", html);
+    }
+
+    [Fact]
+    public async Task Config_CorruptPreferencesFile_SurfacesTheWarning()
+    {
+        using var temp = new TempDir();
+        temp.WriteFile("directus/.env", "DIRECTUS_URL=http://localhost:8055\n");
+        temp.WriteFile("prefs/jonnxor-admin/preferences.json", "{ corrupt");
+        var options = new AdminOptions { RepoRoot = temp.Path };
+        var inspector = new ConfigInspectionService(options, new RepoPaths(options), NoEnv);
+        await using var provider = BuildConfigProvider(
+            inspector, new PanelPreferencesService(Path.Combine(temp.Path, "prefs")));
+
+        var html = await RenderAsync<Config>(provider, ParameterView.Empty);
+
+        // Degrade pattern like the siblings: the corrupt file is data on the page,
+        // and the panel keeps working on defaults.
+        Assert.Contains("preferences", html);
+        Assert.Contains("defaults", html);
+        Assert.Contains("<option value=\"rune\" selected>", html);
     }
 
     private static string StripWhitespace(string html)

@@ -21,6 +21,7 @@ public sealed class RepoPaths
     /// </param>
     public RepoPaths(AdminOptions options, string? startDirectory = null)
     {
+        RepoRootIsExplicit = options.RepoRoot is { Length: > 0 };
         RepoRoot = options.RepoRoot is { Length: > 0 } explicitRoot
             ? ValidateExplicitRoot(explicitRoot)
             : FindRepoRoot(startDirectory ?? AppContext.BaseDirectory);
@@ -32,6 +33,13 @@ public sealed class RepoPaths
 
     /// <summary>Absolute repo root (the directory containing <c>jonnxor.sln</c>).</summary>
     public string RepoRoot { get; }
+
+    /// <summary>
+    /// True when <see cref="AdminOptions.RepoRoot"/> was set explicitly; false when
+    /// the root was found by walking up to <c>jonnxor.sln</c>. Surfaced on the
+    /// Config page's "how was this resolved" line.
+    /// </summary>
+    public bool RepoRootIsExplicit { get; }
 
     /// <summary>Absolute path to the committed content snapshot.</summary>
     public string ContentDir { get; }

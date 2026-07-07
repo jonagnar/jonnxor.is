@@ -37,6 +37,13 @@ builder.Services.AddSingleton(static sp =>
 builder.Services.AddSingleton(static sp =>
     new CoverageService(sp.GetRequiredService<RepoPaths>()));
 
+// Panel preferences (operator state under the OS app-data dir, never the repo) and
+// the Config page's effective-config view. Explicit factories keep the test-only
+// seams (base directory, env lookup) at their real defaults.
+builder.Services.AddSingleton(static _ => new PanelPreferencesService());
+builder.Services.AddSingleton(static sp => new ConfigInspectionService(
+    sp.GetRequiredService<AdminOptions>(), sp.GetRequiredService<RepoPaths>()));
+
 var app = builder.Build();
 
 // Panel-owned assets (wwwroot: admin.css).

@@ -22,9 +22,7 @@
 
     <footer class="tile-foot">
         <span class="tile-refreshed">
-            @(RefreshedAt is { } at
-                ? $"refreshed {at.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture)}"
-                : "loading…")
+            @(RefreshedAt is { } at ? $"refreshed {FormatRefreshedAt(at)}" : "loading…")
         </span>
         @* aria-label disambiguates the otherwise-identical "Refresh" buttons across
            tiles for assistive tech. *@
@@ -42,6 +40,18 @@
     [Parameter] public DateTimeOffset? RefreshedAt { get; set; }
     [Parameter] public bool Refreshing { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
+
+    /// <summary>
+    /// Culture name for ABSOLUTE timestamps (the operator's timestamp-locale
+    /// preference, wired by Dashboard). Null keeps the invariant HH:mm:ss. Relative
+    /// ages elsewhere on the tile stay invariant by design (RelativeTime).
+    /// </summary>
+    [Parameter] public string? TimestampLocale { get; set; }
+
+    private string FormatRefreshedAt(DateTimeOffset at)
+        => TimestampLocale is { Length: > 0 } locale
+            ? at.ToLocalTime().ToString("T", CultureInfo.GetCultureInfo(locale))
+            : at.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
     private string StatusClass => Status switch
     {

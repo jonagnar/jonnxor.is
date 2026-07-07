@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Jonnxor.Api;
 
 namespace Jonnxor.Admin.Services;
 
@@ -21,11 +20,6 @@ public sealed record DirectusHealth(bool Reachable, string? Status, string? Deta
 /// </summary>
 public sealed class DirectusHealthService
 {
-    /// <summary>Worktree wording per the v1 plan — rendered verbatim when the URL cannot resolve.</summary>
-    private const string WorktreeCaveat =
-        "direnv does not reach worktrees — export DIRECTUS_URL or ensure directus/.env exists "
-        + "(decrypted via sops/direnv from the main checkout)";
-
     private const int TimeoutSeconds = 5;
 
     private readonly RepoPaths _paths;
@@ -46,10 +40,12 @@ public sealed class DirectusHealthService
 
     public async Task<DirectusHealth> CheckAsync(CancellationToken ct = default)
     {
-        var (url, problem) = ResolveUrl();
-        if (url is null)
+        // Shared resolver (also feeds the Config page's effective-config view), so
+        // the tile and /config can never disagree about the URL or which source won.
+        var resolution = DirectusUrlResolver.Resolve(_paths.DirectusEnvPath, _getEnv);
+        if (resolution.Url is not { } url)
         {
-            return new DirectusHealth(false, null, problem, string.Empty);
+            return new DirectusHealth(false, null, resolution.Problem, string.Empty);
         }
 
         if (!Uri.TryCreate($"{url.TrimEnd('/')}/server/health", UriKind.Absolute, out var healthUri)
@@ -77,36 +73,6 @@ public sealed class DirectusHealthService
             return new DirectusHealth(
                 false, null, $"timed out after {TimeoutSeconds}s waiting for {healthUri}", url);
         }
-    }
-
-    /// <summary>Env var wins over the env file — the CliRunner precedence.</summary>
-    private (string? Url, string? Problem) ResolveUrl()
-    {
-        if (_getEnv("DIRECTUS_URL") is { Length: > 0 } fromEnv)
-        {
-            return (fromEnv, null);
-        }
-
-        var envPath = _paths.DirectusEnvPath;
-        if (!File.Exists(envPath))
-        {
-            return (null, $"DIRECTUS_URL is not exported and '{envPath}' does not exist; {WorktreeCaveat}");
-        }
-
-        IReadOnlyDictionary<string, string> fileValues;
-        try
-        {
-            fileValues = EnvFile.Load(envPath);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // A permission-restricted sops-decrypted file must degrade, not crash the tile.
-            return (null, $"could not read '{envPath}': {ex.Message}; {WorktreeCaveat}");
-        }
-
-        return fileValues.GetValueOrDefault("DIRECTUS_URL") is { Length: > 0 } fromFile
-            ? (fromFile, null)
-            : (null, $"DIRECTUS_URL is not exported and missing from '{envPath}'; {WorktreeCaveat}");
     }
 
     private static string? TryReadStatus(string body)

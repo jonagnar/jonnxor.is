@@ -326,6 +326,37 @@
   margin: 0 0 var(--space-2);
 }
 
+/* ---------- config page ---------- */
+
+/* Secret badges reuse the .tile-status classes (set = ok, not set = unknown) so the
+   page adds no new color rules; only layout below. */
+
+.config-source {
+  color: var(--ink-faint);
+  font-size: .8rem;
+}
+
+.findings-table th {
+  text-align: left;
+  font-weight: 600;
+}
+
+.prefs-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.prefs-field select {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+}
+
 .coverage-missing {
   list-style: none;
   margin: 0;

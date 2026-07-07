@@ -4,8 +4,9 @@ namespace Jonnxor.Admin.Services;
 
 /// <summary>
 /// Invariant-culture relative-age formatting for the dashboard tiles
-/// ("just now" / "5 min ago" / "3 h ago" / "2 d ago"). Deliberately simple:
-/// locale/timezone preferences are a Config-page concern (Task 7), not this helper's.
+/// ("just now" / "5 min ago" / "3 h ago" / "2 d ago"). Deliberately invariant:
+/// the Config-page timestamp-locale preference applies to ABSOLUTE timestamps only
+/// (HealthTile's refreshed-at) — relative strings render the same in every locale.
 /// </summary>
 public static class RelativeTime
 {
