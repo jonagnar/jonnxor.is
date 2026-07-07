@@ -31,7 +31,10 @@ public sealed record PanelPreferences(string Theme, string TimestampLocale)
 /// or partially-invalid file coerces to defaults with <see cref="LoadWarning"/> as
 /// data for the Config page. Saves are atomic (unique temp file + rename in the same
 /// directory). Thread-safety: one operator, but two tabs share this singleton and
-/// could save concurrently — a plain lock around save is all that scenario needs.
+/// could save concurrently — writes are serialized by a lock, and page code edits
+/// single fields via <see cref="Save(Func{PanelPreferences, PanelPreferences})"/>,
+/// whose read-modify-write runs INSIDE that lock, so two tabs changing different
+/// fields can never silently revert each other's edit.
 /// </summary>
 public sealed class PanelPreferencesService
 {
@@ -74,6 +77,31 @@ public sealed class PanelPreferencesService
     /// </summary>
     public void Save(PanelPreferences preferences)
     {
+        lock (_gate)
+        {
+            SaveLocked(preferences);
+        }
+    }
+
+    /// <summary>
+    /// Reads the up-to-date <see cref="Current"/>, applies <paramref name="mutate"/>,
+    /// and persists the result — all inside the lock. This is how page code must
+    /// edit a single field: a plain read-modify-write around <see cref="Save(PanelPreferences)"/>
+    /// would race a concurrent tab and silently revert its other-field edit.
+    /// Validation and failure semantics match <see cref="Save(PanelPreferences)"/>.
+    /// </summary>
+    public PanelPreferences Save(Func<PanelPreferences, PanelPreferences> mutate)
+    {
+        lock (_gate)
+        {
+            var next = mutate(Current);
+            SaveLocked(next);
+            return next;
+        }
+    }
+
+    private void SaveLocked(PanelPreferences preferences)
+    {
         if (!PanelPreferences.Themes.Contains(preferences.Theme))
         {
             throw new ArgumentException(
@@ -90,28 +118,25 @@ public sealed class PanelPreferencesService
                 nameof(preferences));
         }
 
-        lock (_gate)
+        var directory = Path.GetDirectoryName(_path)!;
+        Directory.CreateDirectory(directory);
+
+        // Atomic write: a unique temp name (two saves racing across processes
+        // must not share one), then rename — readers only ever see a complete file.
+        var temp = Path.Combine(directory, $".preferences-{Guid.NewGuid():N}.tmp");
+        try
         {
-            var directory = Path.GetDirectoryName(_path)!;
-            Directory.CreateDirectory(directory);
-
-            // Atomic write: a unique temp name (two saves racing across processes
-            // must not share one), then rename — readers only ever see a complete file.
-            var temp = Path.Combine(directory, $".preferences-{Guid.NewGuid():N}.tmp");
-            try
-            {
-                File.WriteAllText(temp, JsonSerializer.Serialize(preferences, JsonOptions));
-                File.Move(temp, _path, overwrite: true);
-            }
-            catch
-            {
-                TryDelete(temp);
-                throw;
-            }
-
-            Current = preferences;
-            LoadWarning = null;
+            File.WriteAllText(temp, JsonSerializer.Serialize(preferences, JsonOptions));
+            File.Move(temp, _path, overwrite: true);
         }
+        catch
+        {
+            TryDelete(temp);
+            throw;
+        }
+
+        Current = preferences;
+        LoadWarning = null;
     }
 
     private static (PanelPreferences Preferences, string? Warning) Load(string path)

@@ -336,7 +336,10 @@
   font-size: .8rem;
 }
 
-.findings-table th {
+/* Scoped to the config tables only: ContentPull's findings table keeps its own
+   header look (bold, default alignment). Config tables carry both classes —
+   .findings-table for the shared borders/colors, .config-table for row headers. */
+.config-table th {
   text-align: left;
   font-weight: 600;
 }

@@ -32,7 +32,7 @@ else if (_config is { } config)
 {
     <section class="pull-section">
         <h2>Paths</h2>
-        <table class="findings-table">
+        <table class="findings-table config-table">
             <tbody>
                 <tr>
                     <th>RepoRoot</th>
@@ -59,7 +59,7 @@ else if (_config is { } config)
 
     <section class="pull-section">
         <h2>Endpoints</h2>
-        <table class="findings-table">
+        <table class="findings-table config-table">
             <tbody>
                 <tr>
                     <th>Directus URL</th>
@@ -91,7 +91,7 @@ else if (_config is { } config)
     <section class="pull-section">
         <h2>Secrets</h2>
         <p class="pull-muted">key names and presence only — values never render here</p>
-        <table class="findings-table">
+        <table class="findings-table config-table">
             <tbody>
                 @foreach (var secret in config.Secrets)
                 {
@@ -190,7 +190,7 @@ else
             return;
         }
 
-        if (!TrySave(Prefs.Current with { Theme = theme }))
+        if (!TrySave(prefs => prefs with { Theme = theme }))
         {
             return;
         }
@@ -199,9 +199,10 @@ else
         {
             await JS.InvokeVoidAsync("jxAdminSetTheme", theme);
         }
-        catch (JSException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
         {
-            // The pref is saved; worst case the new theme applies on the next load.
+            // Interop failure, circuit torn down, or interop timeout — the pref is
+            // saved either way; worst case the new theme applies on the next load.
         }
     }
 
@@ -210,17 +211,20 @@ else
         if (e.Value?.ToString() is { Length: > 0 } locale)
         {
             // Applies to absolute timestamps (tiles' refreshed-at) on their next render.
-            TrySave(Prefs.Current with { TimestampLocale = locale });
+            TrySave(prefs => prefs with { TimestampLocale = locale });
         }
 
         return Task.CompletedTask;
     }
 
-    private bool TrySave(PanelPreferences preferences)
+    // Single-field edits go through the mutate overload: the read-modify-write runs
+    // inside the service's lock, so a concurrent save from another tab can't be
+    // silently reverted by this one.
+    private bool TrySave(Func<PanelPreferences, PanelPreferences> mutate)
     {
         try
         {
-            Prefs.Save(preferences);
+            Prefs.Save(mutate);
             _prefsError = null;
             return true;
         }
@@ -243,6 +247,8 @@ else
     {
         SecretSource.EnvironmentVariable => "env var",
         SecretSource.EnvFile => "env file (directus/.env)",
-        _ => secret.Name == "FORGEJO_TOKEN" ? "env var only — never read from a file" : "—",
+        // The env-var-only policy lives on the badge (ConfigInspectionService owns
+        // it); this page just renders the flag — no per-key policy knowledge here.
+        _ => secret.EnvVarOnly ? "env var only — never read from a file" : "—",
     };
 }

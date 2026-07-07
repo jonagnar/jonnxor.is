@@ -15,8 +15,11 @@ public enum SecretSource
 /// value, no length, no prefix — only the key name and whether/where it is set, so
 /// nothing a renderer touches can ever leak the secret itself (design §2, asserted
 /// structurally in ConfigInspectionServiceTests and against HTML in RenderTests).
+/// <see cref="EnvVarOnly"/> carries the per-key sourcing policy (FORGEJO_TOKEN is
+/// never read from a file) as a bool, so the page renders policy without knowing
+/// key names — and the "string properties = Name only" guarantee still holds.
 /// </summary>
-public sealed record SecretBadge(string Name, bool IsSet, SecretSource Source);
+public sealed record SecretBadge(string Name, bool IsSet, SecretSource Source, bool EnvVarOnly);
 
 /// <summary>The Config page's read-only model — everything on it is runtime state.</summary>
 public sealed record EffectiveConfig(
@@ -112,19 +115,19 @@ public sealed class ConfigInspectionService
     /// <summary>FORGEJO_TOKEN never comes from a file — only the exported variable counts.</summary>
     private SecretBadge EnvOnlyBadge(string name)
         => _getEnv(name) is { Length: > 0 }
-            ? new SecretBadge(name, IsSet: true, SecretSource.EnvironmentVariable)
-            : new SecretBadge(name, IsSet: false, SecretSource.NotSet);
+            ? new SecretBadge(name, IsSet: true, SecretSource.EnvironmentVariable, EnvVarOnly: true)
+            : new SecretBadge(name, IsSet: false, SecretSource.NotSet, EnvVarOnly: true);
 
     /// <summary>Env var wins over the env file — the CliRunner precedence.</summary>
     private SecretBadge Badge(string name, IReadOnlyDictionary<string, string> fileValues)
     {
         if (_getEnv(name) is { Length: > 0 })
         {
-            return new SecretBadge(name, IsSet: true, SecretSource.EnvironmentVariable);
+            return new SecretBadge(name, IsSet: true, SecretSource.EnvironmentVariable, EnvVarOnly: false);
         }
 
         return fileValues.GetValueOrDefault(name) is { Length: > 0 }
-            ? new SecretBadge(name, IsSet: true, SecretSource.EnvFile)
-            : new SecretBadge(name, IsSet: false, SecretSource.NotSet);
+            ? new SecretBadge(name, IsSet: true, SecretSource.EnvFile, EnvVarOnly: false)
+            : new SecretBadge(name, IsSet: false, SecretSource.NotSet, EnvVarOnly: false);
     }
 }

@@ -113,6 +113,19 @@ public class ConfigInspectionServiceTests
     }
 
     [Fact]
+    public void Inspect_EnvVarOnlyFlag_MarksTheTokenAndOnlyTheToken()
+    {
+        using var temp = new TempDir();
+
+        var config = ServiceFor(temp).Inspect();
+
+        // The per-key sourcing policy travels on the badge, so the page renders it
+        // without any key-name knowledge of its own.
+        Assert.All(config.Secrets, s =>
+            Assert.Equal(s.Name == "FORGEJO_TOKEN", s.EnvVarOnly));
+    }
+
+    [Fact]
     public void Inspect_SecretBadges_CarryNoValueAnywhere()
     {
         // Structural guarantee for "values never render": the badge type has no

@@ -41,6 +41,46 @@ public class PanelPreferencesServiceTests
     }
 
     [Fact]
+    public void MutateOverload_SingleFieldEditsCompose_NeverRevertEachOther()
+    {
+        using var temp = new TempDir();
+        var service = new PanelPreferencesService(temp.Path);
+
+        // The two-tab scenario: each edit touches ONE field. Because the
+        // read-modify-write runs inside the service's lock, the second edit
+        // observes the first instead of a stale snapshot.
+        service.Save(prefs => prefs with { Theme = "neon" });
+        service.Save(prefs => prefs with { TimestampLocale = "ja-JP" });
+
+        Assert.Equal(new PanelPreferences("neon", "ja-JP"), service.Current);
+        Assert.Equal(new PanelPreferences("neon", "ja-JP"),
+            new PanelPreferencesService(temp.Path).Current);
+    }
+
+    [Fact]
+    public void MutateOverload_ReturnsTheSavedResult()
+    {
+        using var temp = new TempDir();
+        var service = new PanelPreferencesService(temp.Path);
+
+        var saved = service.Save(prefs => prefs with { Theme = "dawn" });
+
+        Assert.Equal(service.Current, saved);
+        Assert.Equal("dawn", saved.Theme);
+    }
+
+    [Fact]
+    public void MutateOverload_InvalidResult_ThrowsAndKeepsState()
+    {
+        using var temp = new TempDir();
+        var service = new PanelPreferencesService(temp.Path);
+
+        Assert.Throws<ArgumentException>(
+            () => service.Save(prefs => prefs with { Theme = "solarized" }));
+        Assert.Equal(PanelPreferences.Default, service.Current);
+    }
+
+    [Fact]
     public void Save_LeavesNoTempFileBehind()
     {
         using var temp = new TempDir();
