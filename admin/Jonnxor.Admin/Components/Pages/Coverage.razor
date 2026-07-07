@@ -108,10 +108,12 @@ else
     private CoverageResult? _result;
     private (string Collection, string Locale, IReadOnlyList<string> Missing)? _selected;
 
-    /// <summary>Initial drill-down selection (deep-link / render-test seam).</summary>
+    /// <summary>Initial drill-down selection (render-test seam; not URL-settable —
+    /// no route segment or [SupplyParameterFromQuery] binds it).</summary>
     [Parameter] public string? SelectedCollection { get; set; }
 
-    /// <summary>Initial drill-down selection (deep-link / render-test seam).</summary>
+    /// <summary>Initial drill-down selection (render-test seam; not URL-settable —
+    /// no route segment or [SupplyParameterFromQuery] binds it).</summary>
     [Parameter] public string? SelectedLocale { get; set; }
 
     protected override async Task OnInitializedAsync()
