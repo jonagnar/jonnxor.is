@@ -13,8 +13,8 @@ design system (`dawn` / `rune` / `neon`) with a Norse-saga visual voice.
 It is also the **first real project** of a self-hosted, backup-first dev environment: the
 proving ground for the Astro + Directus + .NET stack, the trilingual (is/en/ja) i18n
 approach, and the Forgejo → Vercel deploy pipeline. This is a monorepo: the Astro
-frontend lives in `client/`, a .NET 10 seam-validation worker lives in `api/`, and both
-share the top-level `tests/`.
+frontend lives in `client/`, a .NET 10 seam-validation worker lives in `api/`, a Blazor
+Server operator console lives in `admin/`, and all share the top-level `tests/`.
 
 ## Architecture
 
@@ -33,7 +33,12 @@ A governing **4-layer** model separates presentation, content, business logic, a
   Node pull/restore pipeline can't catch itself violating. It's read-only — no
   create/update/delete path anywhere — and never runs on the Astro build path. A full
   Blazor business-logic API is still *planned*.
-- **.NET 10 Blazor Server — Admin layer.** Logs, monitoring, health, settings. *Planned.*
+- **.NET 10 Blazor Server — Admin layer.** A thin, loopback-only operator console
+  (`admin/Jonnxor.Admin`) over the content seam: health tiles (Directus, snapshot
+  freshness, CI), content-pull orchestration with a read-only diff, translation
+  coverage, and effective configuration. **Never writes** — no commit/push, no Directus
+  mutations; the full logging/monitoring/observability scope is deferred until that
+  stack exists.
 
 **The seam:** Directus (local) → `content:pull` → committed snapshot (`client/src/content/**`) →
 Astro SSG build → Vercel. The content producer can evolve without the frontend changing.
@@ -47,8 +52,9 @@ Astro SSG build → Vercel. The content producer can evolve without the frontend
 - **Directus** (`@directus/sdk ^22`) — headless CMS. Runtime (compose stack, data,
   uploads) lives in the separate infra repo; this repo holds only the schema contract
   (`directus/schema/snapshot.yaml`) and client-side env, via sops + direnv.
-- **.NET 10** — a console seam-validator (`api/Jonnxor.Api`) today; Blazor business API +
-  admin are *planned*.
+- **.NET 10** — a console seam-validator (`api/Jonnxor.Api`) and a Blazor Server admin
+  panel (`admin/Jonnxor.Admin`, loopback-only operator console); the Blazor business API
+  is still *planned*.
 - **Design system** — three themes (`dawn` / `rune` / `neon`, `rune` default), a
   four-tier adaptive nav, theme orb, and self-hosted fonts; markup server-rendered in
   `Nav.astro` / `Footer.astro`.
@@ -80,6 +86,12 @@ pnpm content:pull        # refresh the committed content snapshot from Directus
 Directus itself (schema setup/export) is driven from `client/` too, against a stack
 started from the infra repo — see `directus/` and `CLAUDE.md` for the exact commands.
 
+The admin panel (operator console) runs from the repo root on WSL:
+
+```sh
+dotnet run --project admin/Jonnxor.Admin    # → http://127.0.0.1:5170 (loopback-only)
+```
+
 ## Build
 
 ```sh
@@ -98,7 +110,7 @@ stack stopped.
 | `pnpm test` (from `client/`) | Vitest — content/i18n logic + Astro Container-API rendering tests (`tests/{content,i18n,render}`) |
 | `pnpm test:e2e` (from `client/`) | Playwright E2E of the interactive pages (`tests/e2e`) |
 | `pnpm test:visual` (from `client/`) | Playwright self-baseline visual regression (`tests/visual`) |
-| `dotnet test jonnxor.sln` (from repo root) | xUnit tests for the .NET seam validator (`tests/Jonnxor.Api.Tests`) |
+| `dotnet test jonnxor.sln` (from repo root) | xUnit tests for the .NET seam validator + admin panel (`tests/Jonnxor.Api.Tests`, `tests/Jonnxor.Admin.Tests`) |
 
 **Playwright runs in a pinned container.** Browsers are not installed in WSL; all Playwright
 (E2E + visual) runs inside `mcr.microsoft.com/playwright:v1.61.1-noble` via `scripts/pw.sh`,
@@ -116,9 +128,11 @@ on pull requests and on the `preview` branch; a dedicated `dotnet` CI job builds
 
 ### Convention: business/admin layers ship their own tests
 
-The .NET seam validator already ships its own xUnit project (`tests/Jonnxor.Api.Tests`),
-wired into CI from day one. When a full Blazor business API and admin land, each follows
-the same rule — the same way no feature merges here without a test.
+The .NET seam validator ships its own xUnit project (`tests/Jonnxor.Api.Tests`), wired
+into CI from day one, and the admin panel follows the same rule
+(`tests/Jonnxor.Admin.Tests` — both picked up automatically by the CI dotnet job's
+`dotnet build/test jonnxor.sln`). When the full Blazor business API lands, it does the
+same — the same way no feature merges here without a test.
 
 ## Deploy
 
@@ -147,12 +161,14 @@ Vercel must run with `ENABLE_EXPERIMENTAL_COREPACK=1` so the pinned pnpm version
 │   └── docs/             # project documentation (see below)
 ├── api/
 │   └── Jonnxor.Api/      # .NET 10 console worker: build-time seam validator
+├── admin/
+│   └── Jonnxor.Admin/    # .NET 10 Blazor Server: loopback-only operator console
 ├── directus/             # schema contract only (schema/, .env); runtime lives in the infra repo
 ├── tests/                # Vitest (content/, i18n/, render/) + Playwright (e2e/, visual/)
-│                         #   + Jonnxor.Api.Tests/ (xUnit, for the .NET worker)
+│                         #   + Jonnxor.Api.Tests/ + Jonnxor.Admin.Tests/ (xUnit)
 ├── .planning/            # dated design/plan docs, PRD/FRDs for each work cycle
 ├── .forgejo/             # CI workflows
-├── jonnxor.sln           # top-level .NET solution (api/ + tests/Jonnxor.Api.Tests)
+├── jonnxor.sln           # top-level .NET solution (api/, admin/ + their xUnit test projects)
 └── global.json           # .NET SDK version pin
 ```
 

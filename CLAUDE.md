@@ -40,7 +40,7 @@ pnpm directus:snapshot   # export schema-as-code → directus/schema/snapshot.ya
 
 ## Architecture
 
-Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Directus** (content/data, local Docker), **.NET 10 Blazor** API + admin (*planned* — when they land, each ships its own xUnit test project wired into CI).
+Governing 4-layer model: **Astro** (presentation, this repo's frontend), **Directus** (content/data, local Docker), **.NET 10** business API (*planned*) + **Blazor Server admin** (thin v1 shipped — see "Admin panel" below; each .NET layer ships its own xUnit test project wired into CI).
 
 **The content seam is the key invariant:** Directus (local) → `content:pull` → committed, locale-keyed snapshot in `client/src/content/**` → Astro SSG build. The committed snapshot is the build contract — CI and Vercel never query a live backend; the site builds with the stack stopped. Never hand-edit generated snapshot content expecting it to persist; the source of truth is Directus (schema in `directus/schema/snapshot.yaml`).
 
@@ -97,6 +97,35 @@ CI (`.forgejo/workflows/ci.yml`) runs a dedicated `dotnet` job on every push (co
 `dotnet build jonnxor.sln --configuration Release` → `dotnet test jonnxor.sln --configuration
 Release --no-build` → `verify --offline` against the real committed snapshot. `verify --live`
 is a manual/local-only gate — it needs a reachable Directus and is not part of CI.
+
+#### Admin panel (Blazor Server, operator console)
+
+`admin/Jonnxor.Admin` (Blazor Server, interactive server rendering) + `tests/Jonnxor.Admin.Tests`
+(xUnit), both wired into `jonnxor.sln` — a thin operator console over the content seam
+(design: `.planning/2026-07-07-blazor-admin-v1-design.md`). Run from the repo root on WSL
+(the same host whose mise shims put `pnpm` on `PATH` for the shell-out):
+
+```sh
+dotnet run --project admin/Jonnxor.Admin    # → http://127.0.0.1:5170
+```
+
+- **Loopback-only, no auth (v1).** Kestrel binds `127.0.0.1:5170`; a startup guard refuses
+  any non-loopback bind — explicit URLs, the `urls` config key (`--urls`, `ASPNETCORE_URLS`,
+  appsettings), and `Kestrel:Endpoints` binds alike — as a hard failure, not a warning.
+- **Never writes.** Same posture as the API worker: no `git add/commit/push`, no Directus
+  mutations, no snapshot edits. The content-pull page ends at "here is the diff — commit it
+  yourself"; no commit button exists.
+- **Four pages:** Dashboard (health tiles — Directus ping, snapshot freshness, last CI),
+  Content pull (runs `pnpm content:pull`, streams output, read-only diff, offline + live
+  verify), Coverage (the `report` verb as a drill-down table), Config (read-only effective
+  configuration; the only editable state is panel preferences).
+- **`FORGEJO_TOKEN`** (read:repository scope, sops/direnv-managed) powers the CI tile and
+  arrives via environment only — never config/appsettings. Without it the tile degrades to
+  a truthful "no FORGEJO_TOKEN configured".
+- Theme/timestamp-locale prefs persist to the OS app-data dir
+  (`jonnxor-admin/preferences.json`) — operator state, never the repo. The site's
+  `tokens.css` is served read-only from `client/public/assets` at `/site-assets`, so the
+  panel inherits dawn/rune/neon and cannot drift from the site's tokens.
 
 ### Deploy & secrets
 

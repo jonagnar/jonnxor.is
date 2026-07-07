@@ -227,9 +227,10 @@
     // Deliberately NOT deduped: a dedupe gate here can drop the post-run refresh
     // when a refresh that started mid-run (e.g. page load during a pull) is still
     // in flight, leaving the pane on a partial diff. Concurrent refreshes are
-    // read-only git and every trigger (awaited run returning, Running→idle flip)
-    // fires after the run has completed, so overlapping calls observe the same
-    // post-run tree — last writer wins with identical data.
+    // read-only git and every post-run trigger (awaited run returning,
+    // Running→idle flip) fires after the run has completed, so overlapping calls
+    // observe the same post-run tree — last writer wins with identical data; an
+    // init-time refresh racing a run end loses to ordinary completion order.
     private async Task RefreshDiffAsync()
     {
         try

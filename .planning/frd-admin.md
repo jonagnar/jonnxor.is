@@ -1,5 +1,7 @@
 > **DRAFT — for validation.** Intent inferred from existing artifacts; confirm before relying on it.
 
+> **Status update (2026-07-07):** the "realistic v1" subset (§3 sequencing — config/settings read surface, health tiles, content-pull diff, coverage) **shipped** as `admin/Jonnxor.Admin` per `2026-07-07-blazor-admin-v1-design.md`; §2.3–2.5 (logging/monitoring/observability) remain **deferred** until that stack exists.
+
 # FRD — jonnxor.is .NET 10 Blazor Server Admin Panel (Admin Layer)
 
 **Status:** Forward-looking DRAFT. This layer is **planned, not built.** Everything below is a reasonable proposal inferred from `~/dev/notes/dev-environment.md`, `~/dev/CLAUDE.md`, and `.planning/2026-06-24-i18n-directus-design.md`. No admin-panel code exists yet; treat each specific as a hypothesis to confirm, not a settled decision.

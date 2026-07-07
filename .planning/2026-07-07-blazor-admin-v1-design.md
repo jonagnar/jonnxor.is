@@ -140,3 +140,20 @@ scheduling beyond the manual "run now" that content-pull already is, settings
   Directus mutation) exists in the admin project.
 - Full solution green: existing 104 xUnit + new admin tests + 172 Vitest + e2e/visual
   untouched.
+
+## Amendments (execution)
+
+Three deviations from the text above, all review-approved during implementation:
+
+1. **Freshness tile (§4.1):** the Directus schema carries no `date_updated` on the
+   content collections, so "commit vs. CMS newest-edit" is uncomputable. The tile
+   instead reports newest-commit age touching `client/src/content` + working-tree
+   dirty state + whether the read-only git probes themselves succeeded (plan header
+   refinement 1).
+2. **Component tests (§8):** rendered-markup assertions use the framework's own
+   `HtmlRenderer` (Microsoft.AspNetCore.Components.Web) — bUnit was never needed, so
+   the suite adds **zero** new test dependencies (plan header refinement 2).
+3. **Loopback guard (§2):** the guard covers not just explicit URLs and the `urls`
+   configuration key (`--urls`, `ASPNETCORE_URLS`, appsettings) but also
+   `Kestrel:Endpoints:*:Url` config binds, which Kestrel honours without touching the
+   `urls` key at all (review-found gap, closed in Task 1's fix commit `23f261d`).
