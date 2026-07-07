@@ -23,6 +23,7 @@ public class SnapshotHealthServiceTests
         Assert.Equal(DateTimeOffset.Parse("2026-07-07T12:55:35+00:00"), freshness.LastCommit);
         Assert.False(freshness.Dirty);
         Assert.Equal(0, freshness.FileCount);
+        Assert.True(freshness.GitOk);
         Assert.All(runner.Invocations, i => Assert.Equal(paths.RepoRoot, i.WorkingDir));
         runner.VerifyAllConsumed();
     }
@@ -44,6 +45,7 @@ public class SnapshotHealthServiceTests
         Assert.Equal(DateTimeOffset.Parse("2026-06-01T08:00:00+00:00"), freshness.LastCommit);
         Assert.True(freshness.Dirty);
         Assert.Equal(2, freshness.FileCount);
+        Assert.True(freshness.GitOk);
         runner.VerifyAllConsumed();
     }
 
@@ -64,7 +66,26 @@ public class SnapshotHealthServiceTests
         Assert.Null(freshness.LastCommit);
         Assert.False(freshness.Dirty);
         Assert.Equal(0, freshness.FileCount);
+        // A failing git must be visibly "unknown", never silently "clean/in sync".
+        Assert.False(freshness.GitOk);
         runner.VerifyAllConsumed();
+    }
+
+    [Fact]
+    public async Task GetFreshnessAsync_GitMissing_DegradesInsteadOfThrowing()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        // ProcessRunner throws InvalidOperationException when the binary cannot be
+        // spawned at all — the tile must degrade to GitOk=false, not crash.
+        var service = new SnapshotHealthService(paths, new SpawnFailingProcessRunner());
+
+        var freshness = await service.GetFreshnessAsync();
+
+        Assert.Null(freshness.LastCommit);
+        Assert.False(freshness.Dirty);
+        Assert.Equal(0, freshness.FileCount);
+        Assert.False(freshness.GitOk);
     }
 
     [Fact]
@@ -81,6 +102,7 @@ public class SnapshotHealthServiceTests
         var freshness = await service.GetFreshnessAsync();
 
         Assert.Null(freshness.LastCommit);
+        Assert.True(freshness.GitOk); // git itself worked; there is just no commit
         runner.VerifyAllConsumed();
     }
 
@@ -135,5 +157,13 @@ public class SnapshotHealthServiceTests
         Assert.Equal(SnapshotHealthService.ContentDirMissingRule, finding.Rule);
         Assert.Equal(paths.ContentDir, finding.File);
         Assert.Equal(0, result.FileCount);
+    }
+
+    /// <summary>Simulates a missing git binary: every spawn attempt fails.</summary>
+    private sealed class SpawnFailingProcessRunner : IProcessRunner
+    {
+        public Task<int> RunAsync(
+            string fileName, string[] args, string workingDir, Action<string> onLine, CancellationToken ct)
+            => throw new InvalidOperationException($"Failed to start process '{fileName}': No such file or directory");
     }
 }

@@ -98,8 +98,9 @@ public sealed class DirectusHealthService
         {
             fileValues = EnvFile.Load(envPath);
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            // A permission-restricted sops-decrypted file must degrade, not crash the tile.
             return (null, $"could not read '{envPath}': {ex.Message}; {WorktreeCaveat}");
         }
 

@@ -60,8 +60,17 @@ public sealed class ForgejoCiService
             return new CiStatus(false, NoTokenDetail, []);
         }
 
-        var uri = $"{_options.ForgejoBaseUrl.TrimEnd('/')}/api/v1/repos/{_options.ForgejoRepo}"
+        var url = $"{_options.ForgejoBaseUrl.TrimEnd('/')}/api/v1/repos/{_options.ForgejoRepo}"
                   + $"/actions/tasks?limit={RunLimit}";
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            // Malformed config degrades like every other failure mode — the class
+            // contract is "degradation is data, never an exception".
+            return new CiStatus(
+                false, $"ForgejoBaseUrl '{_options.ForgejoBaseUrl}' is not a valid http(s) URL", []);
+        }
+
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.TryAddWithoutValidation("Authorization", $"token {token}");
 
@@ -77,7 +86,7 @@ public sealed class ForgejoCiService
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             return new CiStatus(
-                false, $"Forgejo request timed out after {TimeoutSeconds}s ({uri})", []);
+                false, $"Forgejo request timed out after {TimeoutSeconds}s ({url})", []);
         }
 
         using (response)

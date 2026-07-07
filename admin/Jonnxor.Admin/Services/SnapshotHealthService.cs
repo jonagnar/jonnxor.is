@@ -10,8 +10,10 @@ namespace Jonnxor.Admin.Services;
 /// dirtiness only: <see cref="LastCommit"/> is the newest commit touching the content
 /// dir (null when git fails or no commit touches it), <see cref="Dirty"/> flags
 /// uncommitted pull output, <see cref="FileCount"/> counts the changed paths.
+/// <see cref="GitOk"/> is false when git failed (non-zero exit or unspawnable binary)
+/// — the tile must render "unknown", never a false "clean/in sync".
 /// </summary>
-public sealed record SnapshotFreshness(DateTimeOffset? LastCommit, bool Dirty, int FileCount);
+public sealed record SnapshotFreshness(DateTimeOffset? LastCommit, bool Dirty, int FileCount, bool GitOk);
 
 /// <summary>
 /// Typed outcome of an in-process offline verify: the API's own findings plus the
@@ -42,9 +44,25 @@ public sealed class SnapshotHealthService
     public async Task<SnapshotFreshness> GetFreshnessAsync(CancellationToken ct = default)
     {
         var logLines = new List<string>();
-        var logExit = await _runner.RunAsync(
-            "git", ["log", "-1", "--format=%cI", "--", _paths.ContentDir],
-            _paths.RepoRoot, logLines.Add, ct).ConfigureAwait(false);
+        var statusLines = new List<string>();
+        int logExit;
+        int statusExit;
+        try
+        {
+            logExit = await _runner.RunAsync(
+                "git", ["log", "-1", "--format=%cI", "--", _paths.ContentDir],
+                _paths.RepoRoot, logLines.Add, ct).ConfigureAwait(false);
+
+            statusExit = await _runner.RunAsync(
+                "git", ["status", "--porcelain", "--", _paths.ContentDir],
+                _paths.RepoRoot, statusLines.Add, ct).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException)
+        {
+            // ProcessRunner could not spawn git at all — degrade to "unknown",
+            // never crash the tile.
+            return new SnapshotFreshness(null, false, 0, GitOk: false);
+        }
 
         DateTimeOffset? lastCommit = null;
         if (logExit == 0
@@ -54,14 +72,10 @@ public sealed class SnapshotHealthService
             lastCommit = parsed;
         }
 
-        var statusLines = new List<string>();
-        var statusExit = await _runner.RunAsync(
-            "git", ["status", "--porcelain", "--", _paths.ContentDir],
-            _paths.RepoRoot, statusLines.Add, ct).ConfigureAwait(false);
-
         var changedCount = statusExit == 0 ? statusLines.Count(IsStdoutLine) : 0;
 
-        return new SnapshotFreshness(lastCommit, changedCount > 0, changedCount);
+        return new SnapshotFreshness(
+            lastCommit, changedCount > 0, changedCount, GitOk: logExit == 0 && statusExit == 0);
     }
 
     /// <summary>

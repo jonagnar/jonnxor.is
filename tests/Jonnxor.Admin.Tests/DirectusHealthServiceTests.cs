@@ -131,6 +131,24 @@ public class DirectusHealthServiceTests
     }
 
     [Fact]
+    public async Task CheckAsync_MalformedUrl_DegradesWithoutRequest()
+    {
+        using var temp = new TempDir(); // no env file needed — the env var wins first
+        var handler = FakeHttpMessageHandler.Json(HttpStatusCode.OK, """{"status":"ok"}""");
+        var service = new DirectusHealthService(
+            PathsFor(temp), handler, key => key == "DIRECTUS_URL" ? "not a url" : null);
+
+        var health = await service.CheckAsync();
+
+        Assert.False(health.Reachable);
+        Assert.Null(health.Status);
+        Assert.NotNull(health.Detail);
+        Assert.Contains("not a valid http(s) URL", health.Detail);
+        Assert.Equal("not a url", health.Url);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
     public async Task CheckAsync_UnparseableBody_ReachableWithNullStatus()
     {
         using var temp = new TempDir();

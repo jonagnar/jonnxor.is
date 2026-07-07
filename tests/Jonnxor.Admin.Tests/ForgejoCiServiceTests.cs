@@ -177,6 +177,38 @@ public class ForgejoCiServiceTests
     }
 
     [Fact]
+    public async Task GetLatestPerBranchAsync_Timeout_DegradedResult()
+    {
+        // HttpClient surfaces its own timeout as a canceled task inside the handler
+        // chain; the caller's token is NOT canceled, so this must degrade, not throw.
+        var handler = new FakeHttpMessageHandler(_ => throw new TaskCanceledException("simulated timeout"));
+        var service = new ForgejoCiService(Options, handler, WithToken);
+
+        var status = await service.GetLatestPerBranchAsync();
+
+        Assert.False(status.Available);
+        Assert.NotNull(status.Detail);
+        Assert.Contains("timed out", status.Detail);
+        Assert.Empty(status.Runs);
+    }
+
+    [Fact]
+    public async Task GetLatestPerBranchAsync_MalformedBaseUrl_DegradedResultWithoutRequest()
+    {
+        var handler = FakeHttpMessageHandler.Json(HttpStatusCode.OK, RecordedBody);
+        var options = new AdminOptions { ForgejoBaseUrl = "not a url", ForgejoRepo = "WAAAGH/jonnxor.is" };
+        var service = new ForgejoCiService(options, handler, WithToken);
+
+        var status = await service.GetLatestPerBranchAsync();
+
+        Assert.False(status.Available);
+        Assert.NotNull(status.Detail);
+        Assert.Contains("not a valid http(s) URL", status.Detail);
+        Assert.Empty(status.Runs);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
     public async Task GetLatestPerBranchAsync_ForgejoDown_DegradedResult()
     {
         var handler = new FakeHttpMessageHandler(_ => throw new HttpRequestException("connection refused"));
