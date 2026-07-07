@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import jsYaml from 'js-yaml';
-import { makeEntryCodec } from '../../scripts/lib/entry-yaml.mjs';
+import { makeEntryCodec } from '../../client/scripts/lib/entry-yaml.mjs';
 
 const codec = makeEntryCodec({
   keyOrder: ['slug', 'locale', 'order', 'date', 'gold', 'gradient', 'title', 'body'],

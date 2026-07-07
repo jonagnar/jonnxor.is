@@ -1,0 +1,23 @@
+slug: highland-logistics
+locale: en
+order: 4
+sigil: HL
+gradient:
+  - "#06222b"
+  - "#0b5f6e"
+  - "#3fe0cb"
+stops:
+  - 55
+  - 145
+tech:
+  - Node
+  - PostGIS
+status:
+  label: Shipped
+  kind: plain
+links:
+  - label: Case study
+    href: "#"
+title: Highland Logistics
+description: Offline-first booking and route client for highland tour guides — built for zero signal, glove-friendly taps, and Icelandic weather.
+plate: 2019–22

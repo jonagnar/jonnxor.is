@@ -1,0 +1,114 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import FactList from "../components/FactList.astro";
+import { requirePageHead } from "../i18n/localized";
+import { defaultLocale, type Locale } from "../i18n/ui";
+import type { AboutSections } from "../content/page-sections";
+
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'about', locale).data;
+const sections = head.sections as AboutSections;
+---
+
+<Base title="About — JonnXor" page="about">
+  <main>
+    <PageHead kicker={head.kicker} title={head.title} lede={head.lede} label="About head" />
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section class="about-grid" data-screen-label="About body">
+        <div class="about-body">
+          {/* Paragraphs may carry inline HTML (drop-cap span, em) authored solely by the
+              site owner; the snapshot is committed and PR-reviewed — same trusted-single-
+              author posture as grimoire bodies. Do not extend this to multi-author content. */}
+          {sections.body.map((p) => <p set:html={p} />)}
+        </div>
+
+        <aside class="card fact-card reveal">
+          <h3>{sections.sheet_title}</h3>
+          <FactList facts={sections.sheet} />
+          <div class="chips">
+            {sections.skills.map((s) => <span class:list={["chip", { gold: s.gold, tq: !s.gold }]}>{s.label}</span>)}
+          </div>
+        </aside>
+      </section>
+
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section id="cover-letter" data-screen-label="Cover letter">
+        <p class="kicker gold" style="text-align: center;">{sections.letter.kicker}</p>
+        <article class="letter reveal">
+          <div class="letter-head">
+            <span class="who">{sections.letter.who}</span>
+            <span class="when">{sections.letter.when}</span>
+          </div>
+          {/* set:html — same trusted-single-author posture as the bio paragraphs above. */}
+          {sections.letter.body.map((p) => <p set:html={p} />)}
+          <p class="sign">{sections.letter.sign_name}<small>{sections.letter.sign_small}</small></p>
+        </article>
+        <p style="text-align: center; margin-top: 28px;">
+          <a class="btn btn-ghost" href="/cv">{sections.letter.cta_label}</a>
+        </p>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 880px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-body p { font-size: 16.5px; }
+  .about-body .drop {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 52px;
+    line-height: .85;
+    float: left;
+    margin: 6px 12px 0 0;
+    color: var(--gold-ink);
+    text-shadow: 0 0 var(--glow-r) var(--glow-gold);
+  }
+  .fact-card { padding: 22px; }
+  .fact-card h3 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; }
+  .fact-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .fact-list li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .fact-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .fact-list .k { color: var(--ink-faint); }
+  .fact-list .v { font-weight: 600; text-align: right; }
+  .fact-card .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  .letter {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 48px 52px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 640px) { .letter { padding: 28px 22px; } }
+  .letter .letter-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+  }
+  .letter .letter-head .who { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: .08em; }
+  .letter .letter-head .when { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
+  .letter p { font-size: 15.5px; }
+  .letter .sign { font-family: var(--font-display); font-weight: 700; letter-spacing: .1em; margin-top: 28px; }
+  .letter .sign small { display: block; font-family: var(--font-body); font-weight: 400; color: var(--ink-faint); letter-spacing: 0; margin-top: 4px; }
+</style>

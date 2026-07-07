@@ -1,0 +1,53 @@
+slug: cv
+locale: en
+kicker: Curriculum vitae
+title: The Record of Deeds
+lede: Clean, scannable, and print-friendly — hit the button and it becomes a sober one-pager, no dragons attached.
+sections:
+  role: Full-stack developer
+  contact:
+    location: Reykjavík, Iceland
+    web: jon@jonnxor.is · jonnxor.is
+    github: github.com/jonnxor
+  profile_heading: Profile
+  profile: Full-stack developer with 10 years of experience designing and shipping web platforms end to end. Strong in TypeScript, Go, and React; known for clear technical writing, calm incident response, and finding the lateral solution. Trilingual-in-progress (Icelandic, English, Japanese).
+  experience_heading: Experience
+  experience:
+    - when: 2022 — now
+      title: Senior Full-stack Developer
+      org: Straumur Pay
+      bullets:
+        - Led rebuild of merchant dashboard (React + Go) serving 40,000 merchants; p75 load time down 70%.
+        - Designed event-driven settlement pipeline processing 2M transactions/day on Postgres + NATS.
+        - Introduced ADR practice and incident postmortem culture; support tickets halved in one year.
+    - when: 2019 — 2022
+      title: Full-stack Developer
+      org: Nordsky Software
+      bullets:
+        - Built booking and logistics systems for Icelandic tourism operators (Node, TypeScript, PostGIS).
+        - Shipped offline-first mobile web client used by guides in zero-signal highland routes.
+    - when: 2016 — 2019
+      title: Web Developer
+      org: RVK Studio
+      bullets:
+        - Delivered 30+ client sites and web apps; owned everything from CMS modeling to deployment.
+  skills_heading: Skills
+  skills:
+    - k: Languages
+      v: TypeScript, Go, Python, SQL
+    - k: Frontend
+      v: React, Next.js, CSS architecture, a11y
+    - k: Backend
+      v: Node, Go services, Postgres, Redis, NATS
+    - k: Infra
+      v: Docker, GitHub Actions, Grafana, AWS
+    - k: Practices
+      v: ADRs, testing strategy, incident response
+    - k: Writing
+      v: Docs, postmortems, long-form technical blog
+  education_heading: Education & languages
+  education:
+    - when: 2012 — 2015
+      degree: BSc Computer Science
+      school: University of Iceland
+  languages: Icelandic (native) · English (fluent) · Japanese (JLPT N4, climbing)

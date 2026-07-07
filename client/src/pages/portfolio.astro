@@ -1,0 +1,64 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import { localizedByOrder, requirePageHead } from "../i18n/localized";
+import type { Locale } from "../i18n/ui";
+
+const locale = (Astro.currentLocale ?? 'is') as Locale;
+
+const all = await getCollection('projects');
+const projects = localizedByOrder(all, locale);
+
+const pagesAll = await getCollection('pages');
+const head = requirePageHead(pagesAll, 'portfolio', locale).data;
+---
+
+<Base title="Portfolio — JonnXor" page="portfolio">
+  <main>
+    <PageHead kicker={head.kicker} title={head.title} lede={head.lede} label="Portfolio head" />
+
+    <div class="container">
+      <div class="rune-divider" aria-hidden="true"><span class="runes"></span></div>
+
+      <section class="grid-3" data-screen-label="Project grid">
+        {projects.map((p) => (
+          <ProjectCard
+            sigil={p.data.sigil} gradient={p.data.gradient} stops={p.data.stops}
+            tech={p.data.tech} status={p.data.status} links={p.data.links}
+            title={p.data.title} description={p.data.description} plate={p.data.plate}
+          />
+        ))}
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style is:global>
+  .proj-card { display: flex; flex-direction: column; overflow: hidden; }
+  .proj-card .art .sigil {
+    font-family: var(--font-display);
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    opacity: .92;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, .35);
+  }
+  .proj-card .art .plate {
+    position: absolute;
+    inset: auto 12px 12px auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, .75);
+    background: rgba(0, 0, 0, .35);
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+  }
+  .proj-card .body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .proj-card h3 { font-size: 16px; margin: 0; }
+  .proj-card p { font-size: 14px; color: var(--ink-soft); margin: 0; flex: 1; }
+  .proj-card .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .proj-card .links { display: flex; gap: 14px; margin-top: 4px; }
+  .proj-card .links a { font-family: var(--font-display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+</style>

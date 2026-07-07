@@ -1,0 +1,8 @@
+slug: jol-christmas-eve
+locale: en
+order: 1
+kind: countdown
+when: "2026-12-24"
+gold: true
+what: Jol # this trailing comment silently truncates the scalar above
+note: The big one

@@ -1,0 +1,13 @@
+---
+// src/components/FactList.astro — the "character sheet" k/v rows on /about.
+// Markup mirrors the pre-port about.astro <ul class="fact-list"> class-for-class.
+interface Props {
+  facts: { k: string; v: string }[];
+}
+const { facts } = Astro.props;
+---
+<ul class="fact-list">
+  {facts.map((f) => (
+    <li><span class="k">{f.k}</span> <span class="v">{f.v}</span></li>
+  ))}
+</ul>

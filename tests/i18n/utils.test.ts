@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { useTranslations, stripLocale } from '../../src/i18n/utils';
-import { ui, fallbackLocale } from '../../src/i18n/ui';
+import { useTranslations, stripLocale } from '../../client/src/i18n/utils';
+import { ui, fallbackLocale } from '../../client/src/i18n/ui';
 
 describe('useTranslations', () => {
   it('returns the string for the requested locale', () => {

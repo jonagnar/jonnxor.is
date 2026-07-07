@@ -1,0 +1,36 @@
+---
+// src/components/ProjectCard.astro — one portfolio card, server-rendered.
+// Markup mirrors the pre-port portfolio.astro card structure class-for-class.
+// Links render href="#" as-is (parity with the pre-port page — deliberate,
+// there is no real destination data yet).
+interface Props {
+  sigil: string;
+  gradient: string[];
+  stops: number[];
+  tech: string[];
+  status?: { label: string; kind: 'plain' | 'gold' };
+  links: { label: string; href: string }[];
+  title: string;
+  description: string;
+  plate: string;
+}
+const { sigil, gradient, stops, tech, status, links, title, description, plate } = Astro.props;
+const grad = `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]} ${stops[0]}%, ${gradient[2]} ${stops[1]}%)`;
+---
+<article class="card lift proj-card reveal">
+  <div class="art" style={`background: ${grad};`}>
+    <span class="sigil">{sigil}</span>
+    <span class="plate">{plate}</span>
+  </div>
+  <div class="body">
+    <h3>{title}</h3>
+    <p>{description}</p>
+    <div class="meta">
+      {tech.map((item) => <span class="chip tq">{item}</span>)}
+      {status && <span class:list={["chip", { gold: status.kind === 'gold' }]}>{status.label}</span>}
+    </div>
+    <div class="links">
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+    </div>
+  </div>
+</article>
