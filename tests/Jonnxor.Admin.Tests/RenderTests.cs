@@ -453,10 +453,20 @@ public class RenderTests
         services.AddSingleton(coverage);
         await using var provider = services.BuildServiceProvider();
 
-        var html = await RenderAsync<Coverage>(provider, ParameterView.Empty);
+        // Deep-link parameters set on purpose: a degraded build must IGNORE them —
+        // rendering the drill-down's "none missing" copy over an empty report would
+        // be a false all-clear.
+        var html = await RenderAsync<Coverage>(provider, ParameterView.FromDictionary(
+            new Dictionary<string, object?>
+            {
+                [nameof(Coverage.SelectedCollection)] = "blog",
+                [nameof(Coverage.SelectedLocale)] = "ja",
+            }));
 
         Assert.Contains("does-not-exist", html);
         Assert.Contains("TOTAL", html); // the (empty) table still renders
+        Assert.DoesNotContain("coverage-drill", html); // no drill-down section at all
+        Assert.DoesNotContain("none —", html);
     }
 
     private static string StripWhitespace(string html)

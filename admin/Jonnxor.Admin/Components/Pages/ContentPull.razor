@@ -42,7 +42,8 @@
     <h2>Output</h2>
     @if (Pipeline.OutputSnapshot is { Count: > 0 } lines)
     {
-        <div class="output-scroll">
+        @* tabindex + role: a scrollable region must be keyboard-reachable to scroll. *@
+        <div class="output-scroll" tabindex="0" role="region" aria-label="Run output">
             <pre class="output-pane">@string.Join('\n', lines)</pre>
         </div>
     }
@@ -108,7 +109,8 @@
         </ul>
         @if (diff.DiffText.Length > 0)
         {
-            <pre class="diff-pane">@diff.DiffText</pre>
+            @* tabindex + role: a scrollable region must be keyboard-reachable to scroll. *@
+            <pre class="diff-pane" tabindex="0" role="region" aria-label="Snapshot diff">@diff.DiffText</pre>
         }
     }
 </section>
@@ -121,7 +123,6 @@
     private bool _offlineBusy;
     private string? _actionError;
     private bool _wasRunning;
-    private int _diffRefreshing;
 
     // Buttons derive from the GLOBAL lock state (another tab's run disables them
     // here too — OutputChanged re-renders cover the transitions), plus the local
@@ -155,12 +156,21 @@
 
         _ = InvokeAsync(async () =>
         {
-            if (flippedToIdle)
+            try
             {
-                await RefreshDiffAsync();
-            }
+                if (flippedToIdle)
+                {
+                    await RefreshDiffAsync();
+                }
 
-            StateHasChanged();
+                StateHasChanged();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Component/circuit tearing down between the event firing and this
+                // continuation running — nothing left to render, and an unobserved
+                // task fault here would be pure noise.
+            }
         });
     }
 
@@ -214,13 +224,14 @@
         }
     }
 
+    // Deliberately NOT deduped: a dedupe gate here can drop the post-run refresh
+    // when a refresh that started mid-run (e.g. page load during a pull) is still
+    // in flight, leaving the pane on a partial diff. Concurrent refreshes are
+    // read-only git and every trigger (awaited run returning, Running→idle flip)
+    // fires after the run has completed, so overlapping calls observe the same
+    // post-run tree — last writer wins with identical data.
     private async Task RefreshDiffAsync()
     {
-        if (Interlocked.Exchange(ref _diffRefreshing, 1) == 1)
-        {
-            return; // a refresh is already in flight; it will render the same state
-        }
-
         try
         {
             _diff = await Pipeline.GetDiffAsync(_cts.Token);
@@ -233,19 +244,16 @@
         {
             _diffError = ex.Message;
         }
-        finally
-        {
-            Interlocked.Exchange(ref _diffRefreshing, 0);
-        }
     }
 
     public void Dispose()
     {
         // Long-running subscription + in-flight loads die with the component
         // (carry-over from the Task-4/5 reviews, mandatory now that real
-        // navigation exists).
+        // navigation exists). Cancel only — Dispose here could race an in-flight
+        // load still observing the token; a plain (timer-less) CTS holds nothing
+        // that needs eager release, so the GC finalizes it safely.
         Pipeline.OutputChanged -= OnPipelineChanged;
         _cts.Cancel();
-        _cts.Dispose();
     }
 }

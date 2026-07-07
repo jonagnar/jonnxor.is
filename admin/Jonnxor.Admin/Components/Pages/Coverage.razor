@@ -129,10 +129,14 @@ else
             // BuildAsync degrades a missing content dir itself; anything else
             // (permissions, IO) is data on this page, never a circuit crash.
             _result = new CoverageResult(
-                new CoverageReport(DateTimeOffset.UtcNow, []), ex.Message);
+                new CoverageReport(DateTimeOffset.UtcNow, []), ex.Message,
+                new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>());
         }
 
-        if (SelectedCollection is { Length: > 0 } collection
+        // Deep-link selection only on a HEALTHY build: a degraded (empty) report
+        // must never render a falsely-cheerful "none missing" drill-down.
+        if (_result is { Detail: null }
+            && SelectedCollection is { Length: > 0 } collection
             && SelectedLocale is { Length: > 0 } locale)
         {
             Select(collection, locale);
@@ -140,18 +144,17 @@ else
     }
 
     private void Select(string collection, string locale)
-        // MissingBySlug answers from CoverageService's cache of the LAST build, so
-        // the drill-down always agrees with the table currently on screen.
-        => _selected = (collection, locale, Service.MissingBySlug(collection, locale));
+        // The drill-down answers from THIS page's held result — self-contained, so
+        // it always agrees with the table on screen even if another tab rebuilds.
+        => _selected = _result is { } result
+            ? (collection, locale, result.MissingBySlug(collection, locale))
+            : null;
 
-    // Mirrors ReportTable.FormatCell's rounding so the page can never disagree with
-    // the CLI verb; adds the /total the fixed-width console column leaves implicit.
+    // Renders through the CLI verb's own formatter (ReportTable.FormatPercent), so
+    // the page can never disagree with the `report` table's rounding; adds the
+    // /total the fixed-width console column leaves implicit.
     private static string FormatCell(LocaleCoverage cell, int slugs)
-        => $"{cell.Present}/{slugs} ({FormatPercent(cell.Coverage)}%)";
-
-    private static string FormatPercent(double coverage)
-        => Math.Round(coverage * 100, MidpointRounding.AwayFromZero)
-            .ToString(CultureInfo.InvariantCulture);
+        => $"{cell.Present}/{slugs} ({ReportTable.FormatPercent(cell.Coverage)}%)";
 
     private static int TotalSlugs(CoverageReport report)
         => report.Collections.Sum(c => c.Slugs);
@@ -166,8 +169,10 @@ else
 
     public void Dispose()
     {
-        // In-flight snapshot read dies with the component (Task-4/5 review carry-over).
+        // In-flight snapshot read dies with the component (Task-4/5 review
+        // carry-over). Cancel only — Dispose here could race an in-flight load
+        // still observing the token; a plain (timer-less) CTS holds nothing that
+        // needs eager release, so the GC finalizes it safely.
         _cts.Cancel();
-        _cts.Dispose();
     }
 }

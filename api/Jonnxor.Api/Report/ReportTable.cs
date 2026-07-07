@@ -58,10 +58,16 @@ public static class ReportTable
 
     private const int LocaleColumnWidth = 14; // "999 (100%)"
 
-    // Percentage formatted manually (rather than "{0:P0}") so the table's spacing is stable
-    // across the invariant vs. system culture's differing "before the % sign" conventions —
-    // this is a fixed-width console table, not locale-facing UI text.
+    /// <summary>
+    /// The one percent formatter for coverage fractions (0.0–1.0 → "0"–"100", no sign).
+    /// Formatted manually (rather than "{0:P0}") so output is stable across the invariant
+    /// vs. system culture's differing "before the % sign" conventions. Public because the
+    /// admin panel's coverage page renders through it too — one definition, so the page
+    /// can never disagree with this table's rounding.
+    /// </summary>
+    public static string FormatPercent(double coverage) =>
+        Math.Round(coverage * 100, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture);
+
     private static string FormatCell(LocaleCoverage locale) =>
-        $"{locale.Present} ({Math.Round(locale.Coverage * 100, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture)}%)"
-            .PadRight(LocaleColumnWidth);
+        $"{locale.Present} ({FormatPercent(locale.Coverage)}%)".PadRight(LocaleColumnWidth);
 }

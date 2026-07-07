@@ -52,35 +52,23 @@ public class CoverageServiceTests
     }
 
     [Fact]
-    public async Task MissingBySlug_AfterBuild_ListsSlugsLackingThatLocale()
+    public async Task MissingBySlug_OnTheResult_ListsSlugsLackingThatLocale()
     {
-        var service = MixedLocaleService();
-        await service.BuildAsync();
+        var result = await MixedLocaleService().BuildAsync();
 
-        Assert.Equal(["alpha", "beta"], service.MissingBySlug("blog", "ja"));
-        Assert.Equal(["beta"], service.MissingBySlug("blog", "is"));
-        Assert.Empty(service.MissingBySlug("blog", "en"));
-        Assert.Empty(service.MissingBySlug("grimoire", "ja"));
-    }
-
-    [Fact]
-    public void MissingBySlug_BeforeAnyBuild_IsEmptyNotACrash()
-    {
-        // The drill-down cache is populated by BuildAsync (the page always builds
-        // first); before that there is nothing to drill into.
-        var service = MixedLocaleService();
-
-        Assert.Empty(service.MissingBySlug("blog", "ja"));
+        Assert.Equal(["alpha", "beta"], result.MissingBySlug("blog", "ja"));
+        Assert.Equal(["beta"], result.MissingBySlug("blog", "is"));
+        Assert.Empty(result.MissingBySlug("blog", "en"));
+        Assert.Empty(result.MissingBySlug("grimoire", "ja"));
     }
 
     [Fact]
     public async Task MissingBySlug_UnknownCollectionOrLocale_IsEmpty()
     {
-        var service = MixedLocaleService();
-        await service.BuildAsync();
+        var result = await MixedLocaleService().BuildAsync();
 
-        Assert.Empty(service.MissingBySlug("no-such-collection", "ja"));
-        Assert.Empty(service.MissingBySlug("blog", "fr"));
+        Assert.Empty(result.MissingBySlug("no-such-collection", "ja"));
+        Assert.Empty(result.MissingBySlug("blog", "fr"));
     }
 
     [Fact]
@@ -94,12 +82,12 @@ public class CoverageServiceTests
         Assert.NotNull(result.Detail);
         Assert.Contains("does-not-exist", result.Detail);
         Assert.Empty(result.Report.Collections);
-        // The drill-down cache degrades in step: empty, never stale or throwing.
-        Assert.Empty(service.MissingBySlug("blog", "ja"));
+        // The drill-down degrades in step: empty, never stale or throwing.
+        Assert.Empty(result.MissingBySlug("blog", "ja"));
     }
 
     [Fact]
-    public async Task BuildAsync_Rebuild_RefreshesTheDrillDownCache()
+    public async Task BuildAsync_ResultsAreSelfContained_RebuildNeverMutatesAnEarlierResult()
     {
         using var temp = new TempDir();
         var contentDir = temp.CreateDir("content");
@@ -107,15 +95,17 @@ public class CoverageServiceTests
             "---\nslug: solo\nlocale: en\n---\nbody\n");
         var service = ServiceFor(contentDir);
 
-        await service.BuildAsync();
-        Assert.Equal(["solo"], service.MissingBySlug("blog", "ja"));
+        var first = await service.BuildAsync();
+        Assert.Equal(["solo"], first.MissingBySlug("blog", "ja"));
 
         temp.WriteFile(Path.Combine("content", "blog", "solo.ja.md"),
             "---\nslug: solo\nlocale: ja\n---\nbody\n");
-        await service.BuildAsync();
+        var second = await service.BuildAsync();
 
-        // MissingBySlug reflects the LAST BuildAsync, by design: the drill-down
-        // always matches the table the page currently shows.
-        Assert.Empty(service.MissingBySlug("blog", "ja"));
+        // Each result carries its own drill-down data: the rebuild sees the new
+        // file, and the earlier result still answers for the table IT described —
+        // tab B rebuilding can never change what tab A's cell clicks say.
+        Assert.Empty(second.MissingBySlug("blog", "ja"));
+        Assert.Equal(["solo"], first.MissingBySlug("blog", "ja"));
     }
 }
