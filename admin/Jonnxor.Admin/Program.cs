@@ -12,6 +12,16 @@ builder.Services.AddSingleton(static sp => sp.GetRequiredService<IOptions<AdminO
 builder.Services.AddSingleton<RepoPaths>();
 builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
 
+// Health services (stateless singletons). Explicit factories so the optional
+// test-only ctor parameters (HttpMessageHandler, env lookup) stay at their
+// real defaults instead of being container-resolved.
+builder.Services.AddSingleton(static sp =>
+    new DirectusHealthService(sp.GetRequiredService<RepoPaths>()));
+builder.Services.AddSingleton(static sp =>
+    new SnapshotHealthService(sp.GetRequiredService<RepoPaths>(), sp.GetRequiredService<IProcessRunner>()));
+builder.Services.AddSingleton(static sp =>
+    new ForgejoCiService(sp.GetRequiredService<AdminOptions>()));
+
 var app = builder.Build();
 
 app.UseAntiforgery();
