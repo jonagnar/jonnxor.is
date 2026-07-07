@@ -22,6 +22,14 @@ builder.Services.AddSingleton(static sp =>
 builder.Services.AddSingleton(static sp =>
     new ForgejoCiService(sp.GetRequiredService<AdminOptions>()));
 
+// Pipeline orchestration (stateful singleton: global run lock + output buffer).
+// Explicit factory so the test-only liveVerify seam stays at its CliRunner default.
+builder.Services.AddSingleton(static sp =>
+    new ContentPipelineService(
+        sp.GetRequiredService<RepoPaths>(),
+        sp.GetRequiredService<IProcessRunner>(),
+        sp.GetRequiredService<SnapshotHealthService>()));
+
 var app = builder.Build();
 
 app.UseAntiforgery();
