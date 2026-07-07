@@ -1,5 +1,6 @@
 using Jonnxor.Admin.Components;
 using Jonnxor.Admin.Services;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,21 @@ builder.Services.AddSingleton(static sp =>
         sp.GetRequiredService<SnapshotHealthService>()));
 
 var app = builder.Build();
+
+// Panel-owned assets (wwwroot: admin.css).
+app.UseStaticFiles();
+
+// The site's design tokens, served read-only straight from the client workspace at
+// /site-assets so the panel inherits dawn/rune/neon and can never drift from the
+// site's token vocabulary (design doc §7). Static-file middleware serves GET/HEAD
+// only — no write path.
+var repoPaths = app.Services.GetRequiredService<RepoPaths>();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(repoPaths.ClientDir, "public", "assets")),
+    RequestPath = "/site-assets",
+});
 
 app.UseAntiforgery();
 

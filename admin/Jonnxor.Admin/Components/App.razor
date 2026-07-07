@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+@* data-theme="rune" — the site's default theme; a theme switcher is a Config-page
+   preference (Task 7). Tokens come read-only from the client workspace via the
+   /site-assets static-file provider, so the panel can never drift from the site. *@
+<html lang="en" data-theme="rune">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>Jonnxor Admin</title>
+    <link rel="stylesheet" href="site-assets/tokens.css" />
+    <link rel="stylesheet" href="admin.css" />
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 

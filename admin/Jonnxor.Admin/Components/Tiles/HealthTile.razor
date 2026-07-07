@@ -1,0 +1,58 @@
+@using System.Globalization
+
+@* Shared tile presentation: title + status badge + detail lines + refreshed-at +
+   manual refresh. Status maps to a css class only — every color lives in
+   wwwroot/admin.css as a token (var(--*)) per the design-system rule. *@
+
+<section class="tile">
+    <header class="tile-head">
+        <h2 class="tile-title">@Title</h2>
+        <span class="tile-status @StatusClass">@StatusLabel</span>
+    </header>
+
+    @if (DetailLines.Count > 0)
+    {
+        <ul class="tile-detail">
+            @foreach (var line in DetailLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+    }
+
+    <footer class="tile-foot">
+        <span class="tile-refreshed">
+            @(RefreshedAt is { } at
+                ? $"refreshed {at.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture)}"
+                : "loading…")
+        </span>
+        <button type="button" class="tile-refresh" disabled="@Refreshing" @onclick="OnRefresh">
+            Refresh
+        </button>
+    </footer>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public TileStatus Status { get; set; } = TileStatus.Unknown;
+    [Parameter] public IReadOnlyList<string> DetailLines { get; set; } = [];
+    [Parameter] public DateTimeOffset? RefreshedAt { get; set; }
+    [Parameter] public bool Refreshing { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    private string StatusClass => Status switch
+    {
+        TileStatus.Ok => "tile-status--ok",
+        TileStatus.Warn => "tile-status--warn",
+        TileStatus.Fail => "tile-status--fail",
+        _ => "tile-status--unknown",
+    };
+
+    private string StatusLabel => Status switch
+    {
+        TileStatus.Ok => "ok",
+        TileStatus.Warn => "warn",
+        TileStatus.Fail => "fail",
+        _ => "unknown",
+    };
+}

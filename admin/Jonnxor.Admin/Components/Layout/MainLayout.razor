@@ -1,5 +1,12 @@
 @inherits LayoutComponentBase
 
-<main>
+<header class="admin-head">
+    <span class="admin-brand">Jonnxor Admin</span>
+    <nav class="admin-nav">
+        <NavLink href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
+    </nav>
+</header>
+
+<main class="admin-main">
     @Body
 </main>

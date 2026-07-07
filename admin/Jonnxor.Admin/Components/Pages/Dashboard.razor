@@ -1,5 +1,170 @@
 @page "/"
+@using Jonnxor.Admin.Components.Tiles
+@using Jonnxor.Admin.Services
+@inject DirectusHealthService DirectusService
+@inject SnapshotHealthService SnapshotService
+@inject ForgejoCiService CiService
+
+@* Interactivity note: the whole app renders InteractiveServer via the root
+   <Routes @rendermode="InteractiveServer" /> in App.razor, so this page inherits it.
+   The directive is deliberately NOT repeated here: a per-component render mode makes
+   the component unrenderable by the plain HtmlRenderer our render tests use (the base
+   renderer throws NotSupportedException on components carrying a render mode). *@
 
 <PageTitle>Dashboard — Jonnxor Admin</PageTitle>
 
-<h1>Jonnxor Admin</h1>
+<h1>Dashboard</h1>
+
+<div class="tile-grid">
+    <HealthTile Title="Directus"
+                Status="_directus.Status"
+                DetailLines="_directus.Lines"
+                RefreshedAt="_directus.RefreshedAt"
+                Refreshing="_directus.Loading"
+                OnRefresh="RefreshDirectusAsync" />
+
+    <HealthTile Title="Snapshot freshness"
+                Status="_snapshot.Status"
+                DetailLines="_snapshot.Lines"
+                RefreshedAt="_snapshot.RefreshedAt"
+                Refreshing="_snapshot.Loading"
+                OnRefresh="RefreshSnapshotAsync" />
+
+    <HealthTile Title="Last CI"
+                Status="_ci.Status"
+                DetailLines="_ci.Lines"
+                RefreshedAt="_ci.RefreshedAt"
+                Refreshing="_ci.Loading"
+                OnRefresh="RefreshCiAsync" />
+</div>
+
+@code {
+    /// <summary>Per-tile view state; each tile owns one so failures stay isolated.</summary>
+    private sealed class TileState
+    {
+        public TileStatus Status { get; set; } = TileStatus.Unknown;
+        public IReadOnlyList<string> Lines { get; set; } = [];
+        public DateTimeOffset? RefreshedAt { get; set; }
+        public bool Loading { get; set; }
+    }
+
+    private readonly TileState _directus = new();
+    private readonly TileState _snapshot = new();
+    private readonly TileState _ci = new();
+
+    // All three tiles load in one pass so the static (pre-interactive) render is
+    // already truthful; each load is individually try/caught, so one failing
+    // service degrades its own tile to "unknown" and never blanks the page.
+    protected override Task OnInitializedAsync()
+        => Task.WhenAll(RefreshDirectusAsync(), RefreshSnapshotAsync(), RefreshCiAsync());
+
+    private Task RefreshDirectusAsync()
+        => RefreshAsync(_directus, async () => MapDirectus(await DirectusService.CheckAsync()));
+
+    private Task RefreshSnapshotAsync()
+        => RefreshAsync(_snapshot, async () =>
+            MapFreshness(await SnapshotService.GetFreshnessAsync(), DateTimeOffset.Now));
+
+    private Task RefreshCiAsync()
+        => RefreshAsync(_ci, async () =>
+            MapCi(await CiService.GetLatestPerBranchAsync(), DateTimeOffset.Now));
+
+    private async Task RefreshAsync(
+        TileState tile, Func<Task<(TileStatus Status, IReadOnlyList<string> Lines)>> load)
+    {
+        tile.Loading = true;
+        try
+        {
+            (tile.Status, tile.Lines) = await load();
+        }
+        catch (Exception ex)
+        {
+            // Tile isolation: any unexpected failure is data on this tile only.
+            tile.Status = TileStatus.Unknown;
+            tile.Lines = [$"error: {ex.Message}"];
+        }
+        finally
+        {
+            tile.Loading = false;
+            tile.RefreshedAt = DateTimeOffset.Now;
+        }
+    }
+
+    private static (TileStatus, IReadOnlyList<string>) MapDirectus(DirectusHealth health)
+    {
+        if (!health.Reachable)
+        {
+            return (TileStatus.Fail, WithUrl([health.Detail ?? "unreachable"], health.Url));
+        }
+
+        // Reachable but unhealthy (e.g. a 503 with status "error") must render as a
+        // warning from Status+Detail — reachability alone is not health.
+        return string.Equals(health.Status, "ok", StringComparison.OrdinalIgnoreCase)
+            ? (TileStatus.Ok, WithUrl(["status: ok"], health.Url))
+            : (TileStatus.Warn, WithUrl(
+                health.Detail is { Length: > 0 } detail
+                    ? [$"status: {health.Status ?? "unknown"}", detail]
+                    : [$"status: {health.Status ?? "unknown"}"],
+                health.Url));
+    }
+
+    private static (TileStatus, IReadOnlyList<string>) MapFreshness(
+        SnapshotFreshness freshness, DateTimeOffset now)
+    {
+        // GitOk gates everything: a failing git renders "unknown", never a false
+        // "clean/in sync" (review-mandated).
+        if (!freshness.GitOk)
+        {
+            return (TileStatus.Unknown, ["git failed — freshness unknown"]);
+        }
+
+        var commitLine = freshness.LastCommit is { } commit
+            ? $"last snapshot commit: {RelativeTime.Format(commit, now)}"
+            : "last snapshot commit: none found";
+
+        return freshness.Dirty
+            ? (TileStatus.Warn,
+                [$"{freshness.FileCount} uncommitted change(s) pending", commitLine])
+            : (TileStatus.Ok, ["in sync", commitLine]);
+    }
+
+    private static (TileStatus, IReadOnlyList<string>) MapCi(CiStatus status, DateTimeOffset now)
+    {
+        if (!status.Available)
+        {
+            return (TileStatus.Unknown, [status.Detail ?? "CI status unavailable"]);
+        }
+
+        if (status.Runs.Count == 0)
+        {
+            return (TileStatus.Unknown, ["no CI runs found"]);
+        }
+
+        var overall = status.Runs.Any(r => IsFailure(r.Status)) ? TileStatus.Fail
+            : status.Runs.All(r => IsSuccess(r.Status)) ? TileStatus.Ok
+            : TileStatus.Warn; // something still running/queued
+
+        return (overall, status.Runs.Select(r => DescribeRun(r, now)).ToList());
+    }
+
+    private static string DescribeRun(CiRun run, DateTimeOffset now)
+    {
+        var age = run.CreatedAt is { } at ? $", {RelativeTime.Format(at, now)}" : string.Empty;
+        return $"{run.HeadBranch}: {run.Status} (#{run.RunNumber}{age})";
+    }
+
+    private static bool IsFailure(string status)
+        => status is "failure" or "failed" or "cancelled" or "canceled";
+
+    private static bool IsSuccess(string status) => status is "success";
+
+    private static IReadOnlyList<string> WithUrl(List<string> lines, string url)
+    {
+        if (url.Length > 0)
+        {
+            lines.Add($"url: {url}");
+        }
+
+        return lines;
+    }
+}

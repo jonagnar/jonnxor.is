@@ -1,0 +1,156 @@
+/* Jonnxor Admin — panel chrome.
+   Every color is a token from /site-assets/tokens.css (the site's design system,
+   served read-only from client/public/assets): zero hardcoded themed colors, so the
+   panel renders correctly in all three themes (dawn / rune / neon).
+   Note: the site's token vocabulary has no danger/red token — "fail" uses the
+   highest-contrast token pair (ink on bg inverted) instead of inventing a color. */
+
+/* ---------- chrome ---------- */
+
+.admin-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-brand {
+  font-family: var(--font-display);
+  color: var(--gold-ink);
+  letter-spacing: .06em;
+  text-shadow: var(--ambient-text, none);
+}
+
+.admin-nav {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.admin-nav a {
+  color: var(--ink-soft);
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  color: var(--tq-ink);
+}
+
+.admin-main {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5);
+}
+
+/* ---------- dashboard tiles ---------- */
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ambient-card, none);
+}
+
+.tile-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tile-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.tile-status {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  padding: 2px var(--space-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.tile-status--ok {
+  color: var(--on-tq);
+  background: var(--tq);
+  border-color: var(--tq-deep);
+}
+
+.tile-status--warn {
+  color: var(--on-gold);
+  background: var(--gold);
+  border-color: var(--gold-ink);
+}
+
+.tile-status--fail {
+  color: var(--bg);
+  background: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.tile-status--unknown {
+  color: var(--ink-faint);
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+
+.tile-detail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tile-detail li {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.tile-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tile-refreshed {
+  color: var(--ink-faint);
+  font-size: .78rem;
+}
+
+.tile-refresh {
+  background: var(--tq-soft);
+  color: var(--tq-ink);
+  border: 1px solid var(--tq-deep);
+  border-radius: var(--r-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.tile-refresh:hover:not(:disabled) {
+  background: var(--tq);
+  color: var(--on-tq);
+}
+
+.tile-refresh:disabled {
+  opacity: .5;
+  cursor: default;
+}
