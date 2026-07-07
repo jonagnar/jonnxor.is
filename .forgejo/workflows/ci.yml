@@ -26,7 +26,20 @@ jobs:
     container:
       image: mcr.microsoft.com/dotnet/sdk:10.0
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout is a Node action and the bare SDK image ships no node —
+      # check out with git itself, using the same token auth checkout would.
+      - name: Checkout (git-native)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)
+          git init -q .
+          git config http.extraHeader "Authorization: Basic $AUTH"
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          if ! git fetch -q --depth=1 origin "$GITHUB_SHA"; then
+            git fetch -q --depth=1 origin "$GITHUB_REF"
+          fi
+          git checkout -q --detach "$GITHUB_SHA" || git checkout -q --detach FETCH_HEAD
       - name: Build
         run: dotnet build jonnxor.sln --configuration Release
       - name: Test
