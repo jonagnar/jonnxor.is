@@ -7,6 +7,9 @@ namespace Jonnxor.Admin.Services;
 /// State of the pipeline's current (or most recent) exclusive run. While
 /// <see cref="Running"/> is true, <see cref="ExitCode"/> is null; a completed run
 /// carries the process/CLI exit code verbatim (non-zero is data, not an error).
+/// <see cref="Running"/> false with a null <see cref="ExitCode"/> is the aborted
+/// state: the run ended without producing an exit code (spawn failure or
+/// cancellation — the exception itself went to the triggering caller).
 /// A trigger rejected by the global lock receives the in-flight run's state —
 /// <see cref="Running"/> true and <see cref="Kind"/> naming what is running.
 /// </summary>
@@ -79,9 +82,12 @@ public sealed class ContentPipelineService
 
     /// <summary>
     /// Raised on run start, on every buffered output line, and on run completion —
-    /// the UI subscribes and re-renders. Subscriber exceptions are swallowed: a
-    /// throwing handler must never abort a run (the buffer feed is an
-    /// <see cref="IProcessRunner"/> <c>onLine</c> callback, which must not throw).
+    /// the UI subscribes and re-renders. Fires on arbitrary background threads,
+    /// potentially once per output line: subscribers must be cheap and marshal any
+    /// UI work themselves (Blazor: <c>InvokeAsync(StateHasChanged)</c>). Subscriber
+    /// exceptions are swallowed per subscriber: a throwing handler must never abort
+    /// a run (the buffer feed is an <see cref="IProcessRunner"/> <c>onLine</c>
+    /// callback, which must not throw) nor starve subscribers registered after it.
     /// </summary>
     public event Action? OutputChanged;
 
@@ -105,20 +111,29 @@ public sealed class ContentPipelineService
     /// Runs <c>verify --live</c> through the API's own <see cref="CliRunner"/> (or the
     /// injected test seam) with absolute content/env paths — the CLI resolves env
     /// exactly as it does for the operator (exported vars win over the --env file).
-    /// Output lands in the buffer when the call returns, stderr prefixed <c>"! "</c>.
-    /// Takes the global lock: it logs into Directus.
+    /// Output lands in the buffer when the call returns — including on an unexpected
+    /// escape from the delegate, so partial diagnostics are never discarded — stderr
+    /// prefixed <c>"! "</c>. Takes the global lock: it logs into Directus.
+    /// <paramref name="ct"/> only gates the start: once
+    /// <see cref="CliRunner.Run(string[], TextWriter, TextWriter)"/> begins it runs
+    /// to completion (unlike the pull, whose token kills the process tree).
     /// </summary>
     public Task<PipelineRun> RunVerifyLiveAsync(CancellationToken ct = default)
         => RunExclusiveAsync(VerifyLiveKind, () => Task.Run(() =>
         {
             using var stdout = new StringWriter();
             using var stderr = new StringWriter();
-            var exitCode = _liveVerify(
-                ["verify", "--live", "--content", _paths.ContentDir, "--env", _paths.DirectusEnvPath],
-                stdout, stderr);
-            AppendCaptured(stdout, prefix: null);
-            AppendCaptured(stderr, prefix: "! ");
-            return exitCode;
+            try
+            {
+                return _liveVerify(
+                    ["verify", "--live", "--content", _paths.ContentDir, "--env", _paths.DirectusEnvPath],
+                    stdout, stderr);
+            }
+            finally
+            {
+                AppendCaptured(stdout, prefix: null);
+                AppendCaptured(stderr, prefix: "! ");
+            }
         }, ct));
 
     /// <summary>
@@ -217,14 +232,26 @@ public sealed class ContentPipelineService
 
     private void Notify()
     {
-        try
+        if (OutputChanged is not { } handlers)
         {
-            OutputChanged?.Invoke();
+            return;
         }
-        catch
+
+        // Per-subscriber isolation: a single try around the multicast invoke would
+        // let one throwing subscriber (e.g. a disposed circuit from a closed browser
+        // tab) starve every subscriber registered after it. Each Blazor circuit is
+        // its own subscriber, so tab A's failure must not leave tab B stale.
+        foreach (var handler in handlers.GetInvocationList())
         {
-            // A throwing subscriber must not abort the run: this fires from inside
-            // IProcessRunner's onLine callback, whose contract forbids throwing.
+            try
+            {
+                ((Action)handler)();
+            }
+            catch
+            {
+                // A throwing subscriber must not abort the run: this fires from
+                // inside IProcessRunner's onLine callback, which forbids throwing.
+            }
         }
     }
 

@@ -86,6 +86,58 @@ public class ContentPipelineServiceTests
     }
 
     [Fact]
+    public async Task RunPullAsync_RunnerThrows_PublishesAbortedStateAndFreesGate()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        // An unscripted FakeProcessRunner throws on its first invocation — the same
+        // shape as a real spawn failure (missing pnpm binary).
+        var runner = new FakeProcessRunner();
+        var service = ServiceFor(paths, runner);
+
+        // The exception must reach the triggering caller, not vanish.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.RunPullAsync());
+
+        // Aborted state: the run is over but produced no exit code — the UI must
+        // never see a permanently "running" ghost.
+        var current = service.CurrentRun;
+        Assert.NotNull(current);
+        Assert.False(current.Running);
+        Assert.Null(current.ExitCode);
+
+        // And the global lock must be free again: a follow-up pull succeeds.
+        runner.Expect("pnpm", ["content:pull"], ["recovered"], 0);
+        var retry = await service.RunPullAsync();
+        Assert.Equal(0, retry.ExitCode);
+        runner.VerifyAllConsumed();
+    }
+
+    [Fact]
+    public async Task RunPullAsync_ThrowingSubscriber_RunCompletesAndLaterSubscribersStillNotified()
+    {
+        using var temp = new TempDir();
+        var paths = PathsFor(temp);
+        var runner = new FakeProcessRunner()
+            .Expect("pnpm", ["content:pull"], ["line 1", "line 2"], 0);
+        var service = ServiceFor(paths, runner);
+        var laterNotifications = 0;
+        // Tab A's disposed circuit throws on every notification; tab B is subscribed
+        // after it. FakeProcessRunner propagates onLine exceptions, so without
+        // per-subscriber isolation in Notify() this run would abort — and tab B
+        // would go permanently stale.
+        service.OutputChanged += () => throw new ObjectDisposedException("circuit of a closed tab");
+        service.OutputChanged += () => laterNotifications++;
+
+        var run = await service.RunPullAsync();
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Equal(new[] { "line 1", "line 2" }, service.OutputSnapshot);
+        // Run start + two lines + completion all reached the later subscriber.
+        Assert.True(laterNotifications >= 4);
+        runner.VerifyAllConsumed();
+    }
+
+    [Fact]
     public async Task RunPullAsync_BufferCapEnforced_DropsOldestBeyond2000Lines()
     {
         using var temp = new TempDir();
@@ -245,7 +297,10 @@ public class ContentPipelineServiceTests
         // a future "convenience" commit helper fails this test by name.
         var forbidden = new[] { "commit", "push", "add", "stage", "write", "mutate" };
         var methods = typeof(ContentPipelineService)
-            .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .GetMethods(
+                System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.DeclaredOnly)
             .Where(m => !m.IsSpecialName) // skip property/event accessors (add_OutputChanged)
             .Select(m => m.Name.ToLowerInvariant());
 
