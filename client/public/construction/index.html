@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="is" data-theme="rune">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>jonnxor.is — í smíðum</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/assets/fonts.css" />
+    <link rel="stylesheet" href="/assets/tokens.css" />
+    <style>
+      /* Standalone page: fixed rune theme, no site.css/site.js, no nav — by design. */
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 19px;
+        text-align: center;
+      }
+      main { padding: 2rem; }
+      h1 {
+        font-family: var(--font-display);
+        font-size: clamp(2.2rem, 6vw, 3.4rem);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        margin: 0;
+        text-shadow: 0 0 var(--glow-r) var(--glow-tq);
+      }
+      .rule {
+        width: 64px;
+        height: 2px;
+        background: var(--tq);
+        margin: 1.4rem auto;
+      }
+      .is { margin: 0 0 0.4rem; }
+      .en { margin: 0 0 2.2rem; color: var(--ink-soft); font-size: 17px; }
+      .links { color: var(--ink-faint); font-size: 16px; }
+      .links a {
+        color: var(--tq);
+        text-decoration: none;
+        border-bottom: 1px solid var(--tq-soft);
+      }
+      .links a:hover { border-bottom-color: var(--tq); }
+      .links .sep { margin: 0 0.7em; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>JONNXOR</h1>
+      <div class="rule" role="presentation"></div>
+      <p class="is">Eitthvað er í smíðum hér.</p>
+      <p class="en" lang="en">Something is being forged here.</p>
+      <p class="links">
+        <a href="https://github.com/jonagnar" rel="me">github.com/jonagnar</a>
+        <span class="sep">·</span>
+        <a href="mailto:jonnxor@jonnxor.is">jonnxor@jonnxor.is</a>
+      </p>
+    </main>
+  </body>
+</html>
